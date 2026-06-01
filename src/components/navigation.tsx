@@ -88,12 +88,12 @@ export function Navigation() {
 
   return (
     <nav className="rounded-2xl bg-white p-3 shadow-sm">
-      <div className="mb-3 flex items-center gap-2 px-2">
+      <Link href="/" className="mb-3 flex items-center gap-2 px-2 transition hover:opacity-80">
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
           IA
         </span>
         <span className="text-sm font-bold text-slate-900">InfluApp</span>
-      </div>
+      </Link>
       <div className="flex flex-col gap-2">
         {(role === "influencer" ? influencerLinks : brandLinks).map((link) => (
           <Link

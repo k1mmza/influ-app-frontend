@@ -21,12 +21,12 @@ export default function LoginPage() {
       <div className="grid min-h-[calc(100vh-3rem)] md:grid-cols-[1fr_1.05fr]">
         <aside className="relative hidden flex-col justify-between bg-gradient-to-b from-indigo-700 via-indigo-700 to-violet-700 px-10 py-8 text-white md:flex">
           <div>
-            <div className="inline-flex items-center gap-2 text-lg font-semibold">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
-                IA
-              </span>
-              InfluApp
-            </div>
+          <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold transition hover:opacity-80">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
+              IA
+            </span>
+            InfluApp
+          </Link>
           </div>
 
           <div className="max-w-sm">

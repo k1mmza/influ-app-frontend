@@ -29,7 +29,13 @@ export const useUserStore = create<UserState>()(
       email: "sarah@agency.com",
       role: "agency",
       isLoggedIn: false,
-      signIn: (role) => set({ role, name: defaultNameForRole(role), isLoggedIn: true }),
+      signIn: (role: Role, name?: string, email?: string) => 
+    set({ 
+      role, 
+      name: name || defaultNameForRole(role), 
+      email: email || (role === "brand" ? "david@brand.com" : role === "influencer" ? "lina@creator.com" : "sarah@agency.com"),
+      isLoggedIn: true 
+    }),
       setRole: (role) => set({ role, name: defaultNameForRole(role) }),
       logout: () => {
         set({ role: "agency", name: defaultNameForRole("agency"), isLoggedIn: false });
