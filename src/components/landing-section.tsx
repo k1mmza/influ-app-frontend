@@ -14,7 +14,7 @@ export type LandingFeatureItem = {
 export function LandingSectionTitle({ children }: { children: React.ReactNode }) {
   return (
     <LandingAnimate>
-      <h2 className="text-3xl font-extrabold tracking-tight text-foreground sm:text-4xl font-serif">{children}</h2>
+      <h2 className="text-3xl font-semibold tracking-tight text-foreground sm:text-4xl font-serif">{children}</h2>
     </LandingAnimate>
   );
 }
@@ -45,7 +45,7 @@ export function LandingFeatureList({
               <div className="mb-6 flex h-12 w-12 items-center justify-center rounded-2xl bg-white shadow-sm">
                 {icon || <Check className="h-6 w-6 text-primary" />}
               </div>
-              <h3 className="text-xl font-bold tracking-tight text-foreground font-serif">{title}</h3>
+              <h3 className="text-xl font-semibold tracking-tight text-foreground font-serif">{title}</h3>
               <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
             </CardContent>
           </Card>
