@@ -25,7 +25,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${playfair.variable}`}>
+    <html lang="en" className={`${montserrat.variable} ${playfair.variable}`} suppressHydrationWarning>
       <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
