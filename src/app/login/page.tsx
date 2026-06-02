@@ -13,12 +13,24 @@ import { Separator } from "@/components/ui/separator";
 
 export default function LoginPage() {
   const router = useRouter();
-  const { signIn } = useUserStore();
-  const [selectedRole, setSelectedRole] = useState<Role>("influencer");
+  const { login } = useUserStore();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  const handleSignIn = () => {
-    signIn(selectedRole);
-    router.push("/dashboard");
+  const handleSignIn = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError("");
+    setLoading(true);
+    try {
+      await login(email, password);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to login. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -96,10 +108,12 @@ export default function LoginPage() {
               </div>
             </div>
 
-            <form className="space-y-4" onSubmit={(e) => e.preventDefault()}>
+            {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+            
+            <form className="space-y-4" onSubmit={handleSignIn}>
               <div className="space-y-2">
                 <Label htmlFor="email">Email Address</Label>
-                <Input id="email" type="email" placeholder="name@company.com" className="rounded-xl" />
+                <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" className="rounded-xl" />
               </div>
 
               <div className="space-y-2">
@@ -109,25 +123,11 @@ export default function LoginPage() {
                     Forgot password?
                   </Link>
                 </div>
-                <Input id="password" type="password" placeholder="••••••••" className="rounded-xl" />
+                <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="••••••••" className="rounded-xl" />
               </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="role">Sign in as</Label>
-                <select
-                  id="role"
-                  value={selectedRole}
-                  onChange={(event) => setSelectedRole(event.target.value as Role)}
-                  className="flex h-9 w-full rounded-xl border border-input bg-transparent px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                >
-                  <option value="agency">Agency</option>
-                  <option value="brand">Brand</option>
-                  <option value="influencer">Influencer</option>
-                </select>
-              </div>
-
-              <Button type="button" onClick={handleSignIn} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
-                Sign In
+              <Button type="submit" disabled={loading} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
+                {loading ? "Signing In..." : "Sign In"}
               </Button>
             </form>
 

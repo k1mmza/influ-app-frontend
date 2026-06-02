@@ -17,18 +17,28 @@ export default function RegisterPage() {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState<Role>("agency");
+  const [role, setRole] = useState<Role>("brand");
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const signIn = useUserStore((state) => state.signIn);
+  const { register } = useUserStore();
 
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setStep(1);
   };
 
-  const handleCompleteRegistration = () => {
-    signIn(role, name, email);
-    router.push("/dashboard");
+  const handleCompleteRegistration = async () => {
+    setError("");
+    setLoading(true);
+    try {
+      await register(name, email, password, role);
+      router.push("/dashboard");
+    } catch (err: any) {
+      setError(err.message || "Failed to register. Please try again.");
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -179,10 +189,11 @@ export default function RegisterPage() {
                   </div>
 
                   <div className="pt-4 space-y-3">
-                    <Button onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20">
-                      Complete Registration
+                    {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+                    <Button disabled={loading} onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20">
+                      {loading ? "Creating Account..." : "Complete Registration"}
                     </Button>
-                    <Button variant="ghost" onClick={() => setStep(0)} className="w-full rounded-xl">
+                    <Button variant="ghost" disabled={loading} onClick={() => setStep(0)} className="w-full rounded-xl">
                       Go Back
                     </Button>
                   </div>

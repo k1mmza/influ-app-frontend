@@ -6,6 +6,7 @@ import { useParams } from "next/navigation";
 import { CampaignPartnerReviews } from "@/components/CampaignPartnerReviews";
 import { resolveBrandCampaignId } from "@/lib/campaign-id-bridge";
 import { useUserStore } from "@/store/useUserStore";
+import { Role } from "@/lib/types";
 import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
 import { brandCampaigns, trackingByCampaign } from "@/mock/brand-campaigns";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
@@ -104,7 +105,7 @@ export default function CampaignDetailPage() {
     recordCampaignFinished({
       campaignId: brandCampaign.id,
       campaignName: brandCampaign.name,
-      currentRole: role,
+      currentRole: role as Role,
       currentDisplayName: accountDisplayName
     });
     setShareMessage("Campaign marked finished. Please submit partner reviews below.");
