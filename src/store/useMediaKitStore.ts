@@ -42,40 +42,35 @@ export type MediaKitState = {
 };
 
 const defaultMediaKit = (): MediaKitState => ({
-  displayName: "Lina Park",
-  handle: "@linapark.creates",
-  bio: "Beauty + lifestyle creator. I make story-driven product content with strong save/share performance.",
-  location: "Bangkok, Thailand",
-  email: "lina@influapp.mock",
-  profileCompleteness: 86,
-  totalFollowers: 242000,
-  averageViews: 83000,
-  engagementRate: 5.4,
-  growthRate: 7.2,
-  categories: ["Beauty", "Lifestyle", "Travel"],
+  displayName: "",
+  handle: "",
+  bio: "",
+  location: "",
+  email: "",
+  profileCompleteness: 0,
+  totalFollowers: 0,
+  averageViews: 0,
+  engagementRate: 0,
+  growthRate: 0,
+  categories: [],
   socialAccounts: [
-    { platform: "TikTok", username: "@linapark.creates", followers: 145000, avgViews: 68000, engagementRate: 5.8 },
-    { platform: "Instagram", username: "@linapark.creates", followers: 76000, avgViews: 22000, engagementRate: 4.9 },
-    { platform: "YouTube", username: "Lina Park", followers: 21000, avgViews: 12000, engagementRate: 3.9 }
+    { platform: "TikTok", username: "", followers: 0, avgViews: 0, engagementRate: 0 },
+    { platform: "Instagram", username: "", followers: 0, avgViews: 0, engagementRate: 0 },
   ],
   audience: {
-    gender: "Female 72% / Male 26% / Other 2%",
-    age: "18-24 (38%), 25-34 (41%), 35-44 (15%), 45+ (6%)",
-    topCountries: ["Thailand 64%", "Malaysia 14%", "Singapore 9%"],
-    topCities: ["Bangkok", "Chiang Mai", "Kuala Lumpur"]
+    gender: "",
+    age: "",
+    topCountries: [],
+    topCities: [],
   },
-  pricing: { post: 4500, video: 7800, bundle: 12000 },
-  services: ["UGC Content", "Product Review", "Affiliate", "Brand Ambassador"],
-  portfolio: [
-    "Summer Skincare Launch - TikTok x IG Stories",
-    "Travel Essentials Reels Series",
-    "Daily Routine Product Integration"
-  ],
-  pastCollaborations: ["GlowLab — product seeding", "Nova Retail — seasonal launch", "Peak Media — UGC sprint"],
-  availability: "Available",
+  pricing: { post: 0, video: 0, bundle: 0 },
+  services: [],
+  portfolio: [],
+  pastCollaborations: [],
+  availability: "",
   notificationSettings: { messageAlerts: true, campaignAlerts: true },
   privacy: "Public",
-  uploadedPdfFileName: null
+  uploadedPdfFileName: null,
 });
 
 function isRecord(v: unknown): v is Record<string, unknown> {
@@ -174,7 +169,7 @@ export const useMediaKitStore = create<MediaKitStore>()(
       resetToDemo: () => set(defaultMediaKit())
     }),
     {
-      name: "influapp-media-kit",
+      name: "influapp-media-kit-v2",
       partialize: (s) => ({
         displayName: s.displayName,
         handle: s.handle,

@@ -69,16 +69,15 @@ export default function HomePage() {
       <LandingGuideSections />
 
       <div className="mx-auto max-w-6xl px-4 sm:px-6">
-        <section className="scroll-mt-20">
+        <section id="capabilities" className="scroll-mt-20">
           <div className="text-center max-w-3xl mx-auto mb-16">
+            <Badge variant="outline" className="mb-4 border-primary/30 bg-primary/10 text-primary px-4 py-1.5">Capabilities</Badge>
             <LandingSectionTitle>Capabilities mapped to real workflows</LandingSectionTitle>
             <LandingSectionIntro className="mx-auto">
               Every feature answers a recurring pain point: slow discovery, fuzzy metrics, scattered comms, and late reporting.
             </LandingSectionIntro>
           </div>
-          <LandingFeatureList
-            items={capabilityItems}
-          />
+          <LandingFeatureList items={capabilityItems} accent />
         </section>
 
         <section id="pricing" className="mt-32 scroll-mt-20">

@@ -4,13 +4,14 @@ import { Role } from "@/lib/types";
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 import { apiLogin, apiRegister, apiSelectRole } from "@/lib/api";
+import { useMediaKitStore } from "@/store/useMediaKitStore";
 
 interface UserState {
   name: string;
   email: string;
   role: Role | null;
   token: string | null;
-  /** Set true after sign-in so shell UI (e.g. footer) can hide for the session. */
+  isRoleSelected: boolean;
   isLoggedIn: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: Role) => Promise<void>;
@@ -25,32 +26,39 @@ export const useUserStore = create<UserState>()(
       email: "",
       role: null,
       token: null,
+      isRoleSelected: false,
       isLoggedIn: false,
       login: async (email: string, password: string) => {
         const data = await apiLogin(email, password);
-        // Backend returns access_token. In a real app we might fetch user profile here.
         set({
           token: data.access_token,
-          email: email,
+          name: data.user.name,
+          email: data.user.email,
+          role: data.user.role?.toLowerCase() || null,
+          isRoleSelected: data.user.isRoleSelected,
           isLoggedIn: true,
-          // Temporary role fallback if backend doesn't return user profile in login yet
-          role: "brand",
         });
       },
       register: async (name: string, email: string, password: string, role: Role) => {
         const data = await apiRegister(name, email, password);
-        await apiSelectRole(data.access_token, role);
+        const token = data.access_token;
+        
+        // Select role immediately after registration
+        await apiSelectRole(token, role);
+        
         set({
-          token: data.access_token,
-          name,
-          email,
-          role,
+          token: token,
+          name: name,
+          email: email,
+          role: role,
+          isRoleSelected: true,
           isLoggedIn: true,
         });
       },
-      setRole: (role) => set({ role }),
+      setRole: (role) => set({ role, isRoleSelected: true }),
       logout: () => {
-        set({ role: null, name: "", email: "", token: null, isLoggedIn: false });
+        set({ role: null, name: "", email: "", token: null, isRoleSelected: false, isLoggedIn: false });
+        useMediaKitStore.getState().resetToDemo();
         if (typeof window !== "undefined") {
           window.localStorage.removeItem("influapp-user");
         }

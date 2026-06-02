@@ -56,7 +56,7 @@ export function LandingHero() {
   return (
     <section className="relative flex min-h-[600px] w-full flex-col items-center justify-center overflow-hidden rounded-[2.5rem] bg-background px-4 py-20 lg:min-h-[calc(100vh-8rem)]">
       {/* Background Carousel with Overlay */}
-      <div className="absolute inset-0 z-0 overflow-hidden opacity-40">
+      <div className="absolute inset-0 z-0 overflow-hidden opacity-65">
         {CAROUSEL_IMAGES.map((image, index) => (
           <Image
             key={image.src}
@@ -70,7 +70,7 @@ export function LandingHero() {
             )}
           />
         ))}
-        <div className="absolute inset-0 bg-gradient-to-b from-background via-background/80 to-background" />
+        <div className="absolute inset-0 bg-gradient-to-b from-background/95 via-background/25 to-background/95" />
       </div>
 
       <div className="relative z-10 mx-auto w-full max-w-4xl text-center">

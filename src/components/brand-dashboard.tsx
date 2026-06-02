@@ -20,16 +20,24 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-const kpis = [
-  { label: "Active Campaigns", value: "2", icon: Rocket, color: "text-blue-600" },
-  { label: "Influencers Hired", value: "12", icon: Users, color: "text-primary" },
-  { label: "Budget Spent", value: "THB 1.18M", icon: Wallet, color: "text-emerald-600" },
-  { label: "Avg. Engagement", value: "4.6%", icon: TrendingUp, color: "text-primary" },
-  { label: "Total Reach", value: "2.1M", icon: Target, color: "text-amber-600" }
+const kpis_template = [
+  { label: "Active Campaigns", key: "activeCampaigns", icon: Rocket, color: "text-blue-600" },
+  { label: "Influencers Hired", key: "influencersHired", icon: Users, color: "text-primary" },
+  { label: "Budget Spent", key: "budgetSpent", icon: Wallet, color: "text-emerald-600" },
+  { label: "Avg. Engagement", key: "avgEngagement", icon: TrendingUp, color: "text-primary" },
+  { label: "Total Reach", key: "totalReach", icon: Target, color: "text-amber-600" }
 ];
 
-export function BrandDashboard() {
-  const active = brandCampaigns.filter((c) => c.status === "active");
+export function BrandDashboard({ data }: { data: any }) {
+  const stats = {
+    activeCampaigns: data?.stats?.activeCampaigns ?? 0,
+    influencersHired: data?.stats?.influencersHired ?? 0,
+    budgetSpent: data?.stats?.budgetSpent ?? 0,
+    avgEngagement: data?.stats?.avgEngagement ?? "0%",
+    totalReach: data?.stats?.totalReach ?? "0",
+  };
+
+  const active = data?.activeCampaigns || brandCampaigns.filter((c) => c.status === "active");
 
   return (
     <div className="space-y-8">
@@ -39,14 +47,18 @@ export function BrandDashboard() {
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
-        {kpis.map((item) => (
+        {kpis_template.map((item) => (
           <Card key={item.label} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
                 <item.icon className={cn("h-4 w-4", item.color)} />
               </div>
-              <p className="mt-2 text-xl font-bold tracking-tight text-foreground">{item.value}</p>
+              <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
+                {item.key === "budgetSpent" && typeof stats[item.key] === "number" 
+                  ? `THB ${stats[item.key].toLocaleString()}` 
+                  : stats[item.key]}
+              </p>
             </CardContent>
           </Card>
         ))}
@@ -100,7 +112,7 @@ export function BrandDashboard() {
             <CardDescription>Manage your current collaborations</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
-            {active.map((c) => (
+            {active.map((c: any) => (
               <div key={c.id} className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted">
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
@@ -149,7 +161,7 @@ export function BrandDashboard() {
           <CardContent className="space-y-4 text-sm font-medium">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Total Budget (Active)</span>
-              <span className="font-bold">THB 420,000</span>
+              <span className="font-bold">THB {stats.budgetSpent?.toLocaleString() || "0"}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Spent vs Remaining</span>

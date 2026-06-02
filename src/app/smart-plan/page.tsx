@@ -3,6 +3,26 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/store/useUserStore";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
+import {
+  Sparkles,
+  Brain,
+  FileText,
+  LayoutList,
+  ChevronRight,
+  ArrowLeft,
+  Target,
+  Zap,
+  Plus,
+  CheckCircle2,
+  Lightbulb,
+  PenLine,
+  BookOpen,
+} from "lucide-react";
 
 type StepId = "requirement" | "brief";
 
@@ -31,24 +51,24 @@ type Campaign = {
   requirement: RequirementData;
 };
 
-const stepBar: { id: StepId; label: string }[] = [
-  { id: "requirement", label: "Requirement" },
-  { id: "brief", label: "Brief" },
+const stepBar: { id: StepId; label: string; icon: React.ReactNode }[] = [
+  { id: "requirement", label: "Requirement", icon: <Target className="h-4 w-4" /> },
+  { id: "brief", label: "Brief", icon: <BookOpen className="h-4 w-4" /> },
 ];
 
-const requirementFields: { key: keyof RequirementData; label: string }[] = [
-  { key: "campaignName", label: "Campaign Name" },
-  { key: "objective", label: "Objective" },
+const requirementFields: { key: keyof RequirementData; label: string; fullWidth?: boolean }[] = [
+  { key: "campaignName", label: "Campaign Name", fullWidth: true },
+  { key: "objective", label: "Objective", fullWidth: true },
   { key: "contentAngle", label: "Content Angle" },
   { key: "productInfo", label: "Product Info" },
-  { key: "productLinkOrWebsite", label: "Product link or official website" },
-  { key: "ctaMessage", label: "CTA message" },
+  { key: "productLinkOrWebsite", label: "Product Link / Website" },
+  { key: "ctaMessage", label: "CTA Message" },
   { key: "targetAudience", label: "Target Audience" },
-  { key: "brandTone", label: "Brand Identity/Tone" },
+  { key: "brandTone", label: "Brand Identity / Tone" },
   { key: "budget", label: "Budget" },
   { key: "timeline", label: "Timeline" },
-  { key: "kpi", label: "KPI" },
-  { key: "doDont", label: "Do & Dont" },
+  { key: "kpi", label: "KPI", fullWidth: true },
+  { key: "doDont", label: "Do & Don't", fullWidth: true },
 ];
 
 type BriefSubSection = "strategy" | "concept" | "briefBody";
@@ -77,7 +97,7 @@ const myCampaignSeed: Campaign[] = [
     name: "Glow Summer Launch",
     status: "Active",
     budget: "$12,000",
-    timeRange: "Jun 1 - Jul 15",
+    timeRange: "Jun 1 – Jul 15",
     result: "78% KPI hit",
     requirement: {
       campaignName: "Glow Summer Launch",
@@ -89,9 +109,9 @@ const myCampaignSeed: Campaign[] = [
       targetAudience: "Women 20-35 in urban areas",
       brandTone: "Confident, fresh, and uplifting",
       budget: "$12,000",
-      timeline: "Jun 1 - Jul 15",
+      timeline: "Jun 1 – Jul 15",
       kpi: "Reach 2M, CTR 2.5%, 1,000 purchases",
-      doDont: "Do: show routine steps. Dont: overclaim product effect.",
+      doDont: "Do: show routine steps. Don't: overclaim product effect.",
     },
   },
   {
@@ -99,7 +119,7 @@ const myCampaignSeed: Campaign[] = [
     name: "Fit Habit Challenge",
     status: "Draft",
     budget: "$8,500",
-    timeRange: "May 10 - Jun 20",
+    timeRange: "May 10 – Jun 20",
     result: "Pending",
     requirement: {
       campaignName: "Fit Habit Challenge",
@@ -111,9 +131,9 @@ const myCampaignSeed: Campaign[] = [
       targetAudience: "Young professionals 22-40",
       brandTone: "Motivational and supportive",
       budget: "$8,500",
-      timeline: "May 10 - Jun 20",
+      timeline: "May 10 – Jun 20",
       kpi: "1,500 signups and 8% conversion",
-      doDont: "Do: realistic goals. Dont: shame-based messaging.",
+      doDont: "Do: realistic goals. Don't: shame-based messaging.",
     },
   },
 ];
@@ -135,10 +155,10 @@ function toBriefTemplate(data: RequirementData) {
       `Brand Tone: ${data.brandTone || "-"}`,
     ].join("\n"),
     briefBody: [
-      `Creative Brief - ${campaignTitle}`,
+      `Creative Brief – ${campaignTitle}`,
       `Product Link: ${data.productLinkOrWebsite || "-"}`,
       `CTA: ${data.ctaMessage || "-"}`,
-      `Do & Dont: ${data.doDont || "-"}`,
+      `Do & Don't: ${data.doDont || "-"}`,
     ].join("\n"),
   };
 }
@@ -169,52 +189,42 @@ function parseRequirementText(text: string): Partial<RequirementData> {
   };
 }
 
+const emptyRequirement: RequirementData = {
+  campaignName: "",
+  objective: "",
+  contentAngle: "",
+  productInfo: "",
+  productLinkOrWebsite: "",
+  ctaMessage: "",
+  targetAudience: "",
+  brandTone: "",
+  budget: "",
+  timeline: "",
+  kpi: "",
+  doDont: "",
+};
+
 export default function SmartPlanPage() {
   const { role } = useUserStore();
   const [promptInput, setPromptInput] = useState("");
   const [activeStep, setActiveStep] = useState<StepId>("requirement");
+  const [activeBriefSub, setActiveBriefSub] = useState<BriefSubSection>("strategy");
   const [hasStarted, setHasStarted] = useState(false);
   const [isPlannerVisible, setIsPlannerVisible] = useState(false);
   const [startMode, setStartMode] = useState<StartMode>("none");
   const [viewMode, setViewMode] = useState<"create" | "list" | "detail">("create");
   const [selectedCampaign, setSelectedCampaign] = useState<Campaign | null>(null);
   const [isBriefCampaignPickerOpen, setIsBriefCampaignPickerOpen] = useState(false);
-  const [requirements, setRequirements] = useState<RequirementData>({
-    campaignName: "",
-    objective: "",
-    contentAngle: "",
-    productInfo: "",
-    productLinkOrWebsite: "",
-    ctaMessage: "",
-    targetAudience: "",
-    brandTone: "",
-    budget: "",
-    timeline: "",
-    kpi: "",
-    doDont: "",
-  });
+  const [requirements, setRequirements] = useState<RequirementData>(emptyRequirement);
   const [strategyText, setStrategyText] = useState("");
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
-  const [formDraft, setFormDraft] = useState<RequirementData>({
-    campaignName: "",
-    objective: "",
-    contentAngle: "",
-    productInfo: "",
-    productLinkOrWebsite: "",
-    ctaMessage: "",
-    targetAudience: "",
-    brandTone: "",
-    budget: "",
-    timeline: "",
-    kpi: "",
-    doDont: "",
-  });
+  const [formDraft, setFormDraft] = useState<RequirementData>(emptyRequirement);
 
   const promptHint = useMemo(() => {
     return hasStarted
-      ? "Use @Requirement, @Strategy, @Concept, or @Brief before details (brief step covers strategy, concept, and creative brief)."
-      : "Start with @Requirement and describe campaign details for AI planning.";
+      ? "Use @Requirement, @Strategy, @Concept, or @Brief before details."
+      : "Start with @Requirement and describe your campaign for AI planning.";
   }, [hasStarted]);
 
   const applyPromptText = (input: string) => {
@@ -304,343 +314,514 @@ export default function SmartPlanPage() {
 
   if (role !== "brand" && role !== "agency") {
     return (
-      <section className="p-6">
-        <h1 className="text-2xl font-bold text-foreground font-serif">Smart Plan</h1>
-        <p className="mt-2 text-sm text-muted-foreground">
-          This feature is available for agency and brand workspaces. Switch role to continue.
-        </p>
-      </section>
+      <div className="flex min-h-[60vh] items-center justify-center p-8">
+        <Card className="max-w-md border-none shadow-sm text-center">
+          <CardContent className="p-10">
+            <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+              <Brain className="h-7 w-7 text-muted-foreground" />
+            </div>
+            <h2 className="text-xl font-bold font-serif">Smart Plan</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
+              This feature is available for Agency and Brand workspaces. Switch role to continue.
+            </p>
+            <Button asChild className="mt-6 rounded-xl" variant="outline">
+              <Link href="/dashboard">Back to Dashboard</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
   return (
-    <section className="space-y-6 p-6">
-      <header className="flex flex-wrap items-start justify-between gap-3">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-serif">Smart Plan</h1>
-          <p className="mt-1 text-sm text-muted-foreground">Plan your campaign from requirements through the creative brief.</p>
+    <section className="mx-auto max-w-5xl space-y-6 p-4 lg:p-6">
+      {/* Header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-lg">
+        <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
+          <Brain className="h-40 w-40" />
         </div>
-        <Link
-          href="/dashboard"
-          className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
-        >
-          Back
-        </Link>
-      </header>
-
-      {viewMode === "list" && (
-        <div className="rounded-xl border border-border bg-card p-4 shadow-sm">
-          <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-foreground font-serif">My Campaign</h2>
-            <button
-              type="button"
-              onClick={() => setViewMode("create")}
-              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
-            >
-              Create New Campaign
-            </button>
+        <div className="relative z-10 flex flex-wrap items-start justify-between gap-4">
+          <div>
+            <div className="mb-3 flex items-center gap-2">
+              <Sparkles className="h-4 w-4 text-white/80" />
+              <Badge className="border-none bg-white/20 text-xs text-white hover:bg-white/25">
+                AI-Powered
+              </Badge>
+            </div>
+            <h1 className="text-3xl font-extrabold tracking-tight font-serif">Smart Plan</h1>
+            <p className="mt-2 max-w-md text-sm text-white/70">
+              Plan your campaign from requirements through the creative brief.
+            </p>
           </div>
-          <div className="overflow-x-auto">
-            <table className="w-full min-w-[700px] text-left text-sm">
-              <thead className="text-muted-foreground">
-                <tr>
-                  <th className="pb-2">Campaign Name</th>
-                  <th className="pb-2">Status</th>
-                  <th className="pb-2">Budget</th>
-                  <th className="pb-2">Time Range</th>
-                  <th className="pb-2">Result</th>
-                  <th className="pb-2">Action</th>
-                </tr>
-              </thead>
-              <tbody className="text-foreground">
-                {myCampaignSeed.map((campaign) => (
-                  <tr key={campaign.id} className="border-t border-border">
-                    <td className="py-2">{campaign.name}</td>
-                    <td className="py-2">{campaign.status}</td>
-                    <td className="py-2">{campaign.budget}</td>
-                    <td className="py-2">{campaign.timeRange}</td>
-                    <td className="py-2">{campaign.result}</td>
-                    <td className="py-2">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          applyCampaignRequirementToBrief(campaign);
-                          setViewMode("detail");
-                        }}
-                        className="rounded-lg border border-primary/30 px-3 py-1 text-xs font-semibold text-primary/90 hover:bg-primary/5"
-                      >
-                        See Detail
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="ghost" size="sm"
+              onClick={() => setViewMode("list")}
+              className="rounded-xl text-white hover:bg-white/15"
+            >
+              <LayoutList className="mr-2 h-4 w-4" /> My Campaigns
+            </Button>
+            <Button asChild variant="ghost" size="sm" className="rounded-xl text-white hover:bg-white/15">
+              <Link href="/dashboard">
+                <ArrowLeft className="mr-2 h-4 w-4" /> Back
+              </Link>
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      {/* Campaign List View */}
+      {viewMode === "list" && (
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-bold font-serif text-foreground">My Campaigns</h2>
+            <Button
+              size="sm"
+              onClick={() => setViewMode("create")}
+              className="rounded-xl shadow-sm"
+            >
+              <Plus className="mr-2 h-4 w-4" /> New Campaign
+            </Button>
+          </div>
+          <div className="grid gap-4 sm:grid-cols-2">
+            {myCampaignSeed.map((campaign) => (
+              <Card key={campaign.id} className="border-none shadow-sm transition-all hover:shadow-md">
+                <CardContent className="p-6">
+                  <div className="mb-4 flex items-start justify-between">
+                    <div>
+                      <h3 className="font-bold font-serif text-foreground">{campaign.name}</h3>
+                      <p className="mt-0.5 text-xs text-muted-foreground">{campaign.timeRange}</p>
+                    </div>
+                    <Badge
+                      variant={campaign.status === "Active" ? "default" : "secondary"}
+                      className="rounded-full"
+                    >
+                      {campaign.status}
+                    </Badge>
+                  </div>
+                  <div className="grid grid-cols-2 gap-3">
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Budget</p>
+                      <p className="text-sm font-semibold text-foreground">{campaign.budget}</p>
+                    </div>
+                    <div className="space-y-0.5">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Result</p>
+                      <p className="text-sm font-semibold text-foreground">{campaign.result}</p>
+                    </div>
+                  </div>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="mt-4 w-full justify-between rounded-xl font-bold text-primary hover:text-primary/80"
+                    onClick={() => {
+                      applyCampaignRequirementToBrief(campaign);
+                      setViewMode("detail");
+                    }}
+                  >
+                    View Details <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </CardContent>
+              </Card>
+            ))}
           </div>
         </div>
       )}
 
+      {/* Create View — Start Mode Selection */}
       {viewMode === "create" && !isPlannerVisible && (
-        <div className="mx-auto w-full max-w-3xl rounded-xl border border-border bg-card p-4 shadow-sm">
-          <div className="mb-4 flex flex-wrap items-center gap-2">
-            <span className="text-sm font-medium text-foreground">Start from</span>
-            <button
-              type="button"
-              onClick={() => setStartMode("form")}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                startMode === "form" ? "bg-primary text-white" : "border border-border text-foreground hover:bg-muted"
-              }`}
-            >
-              Form
-            </button>
-            <span className="text-sm text-foreground">or</span>
-            <button
-              type="button"
-              onClick={() => setStartMode("prompt")}
-              className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                startMode === "prompt" ? "bg-primary text-white" : "border border-border text-foreground hover:bg-muted"
-              }`}
-            >
-              Prompt command
-            </button>
-          </div>
-
+        <div className="space-y-6">
           {startMode === "none" && (
-            <p className="rounded-lg bg-muted p-3 text-sm text-muted-foreground">
-              Choose how to start Smart Plan: fill the requirement form or use a prompt command.
-            </p>
-          )}
-
-          {startMode === "prompt" && (
             <>
-              <label htmlFor="smart-plan-input" className="mb-2 block text-sm font-medium text-foreground">
-                AI Prompt Command
-              </label>
-              <textarea
-                id="smart-plan-input"
-                rows={9}
-                value={promptInput}
-                onChange={(event) => setPromptInput(event.target.value)}
-                placeholder={promptHint}
-                className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-              />
-              <div className="mt-4 flex items-center justify-end gap-3">
+              <div>
+                <h2 className="text-lg font-bold font-serif text-foreground">How do you want to start?</h2>
+                <p className="mt-1 text-sm text-muted-foreground">Choose a method to build your campaign plan.</p>
+              </div>
+              <div className="grid gap-4 sm:grid-cols-2">
                 <button
                   type="button"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
+                  onClick={() => setStartMode("form")}
+                  className="group text-left"
                 >
-                  My Campaign
+                  <Card className="h-full cursor-pointer border-2 border-transparent transition-all hover:border-primary/40 hover:shadow-md">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-primary/10 transition-all group-hover:bg-primary/15">
+                        <FileText className="h-6 w-6 text-primary" />
+                      </div>
+                      <h3 className="font-bold font-serif text-foreground">Fill the Form</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        Structured fields for campaign name, objective, budget, timeline, and more.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </button>
                 <button
                   type="button"
-                  onClick={() => {
-                    if (applyPromptText(promptInput)) {
-                      setPromptInput("");
-                      return;
-                    }
-                    setIsPlannerVisible(true);
-                  }}
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
+                  onClick={() => setStartMode("prompt")}
+                  className="group text-left"
                 >
-                  Create Campaign
+                  <Card className="h-full cursor-pointer border-2 border-transparent transition-all hover:border-secondary/40 hover:shadow-md">
+                    <CardContent className="p-6">
+                      <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-secondary/10 transition-all group-hover:bg-secondary/15">
+                        <Sparkles className="h-6 w-6 text-secondary" />
+                      </div>
+                      <h3 className="font-bold font-serif text-foreground">AI Prompt</h3>
+                      <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
+                        Describe your campaign in natural language and let AI parse the details instantly.
+                      </p>
+                    </CardContent>
+                  </Card>
                 </button>
               </div>
             </>
           )}
 
+          {startMode === "prompt" && (
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 font-serif">
+                      <Sparkles className="h-4 w-4 text-secondary" />
+                      AI Prompt Command
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Use <code className="rounded bg-muted px-1 py-0.5 text-xs">@Requirement</code> to start.
+                    </CardDescription>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setStartMode("none")} className="text-muted-foreground">
+                    ← Back
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <textarea
+                  rows={9}
+                  value={promptInput}
+                  onChange={(e) => setPromptInput(e.target.value)}
+                  placeholder={promptHint}
+                  className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                />
+                <div className="flex items-center justify-between">
+                  <Button variant="outline" size="sm" onClick={() => setViewMode("list")} className="rounded-xl">
+                    My Campaigns
+                  </Button>
+                  <Button
+                    onClick={() => {
+                      if (applyPromptText(promptInput)) setPromptInput("");
+                      else setIsPlannerVisible(true);
+                    }}
+                    className="rounded-xl shadow-sm"
+                  >
+                    Create Campaign
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
           {startMode === "form" && (
-            <div className="space-y-4">
-              <div>
-                <h2 className="text-base font-semibold text-foreground font-serif">Requirement</h2>
-                <p className="mt-1 text-xs text-muted-foreground">Same fields as the planner requirement step. Fill what you know; you can edit later.</p>
-              </div>
-              <div className="space-y-3">
-                {requirementFields.map((field) => (
-                  <label key={field.key} className="block">
-                    <span className="mb-1 block text-xs font-medium text-muted-foreground">{field.label}</span>
-                    <input
-                      value={formDraft[field.key]}
-                      onChange={(event) => updateFormDraft(field.key, event.target.value)}
-                      className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-                      placeholder={requirementInputPlaceholder(field.key, field.label)}
-                    />
-                  </label>
-                ))}
-              </div>
-              <div className="flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={() => setViewMode("list")}
-                  className="rounded-xl border border-border px-4 py-2 text-sm font-semibold text-foreground transition hover:bg-muted"
-                >
-                  My Campaign
-                </button>
-                <button
-                  type="button"
-                  onClick={finishFormFlow}
-                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
-                >
-                  Generate Smart Plan
-                </button>
-              </div>
-            </div>
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <CardTitle className="flex items-center gap-2 font-serif">
+                      <FileText className="h-4 w-4 text-primary" />
+                      Campaign Requirements
+                    </CardTitle>
+                    <CardDescription className="mt-1">
+                      Fill what you know — you can edit any field after generating the plan.
+                    </CardDescription>
+                  </div>
+                  <Button variant="ghost" size="sm" onClick={() => setStartMode("none")} className="text-muted-foreground">
+                    ← Back
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {requirementFields.map((field) => (
+                    <label
+                      key={field.key}
+                      className={cn("block space-y-1.5", field.fullWidth && "sm:col-span-2")}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        {field.label}
+                      </span>
+                      <Input
+                        value={formDraft[field.key]}
+                        onChange={(e) => updateFormDraft(field.key, e.target.value)}
+                        placeholder={requirementInputPlaceholder(field.key, field.label)}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="flex items-center justify-between border-t border-border pt-4">
+                  <Button variant="outline" size="sm" onClick={() => setViewMode("list")} className="rounded-xl">
+                    My Campaigns
+                  </Button>
+                  <Button onClick={finishFormFlow} className="rounded-xl shadow-sm">
+                    <Zap className="mr-2 h-4 w-4" />
+                    Generate Smart Plan
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
+      {/* Planner Workspace */}
       {(viewMode === "detail" || (viewMode === "create" && isPlannerVisible)) && (
-        <>
-          <div className="flex flex-wrap gap-2 rounded-xl border border-border bg-card p-3 shadow-sm">
-            {stepBar.map((step, index) => (
-              <button
-                key={step.id}
-                type="button"
-                onClick={() => setActiveStep(step.id)}
-                className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                  activeStep === step.id ? "bg-primary text-white" : "bg-muted text-foreground hover:bg-accent"
-                }`}
-              >
-                {index + 1}. {step.label}
-              </button>
-            ))}
-          </div>
-
-          {viewMode === "detail" && selectedCampaign && (
-            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary/90">
-              Viewing campaign: <span className="font-semibold">{selectedCampaign.name}</span>
-            </div>
-          )}
-
-          {activeStep === "requirement" && (
-            <div className="space-y-4 rounded-xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-foreground font-serif">Requirement</h2>
-              {requirementFields.map((field) => (
-                <label key={field.key} className="block">
-                  <span className="mb-1 block text-xs font-medium text-muted-foreground">{field.label}</span>
-                  <input
-                    value={requirements[field.key]}
-                    onChange={(event) => updateRequirement(field.key, event.target.value)}
-                    className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-                    placeholder={requirementInputPlaceholder(field.key, field.label)}
-                  />
-                </label>
-              ))}
-              <button type="button" className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90">
-                Save Requirement
-              </button>
-            </div>
-          )}
-
-          {activeStep === "brief" && (
-            <div className="space-y-6 rounded-xl border border-border bg-card p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-foreground font-serif">Brief</h2>
-              <p className="text-xs text-muted-foreground">Strategy, concept, and creative brief live in one place for creators and stakeholders.</p>
-
-              <div className="rounded-xl border border-border bg-muted p-3">
-                <p className="text-xs text-muted-foreground">
-                  {selectedCampaign ? (
-                    <>
-                      Selected campaign: <span className="font-semibold text-foreground">{selectedCampaign.name}</span>
-                    </>
-                  ) : (
-                    "No campaign selected"
-                  )}
-                </p>
-                <div className="mt-3 flex flex-wrap items-center gap-2">
-                  <button
-                    type="button"
-                    onClick={() => setIsBriefCampaignPickerOpen(true)}
-                    className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
-                  >
-                    Select campaign
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsBriefCampaignPickerOpen(false)}
-                    className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-foreground hover:bg-muted"
-                  >
-                    Cancel
-                  </button>
-                </div>
-              </div>
-
-              {isBriefCampaignPickerOpen && (
-                <div className="space-y-2 rounded-xl border border-border bg-card p-3">
-                  <p className="text-xs font-medium text-muted-foreground">Choose campaign</p>
-                  {myCampaignSeed.map((campaign) => (
+        <div className="space-y-6">
+          {/* Step Bar */}
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-3">
+              <div className="flex items-center gap-2">
+                {stepBar.map((step, index) => (
+                  <div key={step.id} className="flex items-center gap-2">
                     <button
-                      key={campaign.id}
                       type="button"
-                      onClick={() => {
-                        applyCampaignRequirementToBrief(campaign);
-                        setIsBriefCampaignPickerOpen(false);
-                      }}
-                      className="flex w-full items-center justify-between rounded-lg border border-border px-3 py-2 text-left text-sm text-foreground transition hover:border-primary/30 hover:bg-primary/5"
+                      onClick={() => setActiveStep(step.id)}
+                      className={cn(
+                        "flex items-center gap-2 rounded-xl px-4 py-2.5 text-sm font-semibold transition-all",
+                        activeStep === step.id
+                          ? "bg-primary text-white shadow-sm"
+                          : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                      )}
                     >
-                      <span>{campaign.name}</span>
-                      <span className="text-xs text-muted-foreground">{campaign.status}</span>
+                      <span className={cn(
+                        "flex h-5 w-5 items-center justify-center rounded-full text-[10px] font-bold",
+                        activeStep === step.id ? "bg-white/20 text-white" : "bg-muted-foreground/20"
+                      )}>
+                        {index + 1}
+                      </span>
+                      {step.label}
+                    </button>
+                    {index < stepBar.length - 1 && (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground/40" />
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Campaign context banner */}
+          {viewMode === "detail" && selectedCampaign && (
+            <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+              <CheckCircle2 className="h-4 w-4 text-primary shrink-0" />
+              <p className="text-sm font-medium text-primary">
+                Viewing campaign: <span className="font-bold">{selectedCampaign.name}</span>
+              </p>
+            </div>
+          )}
+
+          {/* Requirement Step */}
+          {activeStep === "requirement" && (
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 font-serif">
+                  <Target className="h-5 w-5 text-primary" />
+                  Requirement
+                </CardTitle>
+                <CardDescription>Define what you need from this campaign.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {requirementFields.map((field) => (
+                    <label
+                      key={field.key}
+                      className={cn("block space-y-1.5", field.fullWidth && "sm:col-span-2")}
+                    >
+                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        {field.label}
+                      </span>
+                      <Input
+                        value={requirements[field.key]}
+                        onChange={(e) => updateRequirement(field.key, e.target.value)}
+                        placeholder={requirementInputPlaceholder(field.key, field.label)}
+                      />
+                    </label>
+                  ))}
+                </div>
+                <div className="flex justify-between border-t border-border pt-4">
+                  <div />
+                  <Button
+                    type="button"
+                    onClick={() => setActiveStep("brief")}
+                    className="rounded-xl shadow-sm"
+                  >
+                    Next: Brief <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Brief Step */}
+          {activeStep === "brief" && (
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 font-serif">
+                  <BookOpen className="h-5 w-5 text-primary" />
+                  Brief
+                </CardTitle>
+                <CardDescription>Strategy, concept, and creative brief in one place.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                {/* Campaign picker */}
+                <div className="rounded-xl border border-border bg-muted/50 p-4">
+                  <div className="flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Campaign</p>
+                      <p className="mt-0.5 text-sm font-semibold text-foreground">
+                        {selectedCampaign ? selectedCampaign.name : "No campaign selected"}
+                      </p>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={() => setIsBriefCampaignPickerOpen((v) => !v)}
+                      className="rounded-xl"
+                    >
+                      {isBriefCampaignPickerOpen ? "Cancel" : "Select Campaign"}
+                    </Button>
+                  </div>
+
+                  {isBriefCampaignPickerOpen && (
+                    <div className="mt-4 space-y-2 border-t border-border pt-4">
+                      {myCampaignSeed.map((campaign) => (
+                        <button
+                          key={campaign.id}
+                          type="button"
+                          onClick={() => {
+                            applyCampaignRequirementToBrief(campaign);
+                            setIsBriefCampaignPickerOpen(false);
+                          }}
+                          className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left text-sm transition hover:border-primary/30 hover:bg-primary/5"
+                        >
+                          <span className="font-semibold text-foreground">{campaign.name}</span>
+                          <Badge variant="secondary" className="rounded-full text-xs">
+                            {campaign.status}
+                          </Badge>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+
+                {/* Brief subsection tabs */}
+                <div className="flex rounded-xl bg-muted p-1 gap-1">
+                  {(
+                    [
+                      { id: "strategy" as BriefSubSection, label: "Strategy", icon: <Target className="h-3.5 w-3.5" /> },
+                      { id: "concept" as BriefSubSection, label: "Concept", icon: <Lightbulb className="h-3.5 w-3.5" /> },
+                      { id: "briefBody" as BriefSubSection, label: "Creative Brief", icon: <PenLine className="h-3.5 w-3.5" /> },
+                    ] as const
+                  ).map((sub) => (
+                    <button
+                      key={sub.id}
+                      type="button"
+                      onClick={() => setActiveBriefSub(sub.id)}
+                      className={cn(
+                        "flex flex-1 items-center justify-center gap-1.5 rounded-lg py-2 text-xs font-semibold transition-all",
+                        activeBriefSub === sub.id
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground"
+                      )}
+                    >
+                      {sub.icon}
+                      {sub.label}
                     </button>
                   ))}
                 </div>
-              )}
 
-              <div className="space-y-2">
-                <span className="block text-xs font-medium text-muted-foreground">Strategy</span>
-                <textarea
-                  rows={5}
-                  value={strategyText}
-                  onChange={(event) => setStrategyText(event.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
+                {activeBriefSub === "strategy" && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Strategy</span>
+                    <textarea
+                      rows={8}
+                      value={strategyText}
+                      onChange={(e) => setStrategyText(e.target.value)}
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                      placeholder="Describe your campaign strategy..."
+                    />
+                  </div>
+                )}
 
-              <div className="space-y-2">
-                <span className="block text-xs font-medium text-muted-foreground">Concept</span>
-                <textarea
-                  rows={5}
-                  value={conceptText}
-                  onChange={(event) => setConceptText(event.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
+                {activeBriefSub === "concept" && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Concept</span>
+                    <textarea
+                      rows={8}
+                      value={conceptText}
+                      onChange={(e) => setConceptText(e.target.value)}
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                      placeholder="Describe your creative concept..."
+                    />
+                  </div>
+                )}
 
-              <div className="space-y-2">
-                <span className="block text-xs font-medium text-muted-foreground">Creative brief</span>
-                <textarea
-                  rows={5}
-                  value={briefText}
-                  onChange={(event) => setBriefText(event.target.value)}
-                  className="w-full rounded-lg border border-border px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-                />
-              </div>
+                {activeBriefSub === "briefBody" && (
+                  <div className="space-y-1.5">
+                    <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Creative Brief</span>
+                    <textarea
+                      rows={8}
+                      value={briefText}
+                      onChange={(e) => setBriefText(e.target.value)}
+                      className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                      placeholder="Write the creative brief for creators..."
+                    />
+                  </div>
+                )}
 
-              <button type="button" className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90">
-                Save brief
-              </button>
-            </div>
+                <div className="flex justify-end border-t border-border pt-4">
+                  <Button type="button" className="rounded-xl shadow-sm">
+                    <CheckCircle2 className="mr-2 h-4 w-4" />
+                    Save Brief
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
           )}
 
-          <form onSubmit={applyPrompt} className={`rounded-xl border border-border bg-card p-4 shadow-sm ${hasStarted ? "sticky bottom-4" : ""}`}>
-            <label htmlFor="smart-plan-input-planner" className="mb-2 block text-sm font-medium text-foreground">
-              AI Prompt Command
-            </label>
-            <textarea
-              id="smart-plan-input-planner"
-              rows={hasStarted ? 4 : 9}
-              value={promptInput}
-              onChange={(event) => setPromptInput(event.target.value)}
-              placeholder={promptHint}
-              className="w-full rounded-xl border border-border px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-            />
-            <div className="mt-3 flex items-center justify-between gap-3">
-              <p className="text-xs text-muted-foreground">{promptHint}</p>
-              <button type="submit" className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
-                Run AI Prompt
-              </button>
+          {/* AI Prompt — sticky bottom */}
+          <form
+            onSubmit={applyPrompt}
+            className={cn(
+              "rounded-2xl border border-border bg-card shadow-sm",
+              hasStarted && "sticky bottom-4 shadow-xl"
+            )}
+          >
+            <div className="p-4">
+              <div className="mb-3 flex items-center justify-between">
+                <label
+                  htmlFor="smart-plan-input-planner"
+                  className="flex items-center gap-2 text-sm font-semibold text-foreground"
+                >
+                  <Sparkles className="h-4 w-4 text-secondary" />
+                  AI Prompt
+                </label>
+                <p className="text-xs text-muted-foreground">{promptHint}</p>
+              </div>
+              <textarea
+                id="smart-plan-input-planner"
+                rows={hasStarted ? 3 : 5}
+                value={promptInput}
+                onChange={(e) => setPromptInput(e.target.value)}
+                placeholder={promptHint}
+                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:bg-background focus:ring-2 focus:ring-primary/10"
+              />
+              <div className="mt-3 flex justify-end">
+                <Button type="submit" className="rounded-xl shadow-sm">
+                  <Zap className="mr-2 h-4 w-4" />
+                  Run AI Prompt
+                </Button>
+              </div>
             </div>
           </form>
-        </>
+        </div>
       )}
     </section>
   );

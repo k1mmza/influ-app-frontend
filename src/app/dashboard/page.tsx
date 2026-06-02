@@ -1,7 +1,10 @@
 "use client";
 
+import { useEffect, useState } from "react";
+import Link from "next/link";
 import { BrandDashboard } from "@/components/brand-dashboard";
 import { useUserStore } from "@/store/useUserStore";
+import { apiGetDashboard } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -15,11 +18,24 @@ import {
   Bell,
   CheckCircle2,
   ExternalLink,
-  Sparkles
+  Sparkles,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-function InfluencerDashboard() {
+function InfluencerDashboard({ data }: { data: any }) {
+  const stats = {
+    walletBalance: data?.stats?.walletBalance ?? 0,
+    activeCampaigns: data?.stats?.activeCampaigns ?? 0,
+    pendingApplications: data?.stats?.pendingApplications ?? 0,
+    unreadMessages: data?.stats?.unreadMessages ?? 0,
+  };
+
+  const recommended = data?.recommendedCampaigns || [
+    { name: "Summer Skincare Launch", brand: "GlowLab", budget: "THB 8,000", platform: "TikTok", deadline: "30 May 2026", icon: "✨" },
+    { name: "Healthy Snack Challenge", brand: "FitBites", budget: "THB 6,500", platform: "Instagram", deadline: "05 Jun 2026", icon: "🍎" }
+  ];
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
@@ -29,10 +45,10 @@ function InfluencerDashboard() {
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          { label: "Wallet Balance", value: "THB 12,500", icon: Wallet, color: "text-emerald-600" },
-          { label: "Active Campaigns", value: "4", icon: Rocket, color: "text-blue-600" },
-          { label: "Pending Apps", value: "7", icon: FileText, color: "text-amber-600" },
-          { label: "Unread Messages", value: "3", icon: MessageSquare, color: "text-primary" }
+          { label: "Wallet Balance", value: `THB ${stats.walletBalance.toLocaleString()}`, icon: Wallet, color: "text-emerald-600" },
+          { label: "Active Campaigns", value: stats.activeCampaigns.toString(), icon: Rocket, color: "text-blue-600" },
+          { label: "Pending Apps", value: stats.pendingApplications.toString(), icon: FileText, color: "text-amber-600" },
+          { label: "Unread Messages", value: stats.unreadMessages.toString(), icon: MessageSquare, color: "text-primary" }
         ].map((item) => (
           <Card key={item.label} className="border-none shadow-sm transition-all hover:shadow-md">
             <CardContent className="p-6">
@@ -57,32 +73,29 @@ function InfluencerDashboard() {
           <Button variant="link" className="text-primary font-bold">View all</Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
-          {[
-            { name: "Summer Skincare Launch", brand: "GlowLab", budget: "THB 8,000", platform: "TikTok", deadline: "30 May 2026", icon: "✨" },
-            { name: "Healthy Snack Challenge", brand: "FitBites", budget: "THB 6,500", platform: "Instagram", deadline: "05 Jun 2026", icon: "🍎" }
-          ].map((c) => (
+          {recommended.map((c: any) => (
             <Card key={c.name} className="border-none shadow-sm transition-all hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
                     <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-2xl font-serif">
-                      {c.icon}
+                      {c.icon || "📢"}
                     </div>
                     <div>
                       <h3 className="font-bold text-foreground font-serif">{c.name}</h3>
-                      <p className="text-sm text-muted-foreground">{c.brand}</p>
+                      <p className="text-sm text-muted-foreground">{c.brand || c.clientBrand?.brandName || "Unknown Brand"}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="rounded-full bg-muted font-bold">{c.platform}</Badge>
+                  <Badge variant="secondary" className="rounded-full bg-muted font-bold">{c.platform || "Any"}</Badge>
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   <div className="space-y-1">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Budget</p>
-                    <p className="text-sm font-semibold text-foreground">{c.budget}</p>
+                    <p className="text-sm font-semibold text-foreground">THB {c.budget?.toLocaleString() || "0"}</p>
                   </div>
                   <div className="space-y-1 text-right">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deadline</p>
-                    <p className="text-sm font-semibold text-foreground">{c.deadline}</p>
+                    <p className="text-sm font-semibold text-foreground">{c.deadline || (c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD")}</p>
                   </div>
                 </div>
                 <div className="mt-6 flex gap-2">
@@ -105,7 +118,7 @@ function InfluencerDashboard() {
             <div className="rounded-xl bg-muted p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">In Progress</span>
-                <span className="font-bold text-primary">2</span>
+                <span className="font-bold text-primary">{stats.activeCampaigns}</span>
               </div>
             </div>
             <div className="flex gap-2">
@@ -158,7 +171,14 @@ function InfluencerDashboard() {
   );
 }
 
-function AgencyDashboard() {
+function AgencyDashboard({ data }: { data: any }) {
+  const stats = {
+    activeBriefs: data?.stats?.activeBriefs ?? 0,
+    creatorsAssigned: data?.stats?.creatorsAssigned ?? 0,
+    spendMTD: data?.stats?.spendMTD ?? "THB 0",
+    slaOnTrack: data?.stats?.slaOnTrack ?? "N/A",
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
@@ -168,10 +188,10 @@ function AgencyDashboard() {
       
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {[
-          ["Active briefs", "8", Rocket],
-          ["Creators assigned", "34", UserCircle],
-          ["Spend (MTD)", "THB 1.2M", Wallet],
-          ["SLA on track", "96%", CheckCircle2]
+          ["Active briefs", stats.activeBriefs.toString(), Rocket],
+          ["Creators assigned", stats.creatorsAssigned.toString(), UserCircle],
+          ["Spend (MTD)", stats.spendMTD.toString(), Wallet],
+          ["SLA on track", stats.slaOnTrack, CheckCircle2]
         ].map(([label, value, Icon]: any) => (
           <Card key={label} className="border-none shadow-sm">
             <CardContent className="p-6">
@@ -185,42 +205,68 @@ function AgencyDashboard() {
         ))}
       </div>
 
-      <div className="grid gap-6 md:grid-cols-1 lg:max-w-2xl">
-        <Card className="border-none shadow-sm bg-slate-900 text-white">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Sparkles className="h-5 w-5 text-primary" />
-              Strategy Assistant
-            </CardTitle>
-            <CardDescription className="text-muted-foreground">AI-driven insights for your next campaign</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-4">
-              {[
-                "Recommend budget split by campaign objective",
-                "Suggest platform mix per audience and KPI target",
-                "Build week-by-week campaign structure plan"
-              ].map((text) => (
-                <li key={text} className="flex items-start gap-3 text-sm text-slate-300 font-medium">
-                  <div className="mt-1 h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                  {text}
-                </li>
-              ))}
-            </ul>
-            <Button className="mt-8 w-full rounded-xl bg-primary text-white hover:bg-primary/90">
-              Generate New Strategy
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
+      <Card className="border-none shadow-sm bg-gradient-to-br from-primary to-secondary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Sparkles className="h-5 w-5 text-white/80" />
+            Strategy Assistant
+          </CardTitle>
+          <CardDescription className="text-white/60">AI-driven insights for your next campaign</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-4">
+            {[
+              "Recommend budget split by campaign objective",
+              "Suggest platform mix per audience and KPI target",
+              "Build week-by-week campaign structure plan"
+            ].map((text) => (
+              <li key={text} className="flex items-start gap-3 text-sm text-white/80 font-medium">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
+                {text}
+              </li>
+            ))}
+          </ul>
+          <Button asChild className="mt-8 w-full rounded-xl bg-white/15 text-white border border-white/20 hover:bg-white/25">
+            <Link href="/smart-plan">Generate New Strategy</Link>
+          </Button>
+        </CardContent>
+      </Card>
     </div>
   );
 }
 
 export default function DashboardPage() {
-  const { role } = useUserStore();
+  const { role, token } = useUserStore();
+  const [data, setData] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-  if (role === "brand") return <BrandDashboard />;
-  if (role === "influencer") return <InfluencerDashboard />;
-  return <AgencyDashboard />;
+  useEffect(() => {
+    async function fetchDashboard() {
+      if (!token) return;
+      try {
+        setLoading(true);
+        const dashboardData = await apiGetDashboard(token);
+        setData(dashboardData);
+      } catch (err: any) {
+        console.error("Dashboard fetch error:", err);
+        setError(err.message);
+      } finally {
+        setLoading(false);
+      }
+    }
+    fetchDashboard();
+  }, [token]);
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  if (role === "brand") return <BrandDashboard data={data} />;
+  if (role === "influencer") return <InfluencerDashboard data={data} />;
+  return <AgencyDashboard data={data} />;
 }

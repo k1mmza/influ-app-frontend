@@ -43,3 +43,88 @@ export async function apiSelectRole(token: string, role: Role) {
   }
   return res.json();
 }
+
+export async function apiGetDashboard(token: string) {
+  const res = await fetch(`${API_URL}/dashboard`, {
+    method: "GET",
+    headers: { 
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch dashboard data");
+  }
+  return res.json();
+}
+
+export async function apiGetConversations(token: string) {
+  const res = await fetch(`${API_URL}/conversations`, {
+    method: "GET",
+    headers: { 
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch conversations");
+  }
+  return res.json();
+}
+
+export async function apiGetMessages(token: string, conversationId: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+    method: "GET",
+    headers: { 
+      "Authorization": `Bearer ${token}`
+    },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch messages");
+  }
+  return res.json();
+}
+
+export async function apiGetProfile(token: string) {
+  const res = await fetch(`${API_URL}/profile`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to fetch profile");
+  }
+  return res.json();
+}
+
+export async function apiUpdateProfile(token: string, data: Record<string, any>) {
+  const res = await fetch(`${API_URL}/profile`, {
+    method: "PATCH",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update profile");
+  }
+  return res.json();
+}
+
+export async function apiSendMessage(token: string, conversationId: string, content: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+    method: "POST",
+    headers: { 
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${token}`
+    },
+    body: JSON.stringify({ content }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to send message");
+  }
+  return res.json();
+}

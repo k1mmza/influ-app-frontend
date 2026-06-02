@@ -4,7 +4,8 @@ import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
-import { influencers } from "@/mock/influencers";
+import { apiGetInfluencers } from "@/lib/influencers";
+import * as api from "@/lib/api";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -24,7 +25,8 @@ import {
   Users, 
   Target, 
   Sparkles,
-  Layers
+  Layers,
+  Loader2
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -59,93 +61,6 @@ const followerRanges: Record<Exclude<FollowerRange, "All">, { min: number; max?:
   Mega: { min: 1_000_000 }
 };
 
-const influencerMeta: Record<string, InfluencerMeta> = {
-  "inf-1": {
-    country: "Thailand",
-    city: "Bangkok",
-    extraPlatforms: ["Facebook"],
-    audienceCountryPercent: 76,
-    averageViews: 95_000,
-    growthRate: 7.1,
-    keywords: ["beauty", "skincare", "makeup"],
-    intents: ["Awareness", "Engagement", "UGC / content production"],
-    audienceGender: "Female",
-    audienceAgeGroup: "25-34",
-    qualityScore: 89,
-    responseRate: 78
-  },
-  "inf-2": {
-    country: "Thailand",
-    city: "Chiang Mai",
-    extraPlatforms: ["X"],
-    audienceCountryPercent: 64,
-    averageViews: 130_000,
-    growthRate: 4.8,
-    keywords: ["fitness", "workout", "lifestyle"],
-    intents: ["Conversion", "Engagement"],
-    audienceGender: "Male",
-    audienceAgeGroup: "25-34",
-    qualityScore: 83,
-    responseRate: 70
-  },
-  "inf-3": {
-    country: "Vietnam",
-    city: "Ho Chi Minh City",
-    extraPlatforms: ["Lemon8"],
-    audienceCountryPercent: 58,
-    averageViews: 82_000,
-    growthRate: 8.3,
-    keywords: ["fashion", "style", "ootd"],
-    intents: ["Awareness", "UGC / content production"],
-    audienceGender: "Mixed",
-    audienceAgeGroup: "18-24",
-    qualityScore: 92,
-    responseRate: 84
-  },
-  "inf-4": {
-    country: "Singapore",
-    city: "Singapore",
-    extraPlatforms: ["Facebook"],
-    audienceCountryPercent: 61,
-    averageViews: 148_000,
-    growthRate: 5.5,
-    keywords: ["travel", "hotel", "city guide"],
-    intents: ["Awareness", "Conversion"],
-    audienceGender: "Female",
-    audienceAgeGroup: "25-34",
-    qualityScore: 88,
-    responseRate: 73
-  },
-  "inf-5": {
-    country: "Thailand",
-    city: "Phuket",
-    extraPlatforms: ["X"],
-    audienceCountryPercent: 55,
-    averageViews: 220_000,
-    growthRate: 3.9,
-    keywords: ["tech", "gadgets", "reviews"],
-    intents: ["Conversion", "Engagement"],
-    audienceGender: "Male",
-    audienceAgeGroup: "35-44",
-    qualityScore: 80,
-    responseRate: 68
-  },
-  "inf-6": {
-    country: "Malaysia",
-    city: "Kuala Lumpur",
-    extraPlatforms: ["Lemon8"],
-    audienceCountryPercent: 72,
-    averageViews: 76_000,
-    growthRate: 8.9,
-    keywords: ["food", "recipe", "street food"],
-    intents: ["Engagement", "UGC / content production"],
-    audienceGender: "Mixed",
-    audienceAgeGroup: "18-24",
-    qualityScore: 91,
-    responseRate: 86
-  }
-};
-
 export default function DiscoverPage() {
   return (
     <Suspense fallback={<DiscoverPageFallback />}>
@@ -168,6 +83,10 @@ function DiscoverPageContent() {
   const urlFromQuery = searchParams.get("url");
   const processedUrlRef = useRef<string | null>(null);
   const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
+  
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [loading, setLoading] = useState(true);
+
   const [smartQuery, setSmartQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [country, setCountry] = useState("All");
@@ -194,6 +113,32 @@ function DiscoverPageContent() {
   const [urlSearchError, setUrlSearchError] = useState("");
   const [generatedInfluencer, setGeneratedInfluencer] = useState<Influencer | null>(null);
   const [generatedInfluencerMeta, setGeneratedInfluencerMeta] = useState<InfluencerMeta | null>(null);
+
+  useEffect(() => {
+    const fetchInfluencers = async () => {
+      setLoading(true);
+      try {
+        const params: any = {
+          category,
+          platform: selectedPlatforms[0] || "All",
+          followerRange,
+          minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
+          keyword,
+          minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
+          minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
+        };
+        const data = await apiGetInfluencers(params);
+        setInfluencers(data);
+      } catch (err) {
+        console.error("Failed to fetch influencers:", err);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    const debounce = setTimeout(fetchInfluencers, 500);
+    return () => clearTimeout(debounce);
+  }, [category, selectedPlatforms, followerRange, minEngagementRate, keyword, minQualityScore, minPerformanceScore]);
 
   const updateAudienceThreshold = (value: number) => {
     const clamped = Math.max(0, Math.min(100, value));
@@ -238,15 +183,6 @@ function DiscoverPageContent() {
     );
     if (detectedCategory) {
       setCategory(detectedCategory);
-    }
-
-    const detectedCountry = countries.find(
-      (item) => item !== "All" && normalized.includes(item.toLowerCase())
-    );
-    if (detectedCountry) {
-      setCountry(detectedCountry);
-      const detectedCity = cities.find((item) => item !== "All" && normalized.includes(item.toLowerCase()));
-      setCity(detectedCity ?? "All");
     }
 
     if (normalized.includes("nano")) setFollowerRange("Nano");
@@ -442,100 +378,12 @@ function DiscoverPageContent() {
     buildInfluencerFromSocialUrl(normalizedUrl);
   }, [urlFromQuery]);
 
-  const countries = useMemo(
-    () => ["All", ...new Set(Object.values(influencerMeta).map((meta) => meta.country))],
-    []
-  );
-
-  const cities = useMemo(() => {
-    const cityOptions = Object.values(influencerMeta)
-      .filter((meta) => country === "All" || meta.country === country)
-      .map((meta) => meta.city);
-    return ["All", ...new Set(cityOptions)];
-  }, [country]);
-
-  const filtered = useMemo(
-    () =>
-      influencers.filter((item) => {
-        const meta = influencerMeta[item.id];
-        if (!meta) return false;
-        const allPlatforms = [...item.platforms, ...meta.extraPlatforms];
-
-        const passPlatform =
-          selectedPlatforms.length === 0 ||
-          selectedPlatforms.some((selectedPlatform) => allPlatforms.includes(selectedPlatform));
-        const passCountry = country === "All" || meta.country === country;
-        const passCity = city === "All" || meta.city === city;
-        const passAudienceThreshold = meta.audienceCountryPercent >= audienceThreshold;
-        const passCategory = category === "All" || item.category === category;
-        const passFollowerRange =
-          followerRange === "All"
-            ? true
-            : item.followers >= followerRanges[followerRange].min &&
-              (followerRanges[followerRange].max ? item.followers <= followerRanges[followerRange].max : true);
-        const passAverageViews = meta.averageViews >= minAverageViews;
-        const passEngagement = item.engagementRate >= minEngagementRate;
-        const passGrowth = meta.growthRate >= minGrowthRate;
-        const passKeyword =
-          keyword.trim().length === 0 ||
-          meta.keywords.some((value) => value.toLowerCase().includes(keyword.trim().toLowerCase()));
-        const passCampaignIntent =
-          selectedCampaignIntents.length === 0 ||
-          selectedCampaignIntents.some((selectedIntent) => meta.intents.includes(selectedIntent));
-        const passAudienceGender = audienceGender === "All" || meta.audienceGender === audienceGender;
-        const passAudienceAgeGroup = audienceAgeGroup === "All" || meta.audienceAgeGroup === audienceAgeGroup;
-        const passStylePresent = stylePresent === "All" || item.stylePresent.includes(stylePresent);
-        const passQualityScore = meta.qualityScore >= minQualityScore;
-        const passPerformanceScore = item.performanceScore >= minPerformanceScore;
-        const passPricing = maxRatePerPost <= 0 || item.ratePerPost <= maxRatePerPost;
-        const passResponseRate = meta.responseRate >= minResponseRate;
-        const mainPlatform = getMainFollowerPlatform(item).platform;
-        const passMainPlatform = mainPlatformFilter === "All" || mainPlatform === mainPlatformFilter;
-
-        return (
-          passPlatform &&
-          passCountry &&
-          passCity &&
-          passAudienceThreshold &&
-          passCategory &&
-          passFollowerRange &&
-          passAverageViews &&
-          passEngagement &&
-          passGrowth &&
-          passKeyword &&
-          passCampaignIntent &&
-          passAudienceGender &&
-          passAudienceAgeGroup &&
-          passStylePresent &&
-          passQualityScore &&
-          passPerformanceScore &&
-          passPricing &&
-          passResponseRate &&
-          passMainPlatform
-        );
-      }),
-    [
-      audienceAgeGroup,
-      audienceGender,
-      audienceThreshold,
-      category,
-      city,
-      country,
-      followerRange,
-      keyword,
-      maxRatePerPost,
-      minAverageViews,
-      minEngagementRate,
-      minGrowthRate,
-      minPerformanceScore,
-      minQualityScore,
-      minResponseRate,
-      mainPlatformFilter,
-      selectedCampaignIntents,
-      selectedPlatforms,
-      stylePresent
-    ]
-  );
+  const filtered = useMemo(() => {
+    // We already fetch filtered data from backend, 
+    // but we can still apply minor local refinements or just use the state.
+    // Let's use the fetched influencers state.
+    return influencers;
+  }, [influencers]);
 
   const activeChips = [
     selectedPlatforms.length ? `${selectedPlatforms.length} platforms` : "",
@@ -564,7 +412,9 @@ function DiscoverPageContent() {
     if (generatedInfluencer && generatedInfluencerMeta && selectedInfluencer.id === generatedInfluencer.id) {
       return generatedInfluencerMeta;
     }
-    return influencerMeta[selectedInfluencer.id] ?? null;
+    // In real app, we might need another API call to get full meta, 
+    // but here influencers from API already include meta in our backend implementation.
+    return (selectedInfluencer as any).meta || null;
   }, [generatedInfluencer, generatedInfluencerMeta, selectedInfluencer]);
 
   useEffect(() => {
@@ -635,14 +485,13 @@ function DiscoverPageContent() {
                 </div>
 
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Main Platform</Label>
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
                   <select
-                    value={mainPlatformFilter}
-                    onChange={(e) => setMainPlatformFilter(e.target.value)}
+                    value={category}
+                    onChange={(e) => setCategory(e.target.value)}
                     className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
-                    <option value="All">Any platform</option>
-                    {platforms.map((item) => (
+                    {categories.map((item) => (
                       <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
@@ -681,26 +530,6 @@ function DiscoverPageContent() {
 
                 {showAdvancedFilters && (
                   <div className="pt-2 space-y-6">
-                    <div className="space-y-3">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Location</Label>
-                      <div className="grid gap-2">
-                        <select
-                          value={country}
-                          onChange={(e) => { setCountry(e.target.value); setCity("All"); }}
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                        >
-                          {countries.map((item) => <option key={item} value={item}>{item}</option>)}
-                        </select>
-                        <select
-                          value={city}
-                          onChange={(e) => setCity(e.target.value)}
-                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
-                        >
-                          {cities.map((item) => <option key={item} value={item}>{item}</option>)}
-                        </select>
-                      </div>
-                    </div>
-
                     <div className="space-y-3">
                       <div className="flex items-center justify-between">
                         <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Follower Range</Label>
@@ -779,33 +608,39 @@ function DiscoverPageContent() {
           </Badge>
         )}
 
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {discoverCards.map((influencer) => (
-            <InfluencerCard
-              key={influencer.id}
-              influencer={influencer}
-              isActive={selectedInfluencerId === influencer.id}
-              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-            />
-          ))}
-          
-          {discoverCards.length === 0 && (
-            <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
-              <CardContent>
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                  <RotateCcw className="h-6 w-6 text-muted-foreground" />
-                </div>
-                <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>
-                <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-                  Try adjusting your filters or search terms to find more creators.
-                </p>
-                <Button variant="outline" onClick={resetFilters} className="mt-6 rounded-xl font-bold">
-                  Clear all filters
-                </Button>
-              </CardContent>
-            </Card>
-          )}
-        </div>
+        {loading ? (
+          <div className="flex min-h-[400px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            {discoverCards.map((influencer) => (
+              <InfluencerCard
+                key={influencer.id}
+                influencer={influencer}
+                isActive={selectedInfluencerId === influencer.id}
+                onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+              />
+            ))}
+            
+            {discoverCards.length === 0 && (
+              <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
+                <CardContent>
+                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                    <RotateCcw className="h-6 w-6 text-muted-foreground" />
+                  </div>
+                  <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>
+                  <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+                    Try adjusting your filters or search terms to find more creators.
+                  </p>
+                  <Button variant="outline" onClick={resetFilters} className="mt-6 rounded-xl font-bold">
+                    Clear all filters
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
+        )}
       </div>
 
       {selectedInfluencer && selectedInfluencerMeta && (

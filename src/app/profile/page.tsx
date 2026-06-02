@@ -1,21 +1,24 @@
 "use client";
 
-import { Download, Heart, Upload } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { Download, Heart, Upload, Loader2, CheckCircle2, Link2 } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
 import {
   buildMediaKitExportPayload,
   parseMediaKitImportFile,
-  useMediaKitStore
+  useMediaKitStore,
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
+import { apiGetProfile, apiUpdateProfile } from "@/lib/api";
+
+// ─── Shared subcomponents ────────────────────────────────────────────────────
 
 function ProfileRatingAvatar({
   src,
   alt,
   imgClassName,
-  role
+  role,
 }: {
   src: string;
   alt: string;
@@ -64,7 +67,7 @@ function ProfileReviewsSection({ role }: { role: Role }) {
         <div>
           <h3 className="text-sm font-semibold text-foreground font-serif">Comments you wrote</h3>
           {written.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No reviews yet. Finish a campaign, then rate partners from the campaign page.</p>
+            <p className="mt-2 text-sm text-muted-foreground">No reviews yet.</p>
           ) : (
             <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
               {written.map((r) => (
@@ -100,60 +103,104 @@ function ProfileReviewsSection({ role }: { role: Role }) {
   );
 }
 
-const mockBrandProfile = {
-  companyName: "GlowLab Co., Ltd.",
-  userName: "Sarah Chen",
-  position: "Head of Growth",
-  email: "sarah.chen@glowlab.mock",
-  phone: "+66 2 000 0000",
-  companyDetail: "Dermatologist-tested skincare for daily routines. HQ Bangkok; shipping SEA.",
-  websiteUrl: "https://www.glowlab.mock",
-  socialInstagram: "https://www.instagram.com/glowlab.mock",
-  socialFacebook: "https://www.facebook.com/glowlab.mock",
-  socialLinkedIn: "https://www.linkedin.com/company/glowlab-mock",
-  socialTikTok: "https://www.tiktok.com/@glowlab.mock"
-};
-
-const mockAgencyProfile = {
-  companyName: "Digital Marketing Agency Co., Ltd.",
-  userName: "Sarah Chen",
-  position: "Senior Campaign Manager",
-  email: "sarah.chen@agency.mock",
-  phone: "+66 2 111 2222",
-  companyDetail: "Full-service influencer and performance campaigns across SEA. Offices in Bangkok and Singapore.",
-  websiteUrl: "https://www.digitalagency.mock",
-  socialInstagram: "https://www.instagram.com/digitalagency.mock",
-  socialFacebook: "https://www.facebook.com/digitalagency.mock",
-  socialLinkedIn: "https://www.linkedin.com/company/digitalagency-mock",
-  socialTikTok: ""
-};
+// ─── Brand / Agency profile ───────────────────────────────────────────────────
 
 function BrandProfileView() {
-  const { role } = useUserStore();
+  const { role, token, name: storeUserName, email: storeEmail, setRole } = useUserStore();
   const profileRole: Role = role === "agency" ? "agency" : "brand";
-  const base = role === "agency" ? mockAgencyProfile : mockBrandProfile;
-  const [companyName, setCompanyName] = useState(base.companyName);
-  const [userName, setUserName] = useState(base.userName);
-  const [position, setPosition] = useState(base.position);
-  const [email, setEmail] = useState(base.email);
-  const [phone, setPhone] = useState(base.phone);
-  const [companyDetail, setCompanyDetail] = useState(base.companyDetail);
-  const [websiteUrl, setWebsiteUrl] = useState(base.websiteUrl);
-  const [socialInstagram, setSocialInstagram] = useState(base.socialInstagram);
-  const [socialFacebook, setSocialFacebook] = useState(base.socialFacebook);
-  const [socialLinkedIn, setSocialLinkedIn] = useState(base.socialLinkedIn);
-  const [socialTikTok, setSocialTikTok] = useState(base.socialTikTok);
-  const avatarUrl = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName)}`;
+
+  const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+
+  // User fields
+  const [userName, setUserName] = useState(storeUserName ?? "");
+  const [email] = useState(storeEmail ?? "");
+
+  // Profile fields
+  const [companyName, setCompanyName] = useState("");
+  const [position, setPosition] = useState("");
+  const [phone, setPhone] = useState("");
+  const [companyDetail, setCompanyDetail] = useState("");
+  const [websiteUrl, setWebsiteUrl] = useState("");
+  const [socialInstagram, setSocialInstagram] = useState("");
+  const [socialFacebook, setSocialFacebook] = useState("");
+  const [socialLinkedIn, setSocialLinkedIn] = useState("");
+  const [socialTikTok, setSocialTikTok] = useState("");
+
+  useEffect(() => {
+    if (!token) return;
+    apiGetProfile(token)
+      .then((data) => {
+        if (data.name) setUserName(data.name);
+        const p = data.profile;
+        if (p) {
+          setCompanyName(p.companyName ?? "");
+          setPosition(p.position ?? "");
+          setPhone(p.telephone ?? "");
+          setCompanyDetail(p.companyDetail ?? "");
+          setWebsiteUrl(p.websiteUrl ?? "");
+          const sl = (p.socialLinks as any) ?? {};
+          setSocialInstagram(sl.instagram ?? "");
+          setSocialFacebook(sl.facebook ?? "");
+          setSocialLinkedIn(sl.linkedin ?? "");
+          setSocialTikTok(sl.tiktok ?? "");
+        }
+      })
+      .catch(console.error)
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  const handleSave = async () => {
+    if (!token) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      await apiUpdateProfile(token, {
+        name: userName,
+        companyName,
+        position,
+        telephone: phone,
+        companyDetail,
+        websiteUrl,
+        socialLinks: {
+          instagram: socialInstagram,
+          facebook: socialFacebook,
+          linkedin: socialLinkedIn,
+          tiktok: socialTikTok,
+        },
+      });
+      useUserStore.setState({ name: userName });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const avatarUrl = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName || userName)}`;
   const heading = role === "agency" ? "Agency profile" : "Brand profile";
   const subline =
     role === "agency"
       ? "Agency and account details; add your site and socials so creators know who they are working with."
       : "Company and account details; add your site and socials for creator trust.";
 
+  const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
+
+  if (loading) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-6 w-6 animate-spin text-primary" />
+      </div>
+    );
+  }
+
   return (
     <section key={role} className="space-y-6">
       <h1 className="text-2xl font-bold text-foreground font-serif">{heading}</h1>
-      <p className="text-muted-foreground">{subline} Manage your password in Account.</p>
+      <p className="text-muted-foreground">{subline}</p>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
@@ -164,10 +211,9 @@ function BrandProfileView() {
               imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
               role={profileRole}
             />
-            <p className="mt-3 text-sm text-muted-foreground">Company logo (demo)</p>
-            <button type="button" className="mt-2 text-sm font-semibold text-primary hover:underline">
-              Change image
-            </button>
+            <p className="mt-3 font-semibold text-foreground font-serif">{companyName || userName}</p>
+            <p className="text-sm text-muted-foreground">{position || "—"}</p>
+            <p className="mt-1 text-xs text-muted-foreground">{email}</p>
           </div>
         </article>
 
@@ -176,147 +222,91 @@ function BrandProfileView() {
             <h2 className="text-lg font-semibold text-foreground font-serif">Company &amp; user</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className="text-muted-foreground">Company name</span>
-                <input
-                  value={companyName}
-                  onChange={(e) => setCompanyName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company name</span>
+                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} />
               </label>
               <label className="block text-sm">
-                <span className="text-muted-foreground">Your name</span>
-                <input
-                  value={userName}
-                  onChange={(e) => setUserName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your name</span>
+                <input value={userName} onChange={(e) => setUserName(e.target.value)} className={inputCls} />
               </label>
               <label className="block text-sm">
-                <span className="text-muted-foreground">Position</span>
-                <input
-                  value={position}
-                  onChange={(e) => setPosition(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Position</span>
+                <input value={position} onChange={(e) => setPosition(e.target.value)} className={inputCls} />
               </label>
               <label className="block text-sm">
-                <span className="text-muted-foreground">Email</span>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email</span>
+                <input type="email" value={email} readOnly className={`${inputCls} cursor-default opacity-60`} />
               </label>
               <label className="block text-sm sm:col-span-2">
-                <span className="text-muted-foreground">Telephone</span>
-                <input
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Telephone</span>
+                <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
               </label>
             </div>
             <label className="mt-3 block text-sm">
-              <span className="text-muted-foreground">Company details</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company details</span>
               <textarea
                 value={companyDetail}
                 onChange={(e) => setCompanyDetail(e.target.value)}
                 rows={4}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                className={inputCls}
               />
             </label>
 
             <div className="mt-6 border-t border-border pt-5">
               <h3 className="text-base font-semibold text-foreground font-serif">Website &amp; company socials</h3>
-              <p className="mt-1 text-xs text-muted-foreground">Shown on campaign pages and briefs (demo fields only).</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm sm:col-span-2">
-                  <span className="text-muted-foreground">Company website</span>
-                  <input
-                    type="url"
-                    value={websiteUrl}
-                    onChange={(e) => setWebsiteUrl(e.target.value)}
-                    placeholder="https://"
-                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company website</span>
+                  <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" className={inputCls} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-muted-foreground">Instagram</span>
-                  <input
-                    type="url"
-                    value={socialInstagram}
-                    onChange={(e) => setSocialInstagram(e.target.value)}
-                    placeholder="https://www.instagram.com/…"
-                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Instagram</span>
+                  <input type="url" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} placeholder="https://www.instagram.com/…" className={inputCls} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-muted-foreground">Facebook</span>
-                  <input
-                    type="url"
-                    value={socialFacebook}
-                    onChange={(e) => setSocialFacebook(e.target.value)}
-                    placeholder="https://www.facebook.com/…"
-                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Facebook</span>
+                  <input type="url" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} placeholder="https://www.facebook.com/…" className={inputCls} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-muted-foreground">LinkedIn</span>
-                  <input
-                    type="url"
-                    value={socialLinkedIn}
-                    onChange={(e) => setSocialLinkedIn(e.target.value)}
-                    placeholder="https://www.linkedin.com/company/…"
-                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">LinkedIn</span>
+                  <input type="url" value={socialLinkedIn} onChange={(e) => setSocialLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/company/…" className={inputCls} />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-muted-foreground">TikTok</span>
-                  <input
-                    type="url"
-                    value={socialTikTok}
-                    onChange={(e) => setSocialTikTok(e.target.value)}
-                    placeholder="https://www.tiktok.com/@…"
-                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-                  />
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">TikTok</span>
+                  <input type="url" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} placeholder="https://www.tiktok.com/@…" className={inputCls} />
                 </label>
               </div>
             </div>
 
-            <button type="button" className="mt-4 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">
-              Save changes (demo)
-            </button>
+            <div className="mt-6 flex items-center gap-3">
+              <button
+                type="button"
+                onClick={handleSave}
+                disabled={saving}
+                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-60"
+              >
+                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+                Save changes
+              </button>
+              {saved && (
+                <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                  <CheckCircle2 className="h-4 w-4" /> Saved
+                </span>
+              )}
+            </div>
           </article>
 
           <ProfileReviewsSection role={profileRole} />
-
-          <article className="rounded-2xl bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground font-serif">Account</h2>
-            <p className="mt-1 text-sm text-muted-foreground">Change password and security settings (wireframe).</p>
-            <div className="mt-3 grid gap-3 sm:max-w-md">
-              <input
-                type="password"
-                placeholder="Current password"
-                className="rounded-xl border border-border px-3 py-2 text-sm"
-              />
-              <input
-                type="password"
-                placeholder="New password"
-                className="rounded-xl border border-border px-3 py-2 text-sm"
-              />
-              <button type="button" className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-foreground">
-                Update password
-              </button>
-            </div>
-          </article>
         </div>
       </div>
     </section>
   );
 }
 
+// ─── Influencer profile ───────────────────────────────────────────────────────
+
 function InfluencerProfileView() {
+  const { token, name: storeUserName, email: storeEmail } = useUserStore();
   const kit = useMediaKitStore();
   const setKit = useMediaKitStore((s) => s.setKit);
   const setSocialRow = useMediaKitStore((s) => s.setSocialRow);
@@ -324,14 +314,56 @@ function InfluencerProfileView() {
   const setUploadedPdfFileName = useMediaKitStore((s) => s.setUploadedPdfFileName);
   const uploadRef = useRef<HTMLInputElement>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
+  const [profileUrl, setProfileUrl] = useState("");
+  const [saving, setSaving] = useState(false);
+  const [saved, setSaved] = useState(false);
+  const [profileLoaded, setProfileLoaded] = useState(false);
+
+  // Load real profile data into the media kit store once
+  useEffect(() => {
+    if (!token || profileLoaded) return;
+    apiGetProfile(token)
+      .then((data) => {
+        const updates: Partial<typeof kit> = {};
+        if (data.name) updates.displayName = data.name;
+        if (storeEmail) updates.email = storeEmail;
+        const p = data.profile;
+        if (p) {
+          if (p.bio) updates.bio = p.bio;
+          if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
+          if (p.availabilityStatus) updates.availability = p.availabilityStatus;
+        }
+        if (Object.keys(updates).length > 0) setKit(updates as any);
+        setProfileLoaded(true);
+      })
+      .catch(console.error);
+  }, [token]);
+
+  const handleSave = async () => {
+    if (!token) return;
+    setSaving(true);
+    setSaved(false);
+    try {
+      await apiUpdateProfile(token, {
+        name: kit.displayName,
+        bio: kit.bio,
+        categories: kit.categories,
+        availabilityStatus: kit.availability,
+      });
+      useUserStore.setState({ name: kit.displayName });
+      setSaved(true);
+      setTimeout(() => setSaved(false), 3000);
+    } catch (err) {
+      console.error(err);
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(kit.displayName)}`;
 
   const parseListInput = (s: string) =>
-    s
-      .split(/[,，\n]/g)
-      .map((x) => x.trim())
-      .filter(Boolean);
+    s.split(/[,，\n]/g).map((x) => x.trim()).filter(Boolean);
 
   const downloadMediaKitJson = () => {
     const state = useMediaKitStore.getState();
@@ -366,13 +398,15 @@ function InfluencerProfileView() {
       const partial = parseMediaKitImportFile(text);
       if (partial) {
         applyImport(partial);
-        setImportMessage("Media kit JSON imported. Review the form and save your work in the browser (auto-saved).");
+        setImportMessage("Media kit JSON imported.");
       } else {
-        setImportMessage("Could not read that file as media kit JSON. Export again from Profile or use the sample shape.");
+        setImportMessage("Could not read that file as media kit JSON.");
       }
     };
     reader.readAsText(file);
   };
+
+  const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
 
   return (
     <section className="space-y-6">
@@ -380,8 +414,7 @@ function InfluencerProfileView() {
         <div>
           <h1 className="text-2xl font-bold text-foreground font-serif">Media kit</h1>
           <p className="mt-1 text-sm text-muted-foreground">
-            Edit the fields brands see in discovery. Download a JSON backup or upload a previously exported JSON; you can also attach a PDF kit
-            for your records (demo: file name only).
+            Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
           </p>
         </div>
         <div className="flex flex-wrap items-center gap-2">
@@ -405,27 +438,59 @@ function InfluencerProfileView() {
         </div>
       </div>
 
-      {importMessage ? (
-        <p className="rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary-foreground" role="status">
+      {/* Social URL import — future feature */}
+      <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-sm">
+        <div className="mb-3 flex items-center gap-2">
+          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
+            <Link2 className="h-4 w-4 text-primary" />
+          </div>
+          <div className="flex items-center gap-2">
+            <h2 className="text-sm font-semibold text-foreground">Import from social profile URL</h2>
+            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              Coming soon
+            </span>
+          </div>
+        </div>
+        <p className="mb-3 text-xs text-muted-foreground">
+          Paste an Instagram, TikTok, or YouTube profile link and we'll automatically pull your follower count, engagement rate, and bio.
+        </p>
+        <div className="flex gap-2">
+          <input
+            type="url"
+            value={profileUrl}
+            onChange={(e) => setProfileUrl(e.target.value)}
+            placeholder="https://www.instagram.com/yourhandle"
+            className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10"
+          />
+          <button
+            type="button"
+            disabled
+            title="Coming soon"
+            className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground opacity-60"
+          >
+            Pull Data
+          </button>
+        </div>
+      </div>
+
+      {importMessage && (
+        <p className="rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary" role="status">
           {importMessage}
         </p>
-      ) : null}
+      )}
 
-      {kit.uploadedPdfFileName ? (
+      {kit.uploadedPdfFileName && (
         <p className="text-sm text-muted-foreground">
           PDF on file: <span className="font-semibold text-foreground">{kit.uploadedPdfFileName}</span>{" "}
           <button
             type="button"
             className="ml-2 text-sm font-semibold text-primary hover:underline"
-            onClick={() => {
-              setUploadedPdfFileName(null);
-              setImportMessage("PDF attachment cleared.");
-            }}
+            onClick={() => { setUploadedPdfFileName(null); setImportMessage("PDF attachment cleared."); }}
           >
             Remove
           </button>
         </p>
-      ) : null}
+      )}
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
@@ -442,62 +507,52 @@ function InfluencerProfileView() {
             </div>
           </div>
           <label className="mt-4 block text-sm">
-            <span className="text-muted-foreground">Display name</span>
-            <input
-              value={kit.displayName}
-              onChange={(e) => setKit({ displayName: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display name</span>
+            <input value={kit.displayName} onChange={(e) => setKit({ displayName: e.target.value })} className={inputCls} />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Handle</span>
-            <input
-              value={kit.handle}
-              onChange={(e) => setKit({ handle: e.target.value })}
-              placeholder="@your.handle"
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Handle</span>
+            <input value={kit.handle} onChange={(e) => setKit({ handle: e.target.value })} placeholder="@your.handle" className={inputCls} />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Bio / positioning</span>
-            <textarea
-              value={kit.bio}
-              onChange={(e) => setKit({ bio: e.target.value })}
-              rows={4}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bio / positioning</span>
+            <textarea value={kit.bio} onChange={(e) => setKit({ bio: e.target.value })} rows={4} className={inputCls} />
           </label>
-          <div className="mt-3 grid gap-3">
+          <label className="mt-3 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Location</span>
+            <input value={kit.location} onChange={(e) => setKit({ location: e.target.value })} className={inputCls} />
+          </label>
+          <label className="mt-3 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact email for brands</span>
+            <input type="email" value={kit.email} onChange={(e) => setKit({ email: e.target.value })} className={inputCls} />
+          </label>
+          <div className="mt-4 rounded-xl bg-muted p-3">
             <label className="block text-sm">
-              <span className="text-muted-foreground">Location</span>
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Profile completeness %</span>
               <input
-                value={kit.location}
-                onChange={(e) => setKit({ location: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted-foreground">Contact email for brands</span>
-              <input
-                type="email"
-                value={kit.email}
-                onChange={(e) => setKit({ email: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
+                type="number" min={0} max={100}
+                value={kit.profileCompleteness}
+                onChange={(e) => setKit({ profileCompleteness: Number(e.target.value) })}
+                className={inputCls}
               />
             </label>
           </div>
-          <div className="mt-4 rounded-xl bg-muted p-3">
-            <label className="block text-sm">
-              <span className="text-xs font-semibold text-muted-foreground">Profile completeness (manual % for demo)</span>
-              <input
-                type="number"
-                min={0}
-                max={100}
-                value={kit.profileCompleteness}
-                onChange={(e) => setKit({ profileCompleteness: Number(e.target.value) })}
-                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
-              />
-            </label>
+
+          <div className="mt-4 flex items-center gap-3">
+            <button
+              type="button"
+              onClick={handleSave}
+              disabled={saving}
+              className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-60"
+            >
+              {saving && <Loader2 className="h-4 w-4 animate-spin" />}
+              Save profile
+            </button>
+            {saved && (
+              <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+                <CheckCircle2 className="h-4 w-4" /> Saved
+              </span>
+            )}
           </div>
         </article>
 
@@ -506,47 +561,22 @@ function InfluencerProfileView() {
             <h2 className="text-lg font-semibold text-foreground font-serif">Audience snapshot</h2>
             <p className="mt-1 text-xs text-muted-foreground">Headline numbers brands scan first on a media kit.</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block text-sm rounded-xl bg-muted p-3">
-                <span className="text-xs text-muted-foreground">Total followers (all platforms)</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={kit.totalFollowers}
-                  onChange={(e) => setKit({ totalFollowers: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                />
-              </label>
-              <label className="block text-sm rounded-xl bg-muted p-3">
-                <span className="text-xs text-muted-foreground">Average views</span>
-                <input
-                  type="number"
-                  min={0}
-                  value={kit.averageViews}
-                  onChange={(e) => setKit({ averageViews: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                />
-              </label>
-              <label className="block text-sm rounded-xl bg-muted p-3">
-                <span className="text-xs text-muted-foreground">Engagement rate %</span>
-                <input
-                  type="number"
-                  min={0}
-                  step={0.1}
-                  value={kit.engagementRate}
-                  onChange={(e) => setKit({ engagementRate: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                />
-              </label>
-              <label className="block text-sm rounded-xl bg-muted p-3">
-                <span className="text-xs text-muted-foreground">Growth rate %</span>
-                <input
-                  type="number"
-                  step={0.1}
-                  value={kit.growthRate}
-                  onChange={(e) => setKit({ growthRate: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                />
-              </label>
+              {[
+                { label: "Total followers", key: "totalFollowers" as const },
+                { label: "Average views", key: "averageViews" as const },
+                { label: "Engagement rate %", key: "engagementRate" as const, step: 0.1 },
+                { label: "Growth rate %", key: "growthRate" as const, step: 0.1 },
+              ].map(({ label, key, step }) => (
+                <label key={key} className="block rounded-xl bg-muted p-3 text-sm">
+                  <span className="text-xs text-muted-foreground">{label}</span>
+                  <input
+                    type="number" min={0} step={step ?? 1}
+                    value={(kit as any)[key]}
+                    onChange={(e) => setKit({ [key]: Number(e.target.value) } as any)}
+                    className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none"
+                  />
+                </label>
+              ))}
             </div>
           </article>
 
@@ -556,51 +586,29 @@ function InfluencerProfileView() {
               {kit.socialAccounts.map((account, index) => (
                 <div key={`${account.platform}-${index}`} className="rounded-xl border border-border p-3 text-sm">
                   <div className="grid gap-2 sm:grid-cols-2">
-                    <label className="block">
-                      <span className="text-xs text-muted-foreground">Platform</span>
-                      <input
-                        value={account.platform}
-                        onChange={(e) => setSocialRow(index, { platform: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs text-muted-foreground">Handle</span>
-                      <input
-                        value={account.username}
-                        onChange={(e) => setSocialRow(index, { username: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs text-muted-foreground">Followers</span>
-                      <input
-                        type="number"
-                        min={0}
-                        value={account.followers}
-                        onChange={(e) => setSocialRow(index, { followers: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                      />
-                    </label>
-                    <label className="block">
-                      <span className="text-xs text-muted-foreground">Avg views</span>
-                      <input
-                        type="number"
-                        min={0}
-                        value={account.avgViews}
-                        onChange={(e) => setSocialRow(index, { avgViews: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
-                      />
-                    </label>
+                    {[
+                      { label: "Platform", field: "platform" as const, type: "text" },
+                      { label: "Handle", field: "username" as const, type: "text" },
+                      { label: "Followers", field: "followers" as const, type: "number" },
+                      { label: "Avg views", field: "avgViews" as const, type: "number" },
+                    ].map(({ label, field, type }) => (
+                      <label key={field} className="block">
+                        <span className="text-xs text-muted-foreground">{label}</span>
+                        <input
+                          type={type}
+                          value={account[field] as any}
+                          onChange={(e) => setSocialRow(index, { [field]: type === "number" ? Number(e.target.value) : e.target.value })}
+                          className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none"
+                        />
+                      </label>
+                    ))}
                     <label className="block sm:col-span-2">
                       <span className="text-xs text-muted-foreground">Engagement rate %</span>
                       <input
-                        type="number"
-                        min={0}
-                        step={0.1}
+                        type="number" min={0} step={0.1}
                         value={account.engagementRate}
                         onChange={(e) => setSocialRow(index, { engagementRate: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none"
                       />
                     </label>
                   </div>
@@ -617,60 +625,33 @@ function InfluencerProfileView() {
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Niches &amp; deliverables</h2>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Categories (comma or newline separated)</span>
-            <textarea
-              value={kit.categories.join(", ")}
-              onChange={(e) => setKit({ categories: parseListInput(e.target.value) })}
-              rows={2}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Categories (comma or newline separated)</span>
+            <textarea value={kit.categories.join(", ")} onChange={(e) => setKit({ categories: parseListInput(e.target.value) })} rows={2} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Services (comma or newline separated)</span>
-            <textarea
-              value={kit.services.join(", ")}
-              onChange={(e) => setKit({ services: parseListInput(e.target.value) })}
-              rows={2}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Services (comma or newline separated)</span>
+            <textarea value={kit.services.join(", ")} onChange={(e) => setKit({ services: parseListInput(e.target.value) })} rows={2} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
         </article>
 
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Audience insights</h2>
+          {[
+            { label: "Gender mix", field: "gender" as const },
+            { label: "Age breakdown", field: "age" as const },
+          ].map(({ label, field }) => (
+            <label key={field} className="mt-3 block text-sm">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{label}</span>
+              <input value={kit.audience[field]} onChange={(e) => setKit({ audience: { ...kit.audience, [field]: e.target.value } })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+            </label>
+          ))}
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Gender mix</span>
-            <input
-              value={kit.audience.gender}
-              onChange={(e) => setKit({ audience: { ...kit.audience, gender: e.target.value } })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top countries (comma separated)</span>
+            <input value={kit.audience.topCountries.join(", ")} onChange={(e) => setKit({ audience: { ...kit.audience, topCountries: parseListInput(e.target.value) } })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Age breakdown</span>
-            <input
-              value={kit.audience.age}
-              onChange={(e) => setKit({ audience: { ...kit.audience, age: e.target.value } })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
-          </label>
-          <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Top countries (comma separated)</span>
-            <input
-              value={kit.audience.topCountries.join(", ")}
-              onChange={(e) =>
-                setKit({ audience: { ...kit.audience, topCountries: parseListInput(e.target.value) } })
-              }
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
-          </label>
-          <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Top cities (comma separated)</span>
-            <input
-              value={kit.audience.topCities.join(", ")}
-              onChange={(e) => setKit({ audience: { ...kit.audience, topCities: parseListInput(e.target.value) } })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top cities (comma separated)</span>
+            <input value={kit.audience.topCities.join(", ")} onChange={(e) => setKit({ audience: { ...kit.audience, topCities: parseListInput(e.target.value) } })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
         </article>
       </div>
@@ -679,72 +660,24 @@ function InfluencerProfileView() {
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Rate card (THB)</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
-            <label className="block text-sm">
-              <span className="text-muted-foreground">Post</span>
-              <input
-                type="number"
-                min={0}
-                value={kit.pricing.post}
-                onChange={(e) => setKit({ pricing: { ...kit.pricing, post: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm">
-              <span className="text-muted-foreground">Video</span>
-              <input
-                type="number"
-                min={0}
-                value={kit.pricing.video}
-                onChange={(e) => setKit({ pricing: { ...kit.pricing, video: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-              />
-            </label>
-            <label className="block text-sm sm:col-span-1">
-              <span className="text-muted-foreground">Bundle</span>
-              <input
-                type="number"
-                min={0}
-                value={kit.pricing.bundle}
-                onChange={(e) => setKit({ pricing: { ...kit.pricing, bundle: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-              />
-            </label>
+            {(["post", "video", "bundle"] as const).map((key) => (
+              <label key={key} className="block text-sm">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{key.charAt(0).toUpperCase() + key.slice(1)}</span>
+                <input type="number" min={0} value={kit.pricing[key]} onChange={(e) => setKit({ pricing: { ...kit.pricing, [key]: Number(e.target.value) } })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+              </label>
+            ))}
           </div>
         </article>
 
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Case highlights &amp; partners</h2>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Portfolio lines (one per line)</span>
-            <textarea
-              value={kit.portfolio.join("\n")}
-              onChange={(e) =>
-                setKit({
-                  portfolio: e.target.value
-                    .split("\n")
-                    .map((l) => l.trim())
-                    .filter(Boolean)
-                })
-              }
-              rows={4}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-mono text-xs"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Portfolio lines (one per line)</span>
+            <textarea value={kit.portfolio.join("\n")} onChange={(e) => setKit({ portfolio: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean) })} rows={4} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs outline-none" />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Past collaborations (one per line)</span>
-            <textarea
-              value={kit.pastCollaborations.join("\n")}
-              onChange={(e) =>
-                setKit({
-                  pastCollaborations: e.target.value
-                    .split("\n")
-                    .map((l) => l.trim())
-                    .filter(Boolean)
-                })
-              }
-              rows={3}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-mono text-xs"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Past collaborations (one per line)</span>
+            <textarea value={kit.pastCollaborations.join("\n")} onChange={(e) => setKit({ pastCollaborations: e.target.value.split("\n").map((l) => l.trim()).filter(Boolean) })} rows={3} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 font-mono text-xs outline-none" />
           </label>
         </article>
       </div>
@@ -753,54 +686,33 @@ function InfluencerProfileView() {
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Availability</h2>
           <label className="mt-2 block text-sm">
-            <span className="text-muted-foreground">Status</span>
-            <input
-              value={kit.availability}
-              onChange={(e) => setKit({ availability: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
+            <input value={kit.availability} onChange={(e) => setKit({ availability: e.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
         </article>
 
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Settings</h2>
-          <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={kit.notificationSettings.messageAlerts}
-              onChange={(e) =>
-                setKit({
-                  notificationSettings: { ...kit.notificationSettings, messageAlerts: e.target.checked }
-                })
-              }
-            />
-            Message alerts
-          </label>
-          <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
-            <input
-              type="checkbox"
-              checked={kit.notificationSettings.campaignAlerts}
-              onChange={(e) =>
-                setKit({
-                  notificationSettings: { ...kit.notificationSettings, campaignAlerts: e.target.checked }
-                })
-              }
-            />
-            Campaign alerts
-          </label>
+          {[
+            { label: "Message alerts", key: "messageAlerts" as const },
+            { label: "Campaign alerts", key: "campaignAlerts" as const },
+          ].map(({ label, key }) => (
+            <label key={key} className="mt-2 flex items-center gap-2 text-sm text-foreground">
+              <input type="checkbox" checked={kit.notificationSettings[key]} onChange={(e) => setKit({ notificationSettings: { ...kit.notificationSettings, [key]: e.target.checked } })} />
+              {label}
+            </label>
+          ))}
           <label className="mt-3 block text-sm">
-            <span className="text-muted-foreground">Privacy</span>
-            <input
-              value={kit.privacy}
-              onChange={(e) => setKit({ privacy: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
-            />
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Privacy</span>
+            <input value={kit.privacy} onChange={(e) => setKit({ privacy: e.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
           </label>
         </article>
       </div>
     </section>
   );
 }
+
+// ─── Page entry ───────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { role } = useUserStore();

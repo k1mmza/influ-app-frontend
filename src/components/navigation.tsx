@@ -5,7 +5,7 @@ import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
-
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
 const brandLinks = [
@@ -33,8 +33,9 @@ function isNavActive(pathname: string, href: string) {
 export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, logout } = useUserStore();
+  const { role, logout, isLoggedIn, name } = useUserStore();
   const isLandingPage = pathname === "/";
+  const isPublicPage = isLandingPage || (pathname === "/discover" && !isLoggedIn);
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
 
   const handleLogout = () => {
@@ -46,7 +47,7 @@ export function Navigation() {
     return null;
   }
 
-  if (isLandingPage) {
+  if (isPublicPage) {
     return (
       <nav className="sticky top-6 z-50 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-background/80 px-4 py-2.5 shadow-sm backdrop-blur-md">
         <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground transition hover:opacity-80">
@@ -61,16 +62,16 @@ export function Navigation() {
             <Link href="/discover">Discover</Link>
           </Button>
           <Button variant="ghost" asChild className="rounded-full hidden md:flex">
-            <Link href="/#for-teams">Agencies</Link>
+            <Link href="/#for-agencies">Agencies</Link>
           </Button>
           <Button variant="ghost" asChild className="rounded-full hidden md:flex">
-            <Link href="/#for-brands">Brands</Link>
+            <Link href="/#for-agencies">Brands</Link>
           </Button>
           <Button variant="ghost" asChild className="rounded-full hidden md:flex">
             <Link href="/#for-creators">Creators</Link>
           </Button>
           <Button variant="ghost" asChild className="rounded-full">
-            <Link href="/#how-it-works">Process</Link>
+            <Link href="/#capabilities">Capabilities</Link>
           </Button>
           <Button variant="ghost" asChild className="rounded-full">
             <Link href="/#pricing">Pricing</Link>
@@ -79,12 +80,24 @@ export function Navigation() {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" asChild className="rounded-full">
-            <Link href="/login">Login</Link>
-          </Button>
-          <Button asChild className="rounded-full shadow-md">
-            <Link href="/register">Get Started</Link>
-          </Button>
+          {isLoggedIn ? (
+            <Link href="/dashboard" className="cursor-pointer">
+              <Avatar className="h-9 w-9 ring-2 ring-primary/20 transition hover:ring-primary/60">
+                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
+                  {name ? name.charAt(0).toUpperCase() : "U"}
+                </AvatarFallback>
+              </Avatar>
+            </Link>
+          ) : (
+            <>
+              <Button variant="ghost" asChild className="rounded-full">
+                <Link href="/login">Login</Link>
+              </Button>
+              <Button asChild className="rounded-full shadow-md">
+                <Link href="/register">Get Started</Link>
+              </Button>
+            </>
+          )}
         </div>
       </nav>
     );
