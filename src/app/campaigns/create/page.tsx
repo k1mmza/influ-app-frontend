@@ -19,8 +19,8 @@ export default function CreateCampaignPage() {
   if (role !== "brand") {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900 font-serif">Create campaign</h1>
-        <p className="text-slate-600">Only brand accounts can create campaigns.</p>
+        <h1 className="text-2xl font-bold text-foreground font-serif">Create campaign</h1>
+        <p className="text-muted-foreground">Only brand accounts can create campaigns.</p>
         <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
         </Link>
@@ -39,28 +39,28 @@ export default function CreateCampaignPage() {
         <Link href="/campaigns" className="text-sm font-medium text-primary hover:underline">
           ← Campaigns
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900 font-serif">Create campaign</h1>
-        <p className="mt-1 text-sm text-slate-600">Public campaigns appear in the influencer marketplace. Private ones stay invite-only via Discover.</p>
+        <h1 className="mt-2 text-2xl font-bold text-foreground font-serif">Create campaign</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Public campaigns appear in the influencer marketplace. Private ones stay invite-only via Discover.</p>
       </div>
 
-      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-white p-6 shadow-sm">
+      <form onSubmit={handleSubmit} className="space-y-4 rounded-2xl bg-card p-6 shadow-sm">
         <div>
-          <label className="block text-sm font-medium text-slate-700">Name</label>
+          <label className="block text-sm font-medium text-foreground">Name</label>
           <input
             value={name}
             onChange={(e) => setName(e.target.value)}
             required
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+            className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             placeholder="e.g. Spring collection launch"
           />
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Objective</label>
+          <label className="block text-sm font-medium text-foreground">Objective</label>
           <select
             value={objective}
             onChange={(e) => setObjective(e.target.value as typeof objective)}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+            className="mt-1 w-full rounded-xl border border-border px-3 py-2"
           >
             <option value="Awareness">Awareness</option>
             <option value="Engagement">Engagement</option>
@@ -69,52 +69,52 @@ export default function CreateCampaignPage() {
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Budget (THB)</label>
+          <label className="block text-sm font-medium text-foreground">Budget (THB)</label>
           <input
             type="number"
             min={0}
             value={budget}
             onChange={(e) => setBudget(e.target.value)}
             required
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+            className="mt-1 w-full rounded-xl border border-border px-3 py-2"
           />
         </div>
 
         <div className="grid gap-3 sm:grid-cols-2">
           <div>
-            <label className="block text-sm font-medium text-slate-700">Start</label>
+            <label className="block text-sm font-medium text-foreground">Start</label>
             <input
               type="date"
               value={start}
               onChange={(e) => setStart(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-slate-700">End / deadline</label>
+            <label className="block text-sm font-medium text-foreground">End / deadline</label>
             <input
               type="date"
               value={end}
               onChange={(e) => setEnd(e.target.value)}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </div>
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-slate-700">Deliverables</label>
+          <label className="block text-sm font-medium text-foreground">Deliverables</label>
           <textarea
             value={deliverables}
             onChange={(e) => setDeliverables(e.target.value)}
             rows={4}
-            className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+            className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             placeholder="Posts, format, key messages, do/don't"
           />
         </div>
 
         <fieldset>
-          <legend className="text-sm font-medium text-slate-700">Visibility</legend>
-          <div className="mt-2 flex flex-wrap gap-4 text-sm text-slate-700">
+          <legend className="text-sm font-medium text-foreground">Visibility</legend>
+          <div className="mt-2 flex flex-wrap gap-4 text-sm text-foreground">
             <label className="inline-flex items-center gap-2">
               <input
                 type="radio"
@@ -140,7 +140,7 @@ export default function CreateCampaignPage() {
           <button type="submit" className="rounded-xl bg-primary px-4 py-2.5 text-sm font-semibold text-white">
             Save campaign (demo)
           </button>
-          <Link href="/campaigns" className="rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700">
+          <Link href="/campaigns" className="rounded-xl border border-border px-4 py-2.5 text-sm font-semibold text-foreground">
             Cancel
           </Link>
         </div>

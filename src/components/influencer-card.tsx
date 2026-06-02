@@ -75,7 +75,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
         
         <div className="absolute top-3 right-3">
-          <Badge className="bg-white/90 text-primary font-bold backdrop-blur-sm border-none shadow-sm hover:bg-white">
+          <Badge className="bg-card/90 text-primary font-bold backdrop-blur-sm border-none shadow-sm hover:bg-card">
             Score {influencer.performanceScore}
           </Badge>
         </div>
@@ -103,7 +103,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
               <div
                 key={platform}
                 title={platform}
-                className="flex size-8 items-center justify-center rounded-full border border-slate-100 bg-slate-50/50 transition-colors hover:bg-slate-100"
+                className="flex size-8 items-center justify-center rounded-full border border-border bg-muted/50 transition-colors hover:bg-muted"
               >
                 <Icon className={cn("size-4 shrink-0", iconClassName)} />
               </div>
@@ -112,11 +112,11 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
         </div>
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-xl bg-slate-50/80 p-2.5">
+          <div className="rounded-xl bg-muted/80 p-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
             <p className="text-sm font-bold text-foreground">{influencer.followers.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl bg-slate-50/80 p-2.5">
+          <div className="rounded-xl bg-muted/80 p-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engage</p>
             <p className="text-sm font-bold text-foreground">{influencer.engagementRate}%</p>
           </div>

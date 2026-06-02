@@ -65,7 +65,7 @@ function InfluencerDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl font-serif">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-2xl font-serif">
                       {c.icon}
                     </div>
                     <div>
@@ -73,7 +73,7 @@ function InfluencerDashboard() {
                       <p className="text-sm text-muted-foreground">{c.brand}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="rounded-full bg-slate-100 font-bold">{c.platform}</Badge>
+                  <Badge variant="secondary" className="rounded-full bg-muted font-bold">{c.platform}</Badge>
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -87,7 +87,7 @@ function InfluencerDashboard() {
                 </div>
                 <div className="mt-6 flex gap-2">
                   <Button className="flex-1 rounded-xl shadow-sm">Apply Now</Button>
-                  <Button variant="secondary" className="rounded-xl bg-slate-100">Details</Button>
+                  <Button variant="secondary" className="rounded-xl bg-muted">Details</Button>
                 </div>
               </CardContent>
             </Card>
@@ -102,7 +102,7 @@ function InfluencerDashboard() {
             <CardDescription>Active, Pending, Completed</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="rounded-xl bg-slate-50 p-4">
+            <div className="rounded-xl bg-muted p-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="font-medium">In Progress</span>
                 <span className="font-bold text-primary">2</span>
@@ -192,7 +192,7 @@ function AgencyDashboard() {
               <Sparkles className="h-5 w-5 text-primary" />
               Strategy Assistant
             </CardTitle>
-            <CardDescription className="text-slate-400">AI-driven insights for your next campaign</CardDescription>
+            <CardDescription className="text-muted-foreground">AI-driven insights for your next campaign</CardDescription>
           </CardHeader>
           <CardContent>
             <ul className="space-y-4">

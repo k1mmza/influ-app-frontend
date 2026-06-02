@@ -54,7 +54,7 @@ export function LandingHero() {
   };
 
   return (
-    <section className="dark relative flex min-h-[600px] w-full flex-col items-center justify-center overflow-hidden rounded-[2.5rem] bg-background px-4 py-20 lg:min-h-[calc(100vh-8rem)]">
+    <section className="relative flex min-h-[600px] w-full flex-col items-center justify-center overflow-hidden rounded-[2.5rem] bg-background px-4 py-20 lg:min-h-[calc(100vh-8rem)]">
       {/* Background Carousel with Overlay */}
       <div className="absolute inset-0 z-0 overflow-hidden opacity-40">
         {CAROUSEL_IMAGES.map((image, index) => (
@@ -108,7 +108,7 @@ export function LandingHero() {
                     setProfileUrl(e.target.value);
                     if (error) setError("");
                   }}
-                  className="h-14 rounded-2xl border-border bg-white/5 pl-12 pr-4 text-foreground placeholder:text-muted-foreground backdrop-blur-md transition-all focus:border-primary/50 focus:ring-primary/20"
+                  className="h-14 rounded-2xl border-border bg-card/5 pl-12 pr-4 text-foreground placeholder:text-muted-foreground backdrop-blur-md transition-all focus:border-primary/50 focus:ring-primary/20"
                 />
               </div>
               <Button type="submit" size="lg" className="h-14 rounded-2xl px-8 text-base font-bold shadow-xl shadow-primary/20">

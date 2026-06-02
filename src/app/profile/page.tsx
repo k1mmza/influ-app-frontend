@@ -32,7 +32,7 @@ function ProfileRatingAvatar({
     <div className="relative inline-block shrink-0">
       <img src={src} alt={alt} className={imgClassName} />
       <div
-        className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-white px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md"
+        className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md"
         title="Average rating from partners on finished campaigns"
       >
         <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
@@ -55,41 +55,41 @@ function ProfileReviewsSection({ role }: { role: Role }) {
   );
 
   return (
-    <article className="rounded-2xl bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 font-serif">Partner review ratings</h2>
-      <p className="mt-1 text-xs text-slate-500">
+    <article className="rounded-2xl bg-card p-5 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground font-serif">Partner review ratings</h2>
+      <p className="mt-1 text-xs text-muted-foreground">
         Ratings use your account display name (same as when you submit reviews on a finished campaign).
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 font-serif">Comments you wrote</h3>
+          <h3 className="text-sm font-semibold text-foreground font-serif">Comments you wrote</h3>
           {written.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">No reviews yet. Finish a campaign, then rate partners from the campaign page.</p>
+            <p className="mt-2 text-sm text-muted-foreground">No reviews yet. Finish a campaign, then rate partners from the campaign page.</p>
           ) : (
-            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+            <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
               {written.map((r) => (
-                <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                  <p className="font-medium text-slate-900">
+                <li key={r.id} className="rounded-lg border border-border bg-muted px-3 py-2">
+                  <p className="font-medium text-foreground">
                     {r.rating}/5 → {r.toName} ({r.toRole}) — {r.campaignName}
                   </p>
-                  {r.comment ? <p className="mt-1 text-slate-600">&ldquo;{r.comment}&rdquo;</p> : null}
+                  {r.comment ? <p className="mt-1 text-muted-foreground">&ldquo;{r.comment}&rdquo;</p> : null}
                 </li>
               ))}
             </ul>
           )}
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-slate-800 font-serif">Comments about you</h3>
+          <h3 className="text-sm font-semibold text-foreground font-serif">Comments about you</h3>
           {received.length === 0 ? (
-            <p className="mt-2 text-sm text-slate-500">No partner feedback yet.</p>
+            <p className="mt-2 text-sm text-muted-foreground">No partner feedback yet.</p>
           ) : (
-            <ul className="mt-2 space-y-2 text-sm text-slate-600">
+            <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
               {received.map((r) => (
-                <li key={r.id} className="rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
-                  <p className="font-medium text-slate-900">
+                <li key={r.id} className="rounded-lg border border-border bg-muted px-3 py-2">
+                  <p className="font-medium text-foreground">
                     {r.rating}/5 from {r.fromName} ({r.fromRole}) — {r.campaignName}
                   </p>
-                  {r.comment ? <p className="mt-1 text-slate-600">&ldquo;{r.comment}&rdquo;</p> : null}
+                  {r.comment ? <p className="mt-1 text-muted-foreground">&ldquo;{r.comment}&rdquo;</p> : null}
                 </li>
               ))}
             </ul>
@@ -152,19 +152,19 @@ function BrandProfileView() {
 
   return (
     <section key={role} className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900 font-serif">{heading}</h1>
-      <p className="text-slate-600">{subline} Manage your password in Account.</p>
+      <h1 className="text-2xl font-bold text-foreground font-serif">{heading}</h1>
+      <p className="text-muted-foreground">{subline} Manage your password in Account.</p>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex flex-col items-center text-center">
             <ProfileRatingAvatar
               src={avatarUrl}
               alt="Company"
-              imgClassName="h-24 w-24 rounded-2xl border border-slate-200 object-cover"
+              imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
               role={profileRole}
             />
-            <p className="mt-3 text-sm text-slate-500">Company logo (demo)</p>
+            <p className="mt-3 text-sm text-muted-foreground">Company logo (demo)</p>
             <button type="button" className="mt-2 text-sm font-semibold text-primary hover:underline">
               Change image
             </button>
@@ -172,113 +172,113 @@ function BrandProfileView() {
         </article>
 
         <div className="space-y-4">
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Company &amp; user</h2>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Company &amp; user</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="block text-sm">
-                <span className="text-slate-600">Company name</span>
+                <span className="text-muted-foreground">Company name</span>
                 <input
                   value={companyName}
                   onChange={(e) => setCompanyName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-slate-600">Your name</span>
+                <span className="text-muted-foreground">Your name</span>
                 <input
                   value={userName}
                   onChange={(e) => setUserName(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-slate-600">Position</span>
+                <span className="text-muted-foreground">Position</span>
                 <input
                   value={position}
                   onChange={(e) => setPosition(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 />
               </label>
               <label className="block text-sm">
-                <span className="text-slate-600">Email</span>
+                <span className="text-muted-foreground">Email</span>
                 <input
                   type="email"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 />
               </label>
               <label className="block text-sm sm:col-span-2">
-                <span className="text-slate-600">Telephone</span>
+                <span className="text-muted-foreground">Telephone</span>
                 <input
                   value={phone}
                   onChange={(e) => setPhone(e.target.value)}
-                  className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                  className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                 />
               </label>
             </div>
             <label className="mt-3 block text-sm">
-              <span className="text-slate-600">Company details</span>
+              <span className="text-muted-foreground">Company details</span>
               <textarea
                 value={companyDetail}
                 onChange={(e) => setCompanyDetail(e.target.value)}
                 rows={4}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
 
-            <div className="mt-6 border-t border-slate-100 pt-5">
-              <h3 className="text-base font-semibold text-slate-900 font-serif">Website &amp; company socials</h3>
-              <p className="mt-1 text-xs text-slate-500">Shown on campaign pages and briefs (demo fields only).</p>
+            <div className="mt-6 border-t border-border pt-5">
+              <h3 className="text-base font-semibold text-foreground font-serif">Website &amp; company socials</h3>
+              <p className="mt-1 text-xs text-muted-foreground">Shown on campaign pages and briefs (demo fields only).</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm sm:col-span-2">
-                  <span className="text-slate-600">Company website</span>
+                  <span className="text-muted-foreground">Company website</span>
                   <input
                     type="url"
                     value={websiteUrl}
                     onChange={(e) => setWebsiteUrl(e.target.value)}
                     placeholder="https://"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">Instagram</span>
+                  <span className="text-muted-foreground">Instagram</span>
                   <input
                     type="url"
                     value={socialInstagram}
                     onChange={(e) => setSocialInstagram(e.target.value)}
                     placeholder="https://www.instagram.com/…"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">Facebook</span>
+                  <span className="text-muted-foreground">Facebook</span>
                   <input
                     type="url"
                     value={socialFacebook}
                     onChange={(e) => setSocialFacebook(e.target.value)}
                     placeholder="https://www.facebook.com/…"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">LinkedIn</span>
+                  <span className="text-muted-foreground">LinkedIn</span>
                   <input
                     type="url"
                     value={socialLinkedIn}
                     onChange={(e) => setSocialLinkedIn(e.target.value)}
                     placeholder="https://www.linkedin.com/company/…"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   />
                 </label>
                 <label className="block text-sm">
-                  <span className="text-slate-600">TikTok</span>
+                  <span className="text-muted-foreground">TikTok</span>
                   <input
                     type="url"
                     value={socialTikTok}
                     onChange={(e) => setSocialTikTok(e.target.value)}
                     placeholder="https://www.tiktok.com/@…"
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                    className="mt-1 w-full rounded-xl border border-border px-3 py-2"
                   />
                 </label>
               </div>
@@ -291,21 +291,21 @@ function BrandProfileView() {
 
           <ProfileReviewsSection role={profileRole} />
 
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Account</h2>
-            <p className="mt-1 text-sm text-slate-600">Change password and security settings (wireframe).</p>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Account</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Change password and security settings (wireframe).</p>
             <div className="mt-3 grid gap-3 sm:max-w-md">
               <input
                 type="password"
                 placeholder="Current password"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-xl border border-border px-3 py-2 text-sm"
               />
               <input
                 type="password"
                 placeholder="New password"
-                className="rounded-xl border border-slate-200 px-3 py-2 text-sm"
+                className="rounded-xl border border-border px-3 py-2 text-sm"
               />
-              <button type="button" className="rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800">
+              <button type="button" className="rounded-xl bg-muted px-4 py-2 text-sm font-semibold text-foreground">
                 Update password
               </button>
             </div>
@@ -378,8 +378,8 @@ function InfluencerProfileView() {
     <section className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900 font-serif">Media kit</h1>
-          <p className="mt-1 text-sm text-slate-600">
+          <h1 className="text-2xl font-bold text-foreground font-serif">Media kit</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
             Edit the fields brands see in discovery. Download a JSON backup or upload a previously exported JSON; you can also attach a PDF kit
             for your records (demo: file name only).
           </p>
@@ -389,7 +389,7 @@ function InfluencerProfileView() {
           <button
             type="button"
             onClick={() => uploadRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-800 shadow-sm hover:bg-slate-50"
+            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-muted"
           >
             <Upload className="h-4 w-4" aria-hidden />
             Upload JSON / PDF
@@ -412,8 +412,8 @@ function InfluencerProfileView() {
       ) : null}
 
       {kit.uploadedPdfFileName ? (
-        <p className="text-sm text-slate-600">
-          PDF on file: <span className="font-semibold text-slate-900">{kit.uploadedPdfFileName}</span>{" "}
+        <p className="text-sm text-muted-foreground">
+          PDF on file: <span className="font-semibold text-foreground">{kit.uploadedPdfFileName}</span>{" "}
           <button
             type="button"
             className="ml-2 text-sm font-semibold text-primary hover:underline"
@@ -428,179 +428,179 @@ function InfluencerProfileView() {
       ) : null}
 
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex items-center gap-3">
             <ProfileRatingAvatar
               src={avatarUrl}
               alt={`${kit.displayName} profile`}
-              imgClassName="h-14 w-14 rounded-full border border-slate-200 object-cover"
+              imgClassName="h-14 w-14 rounded-full border border-border object-cover"
               role="influencer"
             />
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 font-serif">{kit.displayName}</h2>
-              <p className="text-sm text-slate-600">{kit.handle}</p>
+              <h2 className="text-lg font-semibold text-foreground font-serif">{kit.displayName}</h2>
+              <p className="text-sm text-muted-foreground">{kit.handle}</p>
             </div>
           </div>
           <label className="mt-4 block text-sm">
-            <span className="text-slate-600">Display name</span>
+            <span className="text-muted-foreground">Display name</span>
             <input
               value={kit.displayName}
               onChange={(e) => setKit({ displayName: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Handle</span>
+            <span className="text-muted-foreground">Handle</span>
             <input
               value={kit.handle}
               onChange={(e) => setKit({ handle: e.target.value })}
               placeholder="@your.handle"
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Bio / positioning</span>
+            <span className="text-muted-foreground">Bio / positioning</span>
             <textarea
               value={kit.bio}
               onChange={(e) => setKit({ bio: e.target.value })}
               rows={4}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <div className="mt-3 grid gap-3">
             <label className="block text-sm">
-              <span className="text-slate-600">Location</span>
+              <span className="text-muted-foreground">Location</span>
               <input
                 value={kit.location}
                 onChange={(e) => setKit({ location: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">Contact email for brands</span>
+              <span className="text-muted-foreground">Contact email for brands</span>
               <input
                 type="email"
                 value={kit.email}
                 onChange={(e) => setKit({ email: e.target.value })}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
           </div>
-          <div className="mt-4 rounded-xl bg-slate-50 p-3">
+          <div className="mt-4 rounded-xl bg-muted p-3">
             <label className="block text-sm">
-              <span className="text-xs font-semibold text-slate-500">Profile completeness (manual % for demo)</span>
+              <span className="text-xs font-semibold text-muted-foreground">Profile completeness (manual % for demo)</span>
               <input
                 type="number"
                 min={0}
                 max={100}
                 value={kit.profileCompleteness}
                 onChange={(e) => setKit({ profileCompleteness: Number(e.target.value) })}
-                className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-lg border border-border px-3 py-2"
               />
             </label>
           </div>
         </article>
 
         <div className="space-y-4">
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Audience snapshot</h2>
-            <p className="mt-1 text-xs text-slate-500">Headline numbers brands scan first on a media kit.</p>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Audience snapshot</h2>
+            <p className="mt-1 text-xs text-muted-foreground">Headline numbers brands scan first on a media kit.</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <label className="block text-sm rounded-xl bg-slate-50 p-3">
-                <span className="text-xs text-slate-500">Total followers (all platforms)</span>
+              <label className="block text-sm rounded-xl bg-muted p-3">
+                <span className="text-xs text-muted-foreground">Total followers (all platforms)</span>
                 <input
                   type="number"
                   min={0}
                   value={kit.totalFollowers}
                   onChange={(e) => setKit({ totalFollowers: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                 />
               </label>
-              <label className="block text-sm rounded-xl bg-slate-50 p-3">
-                <span className="text-xs text-slate-500">Average views</span>
+              <label className="block text-sm rounded-xl bg-muted p-3">
+                <span className="text-xs text-muted-foreground">Average views</span>
                 <input
                   type="number"
                   min={0}
                   value={kit.averageViews}
                   onChange={(e) => setKit({ averageViews: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                 />
               </label>
-              <label className="block text-sm rounded-xl bg-slate-50 p-3">
-                <span className="text-xs text-slate-500">Engagement rate %</span>
+              <label className="block text-sm rounded-xl bg-muted p-3">
+                <span className="text-xs text-muted-foreground">Engagement rate %</span>
                 <input
                   type="number"
                   min={0}
                   step={0.1}
                   value={kit.engagementRate}
                   onChange={(e) => setKit({ engagementRate: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                 />
               </label>
-              <label className="block text-sm rounded-xl bg-slate-50 p-3">
-                <span className="text-xs text-slate-500">Growth rate %</span>
+              <label className="block text-sm rounded-xl bg-muted p-3">
+                <span className="text-xs text-muted-foreground">Growth rate %</span>
                 <input
                   type="number"
                   step={0.1}
                   value={kit.growthRate}
                   onChange={(e) => setKit({ growthRate: Number(e.target.value) })}
-                  className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                  className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                 />
               </label>
             </div>
           </article>
 
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Platforms &amp; handles</h2>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Platforms &amp; handles</h2>
             <div className="mt-3 space-y-3">
               {kit.socialAccounts.map((account, index) => (
-                <div key={`${account.platform}-${index}`} className="rounded-xl border border-slate-200 p-3 text-sm">
+                <div key={`${account.platform}-${index}`} className="rounded-xl border border-border p-3 text-sm">
                   <div className="grid gap-2 sm:grid-cols-2">
                     <label className="block">
-                      <span className="text-xs text-slate-500">Platform</span>
+                      <span className="text-xs text-muted-foreground">Platform</span>
                       <input
                         value={account.platform}
                         onChange={(e) => setSocialRow(index, { platform: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs text-slate-500">Handle</span>
+                      <span className="text-xs text-muted-foreground">Handle</span>
                       <input
                         value={account.username}
                         onChange={(e) => setSocialRow(index, { username: e.target.value })}
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs text-slate-500">Followers</span>
+                      <span className="text-xs text-muted-foreground">Followers</span>
                       <input
                         type="number"
                         min={0}
                         value={account.followers}
                         onChange={(e) => setSocialRow(index, { followers: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                       />
                     </label>
                     <label className="block">
-                      <span className="text-xs text-slate-500">Avg views</span>
+                      <span className="text-xs text-muted-foreground">Avg views</span>
                       <input
                         type="number"
                         min={0}
                         value={account.avgViews}
                         onChange={(e) => setSocialRow(index, { avgViews: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                       />
                     </label>
                     <label className="block sm:col-span-2">
-                      <span className="text-xs text-slate-500">Engagement rate %</span>
+                      <span className="text-xs text-muted-foreground">Engagement rate %</span>
                       <input
                         type="number"
                         min={0}
                         step={0.1}
                         value={account.engagementRate}
                         onChange={(e) => setSocialRow(index, { engagementRate: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-slate-200 px-2 py-1.5"
+                        className="mt-1 w-full rounded-lg border border-border px-2 py-1.5"
                       />
                     </label>
                   </div>
@@ -614,108 +614,108 @@ function InfluencerProfileView() {
       <ProfileReviewsSection role="influencer" />
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Niches &amp; deliverables</h2>
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Niches &amp; deliverables</h2>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Categories (comma or newline separated)</span>
+            <span className="text-muted-foreground">Categories (comma or newline separated)</span>
             <textarea
               value={kit.categories.join(", ")}
               onChange={(e) => setKit({ categories: parseListInput(e.target.value) })}
               rows={2}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Services (comma or newline separated)</span>
+            <span className="text-muted-foreground">Services (comma or newline separated)</span>
             <textarea
               value={kit.services.join(", ")}
               onChange={(e) => setKit({ services: parseListInput(e.target.value) })}
               rows={2}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
         </article>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Audience insights</h2>
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Audience insights</h2>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Gender mix</span>
+            <span className="text-muted-foreground">Gender mix</span>
             <input
               value={kit.audience.gender}
               onChange={(e) => setKit({ audience: { ...kit.audience, gender: e.target.value } })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Age breakdown</span>
+            <span className="text-muted-foreground">Age breakdown</span>
             <input
               value={kit.audience.age}
               onChange={(e) => setKit({ audience: { ...kit.audience, age: e.target.value } })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Top countries (comma separated)</span>
+            <span className="text-muted-foreground">Top countries (comma separated)</span>
             <input
               value={kit.audience.topCountries.join(", ")}
               onChange={(e) =>
                 setKit({ audience: { ...kit.audience, topCountries: parseListInput(e.target.value) } })
               }
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Top cities (comma separated)</span>
+            <span className="text-muted-foreground">Top cities (comma separated)</span>
             <input
               value={kit.audience.topCities.join(", ")}
               onChange={(e) => setKit({ audience: { ...kit.audience, topCities: parseListInput(e.target.value) } })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
         </article>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Rate card (THB)</h2>
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Rate card (THB)</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <label className="block text-sm">
-              <span className="text-slate-600">Post</span>
+              <span className="text-muted-foreground">Post</span>
               <input
                 type="number"
                 min={0}
                 value={kit.pricing.post}
                 onChange={(e) => setKit({ pricing: { ...kit.pricing, post: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
             <label className="block text-sm">
-              <span className="text-slate-600">Video</span>
+              <span className="text-muted-foreground">Video</span>
               <input
                 type="number"
                 min={0}
                 value={kit.pricing.video}
                 onChange={(e) => setKit({ pricing: { ...kit.pricing, video: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
             <label className="block text-sm sm:col-span-1">
-              <span className="text-slate-600">Bundle</span>
+              <span className="text-muted-foreground">Bundle</span>
               <input
                 type="number"
                 min={0}
                 value={kit.pricing.bundle}
                 onChange={(e) => setKit({ pricing: { ...kit.pricing, bundle: Number(e.target.value) } })}
-                className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+                className="mt-1 w-full rounded-xl border border-border px-3 py-2"
               />
             </label>
           </div>
         </article>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Case highlights &amp; partners</h2>
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Case highlights &amp; partners</h2>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Portfolio lines (one per line)</span>
+            <span className="text-muted-foreground">Portfolio lines (one per line)</span>
             <textarea
               value={kit.portfolio.join("\n")}
               onChange={(e) =>
@@ -727,11 +727,11 @@ function InfluencerProfileView() {
                 })
               }
               rows={4}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-mono text-xs"
             />
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Past collaborations (one per line)</span>
+            <span className="text-muted-foreground">Past collaborations (one per line)</span>
             <textarea
               value={kit.pastCollaborations.join("\n")}
               onChange={(e) =>
@@ -743,28 +743,28 @@ function InfluencerProfileView() {
                 })
               }
               rows={3}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2 font-mono text-xs"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2 font-mono text-xs"
             />
           </label>
         </article>
       </div>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Availability</h2>
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Availability</h2>
           <label className="mt-2 block text-sm">
-            <span className="text-slate-600">Status</span>
+            <span className="text-muted-foreground">Status</span>
             <input
               value={kit.availability}
               onChange={(e) => setKit({ availability: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
         </article>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Settings</h2>
-          <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Settings</h2>
+          <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"
               checked={kit.notificationSettings.messageAlerts}
@@ -776,7 +776,7 @@ function InfluencerProfileView() {
             />
             Message alerts
           </label>
-          <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
+          <label className="mt-2 flex items-center gap-2 text-sm text-foreground">
             <input
               type="checkbox"
               checked={kit.notificationSettings.campaignAlerts}
@@ -789,11 +789,11 @@ function InfluencerProfileView() {
             Campaign alerts
           </label>
           <label className="mt-3 block text-sm">
-            <span className="text-slate-600">Privacy</span>
+            <span className="text-muted-foreground">Privacy</span>
             <input
               value={kit.privacy}
               onChange={(e) => setKit({ privacy: e.target.value })}
-              className="mt-1 w-full rounded-xl border border-slate-200 px-3 py-2"
+              className="mt-1 w-full rounded-xl border border-border px-3 py-2"
             />
           </label>
         </article>

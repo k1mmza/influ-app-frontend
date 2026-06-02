@@ -48,9 +48,9 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
 
   if (!keys.includes(selfKey)) {
     return (
-      <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 font-serif">Partner reviews</h2>
-        <p className="mt-2 text-sm text-slate-600">
+      <article className="rounded-2xl border border-border bg-muted p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground font-serif">Partner reviews</h2>
+        <p className="mt-2 text-sm text-muted-foreground">
           Your account name does not match this campaign&apos;s participant list. Use the same display name as when you
           completed the campaign (demo: Brand <strong>David Kim</strong>, Agency <strong>Sarah Chen</strong>, Influencer{" "}
           <strong>Lina Park</strong>).
@@ -60,9 +60,9 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
   }
 
   return (
-    <article className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900 font-serif">Rate your campaign partners</h2>
-      <p className="mt-1 text-sm text-slate-600">
+    <article className="rounded-2xl border border-primary/20 bg-card p-5 shadow-sm">
+      <h2 className="text-lg font-semibold text-foreground font-serif">Rate your campaign partners</h2>
+      <p className="mt-1 text-sm text-muted-foreground">
         After a finished campaign, leave a star rating and short note for each partner. Reviews show on their profile.
       </p>
 
@@ -85,11 +85,11 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
               r.toName === p.name
           );
           return (
-            <li key={pk} className="rounded-xl border border-slate-100 bg-slate-50/80 p-4">
+            <li key={pk} className="rounded-xl border border-border bg-muted/80 p-4">
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <p className="font-semibold text-slate-900">
+                <p className="font-semibold text-foreground">
                   {p.name}{" "}
-                  <span className="text-xs font-normal text-slate-500">({p.role})</span>
+                  <span className="text-xs font-normal text-muted-foreground">({p.role})</span>
                 </p>
                 {done && existing ? (
                   <span className="text-sm text-emerald-700">
@@ -99,11 +99,11 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
               </div>
 
               {done && existing ? (
-                <p className="mt-2 text-sm text-slate-600">&ldquo;{existing.comment || "No comment."}&rdquo;</p>
+                <p className="mt-2 text-sm text-muted-foreground">&ldquo;{existing.comment || "No comment."}&rdquo;</p>
               ) : (
                 <div className="mt-3 space-y-3">
                   <div>
-                    <p className="mb-1 text-xs font-medium text-slate-600">Rating</p>
+                    <p className="mb-1 text-xs font-medium text-muted-foreground">Rating</p>
                     <div className="flex flex-wrap gap-1">
                       {[1, 2, 3, 4, 5].map((n) => (
                         <button
@@ -111,7 +111,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
                           type="button"
                           onClick={() => setRatings((prev) => ({ ...prev, [pk]: n }))}
                           className={`h-9 w-9 rounded-lg text-sm font-semibold transition ${
-                            (ratings[pk] ?? 0) >= n ? "bg-rose-500 text-white" : "bg-white text-slate-500 ring-1 ring-slate-200"
+                            (ratings[pk] ?? 0) >= n ? "bg-rose-500 text-white" : "bg-card text-muted-foreground ring-1 ring-border"
                           }`}
                           aria-label={`${n} stars`}
                         >
@@ -121,12 +121,12 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
                     </div>
                   </div>
                   <label className="block text-sm">
-                    <span className="text-slate-600">Comment</span>
+                    <span className="text-muted-foreground">Comment</span>
                     <textarea
                       value={comments[pk] ?? ""}
                       onChange={(e) => setComments((prev) => ({ ...prev, [pk]: e.target.value }))}
                       rows={2}
-                      className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+                      className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
                       placeholder="What went well or what to improve?"
                     />
                   </label>

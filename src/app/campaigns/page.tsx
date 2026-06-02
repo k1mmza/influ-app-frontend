@@ -122,12 +122,12 @@ function BrandCampaignsView() {
               <h1 className="text-3xl font-extrabold tracking-tight font-serif">Campaigns</h1>
               <p className="text-primary-foreground/80 font-medium">Manage your active collaborations and marketplace listings.</p>
               <div className="pt-2">
-                <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
+                <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
                   {filtered.length} total campaigns
                 </Badge>
               </div>
             </div>
-            <Button size="lg" asChild className="rounded-xl bg-white text-primary font-bold shadow-xl hover:bg-white/90">
+            <Button size="lg" asChild className="rounded-xl bg-card text-primary font-bold shadow-xl hover:bg-card/90">
               <Link href="/campaigns/create">
                 <Plus className="mr-2 h-5 w-5" />
                 Create Campaign
@@ -206,7 +206,7 @@ function BrandCampaignsView() {
                     <h3 className="font-bold text-foreground leading-tight font-serif">{c.name}</h3>
                   </div>
                   <div className="flex gap-2 pt-1">
-                    <Badge variant="secondary" className="text-[10px] bg-slate-100 border-none font-bold uppercase">{c.visibility}</Badge>
+                    <Badge variant="secondary" className="text-[10px] bg-muted border-none font-bold uppercase">{c.visibility}</Badge>
                     <Badge variant="outline" className="text-[10px] font-bold uppercase">{c.platform}</Badge>
                   </div>
                 </div>
@@ -214,7 +214,7 @@ function BrandCampaignsView() {
                   "font-bold text-[10px] uppercase border-none",
                   c.status === "active" ? "bg-emerald-50 text-emerald-700" :
                   c.status === "pending" ? "bg-amber-50 text-amber-700" :
-                  "bg-slate-100 text-slate-600"
+                  "bg-muted text-muted-foreground"
                 )}>
                   {c.status}
                 </Badge>
@@ -232,7 +232,7 @@ function BrandCampaignsView() {
                   </div>
                 </div>
                 
-                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-slate-50 p-2.5 rounded-xl">
+                <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-muted p-2.5 rounded-xl">
                   <Calendar className="h-3.5 w-3.5" />
                   Ends on {c.deadline}
                 </div>
@@ -247,9 +247,9 @@ function BrandCampaignsView() {
       </div>
 
       {filtered.length === 0 && (
-        <Card className="border-2 border-dashed bg-slate-50/50 py-20 text-center">
+        <Card className="border-2 border-dashed bg-muted/50 py-20 text-center">
           <CardContent>
-            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
               <LayoutGrid className="h-6 w-6 text-muted-foreground" />
             </div>
             <h3 className="mt-4 text-lg font-bold font-serif">No campaigns match</h3>
@@ -303,7 +303,7 @@ function InfluencerDiscoverCampaignsView() {
           <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Campaigns</h1>
           <p className="mt-2 text-primary-foreground/80 font-medium">Find the best-fit collaborations with clear budget visibility.</p>
           <div className="pt-4">
-            <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
+            <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
               {filtered.length} active opportunities
             </Badge>
           </div>
@@ -370,7 +370,7 @@ function InfluencerDiscoverCampaignsView() {
                   <h3 className="font-bold text-foreground leading-tight font-serif">{campaign.name}</h3>
                   <p className="text-xs font-semibold text-primary mt-1">{campaign.brand}</p>
                 </div>
-                <Badge variant="secondary" className="bg-slate-100 border-none font-bold text-[10px] uppercase">
+                <Badge variant="secondary" className="bg-muted border-none font-bold text-[10px] uppercase">
                   {campaign.platform}
                 </Badge>
               </div>

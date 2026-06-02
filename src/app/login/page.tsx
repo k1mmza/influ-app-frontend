@@ -36,7 +36,7 @@ export default function LoginPage() {
 
           <div className="relative z-10 max-w-sm">
             <h2 className="text-4xl font-bold leading-tight tracking-tight font-serif">Master the pulse of the creator economy.</h2>
-            <p className="mt-6 text-lg text-slate-400">
+            <p className="mt-6 text-lg text-muted-foreground">
               "Precision analytics is no longer a luxury; it&apos;s the engine that drives influence into measurable impact."
             </p>
             <div className="mt-10 flex items-center gap-3">
@@ -45,7 +45,7 @@ export default function LoginPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">Sarah Chen</p>
-                <p className="text-xs text-slate-500">Head of Growth, Global Brands Inc.</p>
+                <p className="text-xs text-muted-foreground">Head of Growth, Global Brands Inc.</p>
               </div>
             </div>
           </div>
@@ -53,11 +53,11 @@ export default function LoginPage() {
           <div className="relative z-10 flex gap-10">
             <div>
               <p className="text-2xl font-bold font-serif">98%</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">ROI Accuracy</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">ROI Accuracy</p>
             </div>
             <div>
               <p className="text-2xl font-bold font-serif">2.4M</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">Creators Indexed</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Creators Indexed</p>
             </div>
           </div>
         </aside>

@@ -118,7 +118,7 @@ export default function HomePage() {
         </section>
 
         <LandingAnimate delay={400}>
-          <section className="dark mt-32 relative overflow-hidden rounded-[2.5rem] bg-background px-8 py-16 text-center text-foreground sm:px-12">
+          <section className="mt-32 relative overflow-hidden rounded-[2.5rem] bg-background px-8 py-16 text-center text-foreground sm:px-12">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20" />
             <div className="relative z-10 max-w-3xl mx-auto">
               <h2 className="text-4xl font-medium tracking-tight sm:text-5xl font-serif">Ready to replace the busywork?</h2>
@@ -129,7 +129,7 @@ export default function HomePage() {
                 <Button size="lg" asChild className="h-14 rounded-2xl px-10 text-lg font-bold shadow-xl shadow-primary/40">
                   <Link href="/register">Register Free</Link>
                 </Button>
-                <Button variant="outline" size="lg" asChild className="h-14 rounded-2xl border-border bg-white/5 px-10 text-lg font-bold text-foreground backdrop-blur-sm hover:bg-white/10">
+                <Button variant="outline" size="lg" asChild className="h-14 rounded-2xl border-border bg-card/5 px-10 text-lg font-bold text-foreground backdrop-blur-sm hover:bg-card/10">
                   <Link href="/discover">Preview Discovery</Link>
                 </Button>
               </div>

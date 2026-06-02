@@ -107,8 +107,8 @@ export default function CampaignSharePreviewPage() {
   if (!campaign) {
     return (
       <section className="mx-auto max-w-3xl space-y-4 p-6">
-        <h1 className="text-2xl font-bold text-slate-900 font-serif">Shared list unavailable</h1>
-        <p className="text-slate-600">This link does not match a demo campaign.</p>
+        <h1 className="text-2xl font-bold text-foreground font-serif">Shared list unavailable</h1>
+        <p className="text-muted-foreground">This link does not match a demo campaign.</p>
         <Link href="/campaigns" className="font-semibold text-primary hover:underline">
           Back to campaigns
         </Link>
@@ -120,30 +120,30 @@ export default function CampaignSharePreviewPage() {
     <section className="mx-auto max-w-5xl space-y-6 p-4 pb-16 sm:p-6">
       <header className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/5 to-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Client-facing preview (mock)</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900 font-serif">{campaign.name}</h1>
-        <p className="mt-2 max-w-2xl text-sm text-slate-600">
+        <h1 className="mt-1 text-2xl font-bold text-foreground font-serif">{campaign.name}</h1>
+        <p className="mt-2 max-w-2xl text-sm text-muted-foreground">
           This page simulates what a brand client sees when an agency shares a creator shortlist — inspired by the agency
           and brand personas in{" "}
-          <span className="font-medium text-slate-800">resources/personas.md</span> (Sarah Chen presenting to David
+          <span className="font-medium text-foreground">resources/personas.md</span> (Sarah Chen presenting to David
           Kim). The table is read-only; use the thread below for two-way feedback on the list.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-white px-2.5 py-1 font-medium text-slate-700 shadow-sm">Objective: {campaign.objective}</span>
-          <span className="rounded-full bg-white px-2.5 py-1 font-medium text-slate-700 shadow-sm">Platform focus: {campaign.platform}</span>
-          <span className="rounded-full bg-white px-2.5 py-1 font-medium text-slate-700 shadow-sm">
+          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Objective: {campaign.objective}</span>
+          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Platform focus: {campaign.platform}</span>
+          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">
             Budget: THB {campaign.budget.toLocaleString()}
           </span>
         </div>
       </header>
 
-      <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
-        <div className="border-b border-slate-100 px-4 py-3 sm:px-6">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Influencer shortlist</h2>
-          <p className="text-sm text-slate-500">Primary platform = where the creator has the most followers.</p>
+      <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+        <div className="border-b border-border px-4 py-3 sm:px-6">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Influencer shortlist</h2>
+          <p className="text-sm text-muted-foreground">Primary platform = where the creator has the most followers.</p>
         </div>
         <div className="overflow-x-auto">
           <table className="w-full min-w-[720px] text-left text-sm">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="px-4 py-2 font-medium sm:px-6">#</th>
                 <th className="px-4 py-2 font-medium sm:px-6">Creator</th>
@@ -158,20 +158,20 @@ export default function CampaignSharePreviewPage() {
             </thead>
             <tbody>
               {rows.map((row) => (
-                <tr key={row.name} className="border-t border-slate-100">
-                  <td className="px-4 py-2.5 text-slate-600 sm:px-6">{row.marker}</td>
-                  <td className="px-4 py-2.5 font-medium text-slate-900 sm:px-6">{row.name}</td>
+                <tr key={row.name} className="border-t border-border">
+                  <td className="px-4 py-2.5 text-muted-foreground sm:px-6">{row.marker}</td>
+                  <td className="px-4 py-2.5 font-medium text-foreground sm:px-6">{row.name}</td>
                   <td className="px-4 py-2.5 text-primary sm:px-6">
                     <a href={row.link} className="hover:underline" target="_blank" rel="noreferrer">
                       {row.link}
                     </a>
                   </td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">{row.mainPlatform}</td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">{row.mainFollowers.toLocaleString()}</td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">{row.totalFollowers.toLocaleString()}</td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">{row.category}</td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">{row.engagementRate}%</td>
-                  <td className="px-4 py-2.5 text-slate-700 sm:px-6">THB {row.rate.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">{row.mainPlatform}</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">{row.mainFollowers.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">{row.totalFollowers.toLocaleString()}</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">{row.category}</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">{row.engagementRate}%</td>
+                  <td className="px-4 py-2.5 text-foreground sm:px-6">THB {row.rate.toLocaleString()}</td>
                 </tr>
               ))}
             </tbody>
@@ -179,9 +179,9 @@ export default function CampaignSharePreviewPage() {
         </div>
       </article>
 
-      <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900 font-serif">Comments on this list</h2>
-        <p className="mt-1 text-sm text-slate-600">
+      <article className="rounded-2xl border border-border bg-card p-4 shadow-sm sm:p-6">
+        <h2 className="text-lg font-semibold text-foreground font-serif">Comments on this list</h2>
+        <p className="mt-1 text-sm text-muted-foreground">
           Mock two-way thread: the client (David) can question or approve picks; the agency (Sarah) can respond — all
           stored in the browser for this demo only.
         </p>
@@ -196,26 +196,26 @@ export default function CampaignSharePreviewPage() {
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
                 <div>
-                  <p className="font-semibold text-slate-900">{msg.name}</p>
-                  <p className="text-xs text-slate-600">{msg.title}</p>
+                  <p className="font-semibold text-foreground">{msg.name}</p>
+                  <p className="text-xs text-muted-foreground">{msg.title}</p>
                 </div>
-                <span className="text-xs text-slate-500">{msg.sentAtLabel}</span>
+                <span className="text-xs text-muted-foreground">{msg.sentAtLabel}</span>
               </div>
-              <p className="mt-2 text-sm text-slate-800 whitespace-pre-wrap">{msg.text}</p>
+              <p className="mt-2 text-sm text-foreground whitespace-pre-wrap">{msg.text}</p>
             </li>
           ))}
         </ul>
 
-        <div className="mt-8 grid gap-6 border-t border-slate-100 pt-6 md:grid-cols-2">
+        <div className="mt-8 grid gap-6 border-t border-border pt-6 md:grid-cols-2">
           <div>
             <label className="text-sm font-semibold text-emerald-900">David Kim (client)</label>
-            <p className="text-xs text-slate-500">Share concerns, budget notes, or who you want to book.</p>
+            <p className="text-xs text-muted-foreground">Share concerns, budget notes, or who you want to book.</p>
             <textarea
               value={clientDraft}
               onChange={(e) => setClientDraft(e.target.value)}
               rows={4}
               placeholder="e.g. Can we prioritize creators with stronger TikTok saves?"
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              className="mt-2 w-full rounded-xl border border-border px-3 py-2 text-sm"
             />
             <button
               type="button"
@@ -227,13 +227,13 @@ export default function CampaignSharePreviewPage() {
           </div>
           <div>
             <label className="text-sm font-semibold text-primary-foreground">Sarah Chen (agency)</label>
-            <p className="text-xs text-slate-500">Clarify strategy, swap names, or confirm next steps.</p>
+            <p className="text-xs text-muted-foreground">Clarify strategy, swap names, or confirm next steps.</p>
             <textarea
               value={agencyDraft}
               onChange={(e) => setAgencyDraft(e.target.value)}
               rows={4}
               placeholder="e.g. Swapping Ethan for Aria — same budget band, stronger lifestyle fit."
-              className="mt-2 w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
+              className="mt-2 w-full rounded-xl border border-border px-3 py-2 text-sm"
             />
             <button
               type="button"
@@ -246,7 +246,7 @@ export default function CampaignSharePreviewPage() {
         </div>
       </article>
 
-      <p className="text-center text-xs text-slate-500">
+      <p className="text-center text-xs text-muted-foreground">
         This is a static UI mock. In production, comments would be saved per share link and visible to both sides.
       </p>
     </section>

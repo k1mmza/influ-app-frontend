@@ -33,7 +33,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   return (
-    <main className="flex min-h-screen flex-col bg-slate-50/50 px-4 py-6 lg:px-8">
+    <main className="flex min-h-screen flex-col bg-muted/50 px-4 py-6 lg:px-8">
       <div className="mx-auto grid w-full max-w-7xl flex-1 gap-8 lg:grid-cols-[240px_1fr]">
         <aside className="sticky top-6 self-start">
           <Navigation />

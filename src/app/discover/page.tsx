@@ -590,7 +590,7 @@ function DiscoverPageContent() {
               <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Influencers</h1>
               <p className="mt-2 text-primary-foreground/80 font-medium">Find campaign-fit creators with smart filters and audience signals.</p>
             </div>
-            <Badge variant="outline" className="w-fit border-white/30 bg-white/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
+            <Badge variant="outline" className="w-fit border-white/30 bg-card/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
               {filtered.length} matches found
             </Badge>
           </div>
@@ -731,7 +731,7 @@ function DiscoverPageContent() {
                         max={100}
                         value={minQualityScore}
                         onChange={(e) => updateQualityScore(Number(e.target.value))}
-                        className="w-full accent-primary h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer"
+                        className="w-full accent-primary h-1 bg-muted rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                   </div>
@@ -766,7 +766,7 @@ function DiscoverPageContent() {
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-2">Active:</span>
             {activeChips.map((chip) => (
-              <Badge key={chip} variant="secondary" className="rounded-full bg-slate-100 text-slate-700 font-semibold px-3 py-1 border-none">
+              <Badge key={chip} variant="secondary" className="rounded-full bg-muted text-foreground font-semibold px-3 py-1 border-none">
                 {chip}
               </Badge>
             ))}
@@ -790,9 +790,9 @@ function DiscoverPageContent() {
           ))}
           
           {discoverCards.length === 0 && (
-            <Card className="col-span-full border-2 border-dashed bg-slate-50/50 py-20 text-center">
+            <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
               <CardContent>
-                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                   <RotateCcw className="h-6 w-6 text-muted-foreground" />
                 </div>
                 <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>

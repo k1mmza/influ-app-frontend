@@ -78,7 +78,7 @@ export function BrandDashboard() {
                 </Badge>
               </div>
             </div>
-            <div className="mt-8 h-2 w-full rounded-full bg-slate-100 overflow-hidden flex">
+            <div className="mt-8 h-2 w-full rounded-full bg-muted overflow-hidden flex">
               <div className="h-full bg-primary w-[65%]" />
               <div className="h-full bg-secondary w-[25%]" />
               <div className="h-full bg-slate-300 w-[10%]" />
@@ -101,7 +101,7 @@ export function BrandDashboard() {
           </CardHeader>
           <CardContent className="space-y-3">
             {active.map((c) => (
-              <div key={c.id} className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 transition-all hover:bg-slate-50">
+              <div key={c.id} className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted">
                 <div className="flex items-center gap-3">
                   <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
                   <span className="font-bold text-sm text-foreground">{c.name}</span>

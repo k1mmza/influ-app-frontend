@@ -79,7 +79,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
       <div className="flex h-full flex-col">
         <header className="flex items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-4">
-            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-slate-50" />
+            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-muted" />
             <div>
               <h2 className="text-xl font-bold tracking-tight font-serif">{influencer.name}</h2>
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
@@ -88,7 +88,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               </div>
             </div>
           </div>
-          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-slate-100">
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted">
             <X className="h-5 w-5 text-muted-foreground" />
           </Button>
         </header>
@@ -147,13 +147,13 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               Performance Metrics
             </h3>
             <div className="grid grid-cols-2 gap-4">
-              <Card className="border-none bg-slate-50/80 shadow-none">
+              <Card className="border-none bg-muted/80 shadow-none">
                 <CardContent className="p-4 space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Avg Views</p>
                   <p className="text-base font-bold">{meta.averageViews.toLocaleString()}</p>
                 </CardContent>
               </Card>
-              <Card className="border-none bg-slate-50/80 shadow-none">
+              <Card className="border-none bg-muted/80 shadow-none">
                 <CardContent className="p-4 space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Growth Rate</p>
                   <p className="text-base font-bold text-emerald-600">+{meta.growthRate}%</p>
@@ -168,7 +168,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               <Users className="h-4 w-4" />
               Audience Snapshot
             </h3>
-            <Card className="border-none bg-slate-50/80 shadow-none">
+            <Card className="border-none bg-muted/80 shadow-none">
               <CardContent className="p-5 space-y-4">
                 <div className="flex items-center justify-between text-xs font-medium">
                   <span className="text-muted-foreground">Gender Mix</span>
@@ -185,7 +185,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 <div className="pt-2">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
                   <div className="flex flex-wrap gap-2">
-                    {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-white text-slate-700">{c}</Badge>)}
+                    {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
                   </div>
                 </div>
               </CardContent>

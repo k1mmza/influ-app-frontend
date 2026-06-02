@@ -46,7 +46,7 @@ export default function RegisterPage() {
 
           <div className="relative z-10 max-w-sm">
             <h2 className="text-4xl font-bold leading-tight tracking-tight font-serif">Build your creator growth engine.</h2>
-            <p className="mt-6 text-lg text-slate-400">
+            <p className="mt-6 text-lg text-muted-foreground">
               "Launch faster, match smarter, and scale your partnerships with trusted creator insights."
             </p>
             <div className="mt-10 flex items-center gap-3">
@@ -55,7 +55,7 @@ export default function RegisterPage() {
               </div>
               <div>
                 <p className="text-sm font-semibold">Alya Morgan</p>
-                <p className="text-xs text-slate-500">Partnership Lead, Nexa Commerce</p>
+                <p className="text-xs text-muted-foreground">Partnership Lead, Nexa Commerce</p>
               </div>
             </div>
           </div>
@@ -63,11 +63,11 @@ export default function RegisterPage() {
           <div className="relative z-10 flex gap-10">
             <div>
               <p className="text-2xl font-bold font-serif">15K+</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">Active Campaigns</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Active Campaigns</p>
             </div>
             <div>
               <p className="text-2xl font-bold font-serif">2.4M</p>
-              <p className="text-xs text-slate-500 uppercase tracking-wider">Creators Indexed</p>
+              <p className="text-xs text-muted-foreground uppercase tracking-wider">Creators Indexed</p>
             </div>
           </div>
         </aside>

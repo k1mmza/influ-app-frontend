@@ -33,7 +33,7 @@ export function WorkStatusIndicator({ phase, className = "" }: { phase: WorkPhas
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`} title={workPhaseLabel(phase)}>
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${phaseDotClass[phase]}`} aria-hidden />
-      <span className="text-[11px] font-medium text-slate-500">{workPhaseLabel(phase)}</span>
+      <span className="text-[11px] font-medium text-muted-foreground">{workPhaseLabel(phase)}</span>
     </span>
   );
 }
@@ -96,10 +96,10 @@ function Modal({
   return (
     <div className={`fixed inset-0 flex items-center justify-center p-4 ${zClass}`}>
       <button type="button" className="absolute inset-0 bg-slate-900/40" aria-label="Close dialog" onClick={onClose} />
-      <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-white p-5 shadow-xl">
-        <div className="flex items-start justify-between gap-3 border-b border-slate-100 pb-3">
-          <h3 className="text-lg font-semibold text-slate-900 font-serif">{title}</h3>
-          <button type="button" onClick={onClose} className="rounded-lg p-1 text-slate-400 hover:bg-slate-100 hover:text-slate-700">
+      <div className="relative z-10 max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-2xl bg-card p-5 shadow-xl">
+        <div className="flex items-start justify-between gap-3 border-b border-border pb-3">
+          <h3 className="text-lg font-semibold text-foreground font-serif">{title}</h3>
+          <button type="button" onClick={onClose} className="rounded-lg p-1 text-muted-foreground hover:bg-muted hover:text-foreground">
             ✕
           </button>
         </div>
@@ -220,11 +220,11 @@ export function ProcessOfWorkPanel({
                 className={`flex w-full flex-col gap-0.5 rounded-xl border px-3 py-2 text-left text-sm transition ${
                   done
                     ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100"
-                    : "border-slate-200 bg-slate-50/80 hover:border-primary/20 hover:bg-white"
+                    : "border-border bg-muted/80 hover:border-primary/20 hover:bg-card"
                 }`}
               >
-                <span className={`text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : "text-slate-800"}`}>{s.label}</span>
-                <span className={`text-[10px] leading-tight ${done ? "text-emerald-700" : "text-slate-500"}`}>{done ? "Done" : s.hint}</span>
+                <span className={`text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : "text-foreground"}`}>{s.label}</span>
+                <span className={`text-[10px] leading-tight ${done ? "text-emerald-700" : "text-muted-foreground"}`}>{done ? "Done" : s.hint}</span>
               </button>
             </li>
           );
@@ -232,12 +232,12 @@ export function ProcessOfWorkPanel({
       </ul>
 
       <Modal open={active === "contact"} title="Agreement/Contract" onClose={close}>
-        <p className="text-sm text-slate-600">
+        <p className="text-sm text-muted-foreground">
           {variant === "influencer"
             ? "Upload a photo or scan of your signed agreement for online signing. You can download the template below."
             : "Upload contact or agreement documents to share with the creator. They can download copies for their records."}
         </p>
-        <label className="mt-4 block text-xs font-semibold text-slate-700">Upload image</label>
+        <label className="mt-4 block text-xs font-semibold text-foreground">Upload image</label>
         <input type="file" accept="image/*" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
         <div className="mt-4 flex flex-wrap gap-2">
           <button
@@ -253,7 +253,7 @@ export function ProcessOfWorkPanel({
       <Modal open={active === "brief"} title="Brief" onClose={close}>
         <div className="space-y-4">
           <div className="rounded-xl border border-primary/10 bg-gradient-to-r from-primary/5 to-sky-50 p-4">
-            <label htmlFor="brief-campaign-select" className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
+            <label htmlFor="brief-campaign-select" className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
               Select campaign
             </label>
             <div className="mt-2 flex flex-wrap items-center gap-2">
@@ -261,7 +261,7 @@ export function ProcessOfWorkPanel({
                 id="brief-campaign-select"
                 value={selectedBriefCampaignId}
                 onChange={(event) => setSelectedBriefCampaignId(event.target.value)}
-                className="min-w-[220px] flex-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                className="min-w-[220px] flex-1 rounded-lg border border-primary/20 bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
               >
                 <option value="">No campaign selected</option>
                 {briefCampaignSeed.map((campaign) => (
@@ -273,18 +273,18 @@ export function ProcessOfWorkPanel({
               <button
                 type="button"
                 onClick={() => setSelectedBriefCampaignId("")}
-                className="rounded-lg border border-slate-300 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-100"
+                className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted"
               >
                 Cancel campaign
               </button>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-white p-4">
-            <div className="flex items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div className="rounded-xl border border-border bg-card p-4">
+            <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Brief overview</p>
-                <h4 className="text-base font-semibold text-slate-900">{selectedBriefCampaign?.name ?? "No campaign selected"}</h4>
+                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief overview</p>
+                <h4 className="text-base font-semibold text-foreground">{selectedBriefCampaign?.name ?? "No campaign selected"}</h4>
               </div>
               {selectedBriefCampaign ? (
                 <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/90">Requirement-linked</span>
@@ -292,38 +292,38 @@ export function ProcessOfWorkPanel({
             </div>
 
             <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Objective:</span> {selectedBriefCampaign?.objective ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Objective:</span> {selectedBriefCampaign?.objective ?? "-"}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Target audience:</span> {selectedBriefCampaign?.targetAudience ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Target audience:</span> {selectedBriefCampaign?.targetAudience ?? "-"}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Content angle:</span> {selectedBriefCampaign?.contentAngle ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Content angle:</span> {selectedBriefCampaign?.contentAngle ?? "-"}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Brand tone:</span> {selectedBriefCampaign?.brandTone ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Brand tone:</span> {selectedBriefCampaign?.brandTone ?? "-"}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Budget:</span> {selectedBriefCampaign?.budget ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Budget:</span> {selectedBriefCampaign?.budget ?? "-"}
               </p>
-              <p className="text-slate-600">
-                <span className="font-semibold text-slate-800">Timeline:</span> {selectedBriefCampaign?.timeline ?? "-"}
+              <p className="text-muted-foreground">
+                <span className="font-semibold text-foreground">Timeline:</span> {selectedBriefCampaign?.timeline ?? "-"}
               </p>
-              <p className="text-slate-600 sm:col-span-2">
-                <span className="font-semibold text-slate-800">KPI:</span> {selectedBriefCampaign?.kpi ?? "-"}
+              <p className="text-muted-foreground sm:col-span-2">
+                <span className="font-semibold text-foreground">KPI:</span> {selectedBriefCampaign?.kpi ?? "-"}
               </p>
             </div>
           </div>
 
-          <div className="rounded-xl border border-slate-200 bg-slate-50 p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Requirement details</p>
-            <div className="mt-3 space-y-2 text-sm text-slate-600">
+          <div className="rounded-xl border border-border bg-muted p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Requirement details</p>
+            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
               <p>
-                <span className="font-semibold text-slate-800">Product info:</span> {selectedBriefCampaign?.productInfo ?? "-"}
+                <span className="font-semibold text-foreground">Product info:</span> {selectedBriefCampaign?.productInfo ?? "-"}
               </p>
               <p>
-                <span className="font-semibold text-slate-800">Product link:</span>{" "}
+                <span className="font-semibold text-foreground">Product link:</span>{" "}
                 {selectedBriefCampaign?.productLink ? (
                   <a
                     href={selectedBriefCampaign.productLink}
@@ -338,28 +338,28 @@ export function ProcessOfWorkPanel({
                 )}
               </p>
               <p>
-                <span className="font-semibold text-slate-800">CTA:</span> {selectedBriefCampaign?.ctaMessage ?? "-"}
+                <span className="font-semibold text-foreground">CTA:</span> {selectedBriefCampaign?.ctaMessage ?? "-"}
               </p>
               <p>
-                <span className="font-semibold text-slate-800">Key messages:</span> {selectedBriefCampaign?.keyMessages ?? "-"}
+                <span className="font-semibold text-foreground">Key messages:</span> {selectedBriefCampaign?.keyMessages ?? "-"}
               </p>
               <p>
-                <span className="font-semibold text-slate-800">Do / Don&apos;t:</span> {selectedBriefCampaign?.doDont ?? "-"}
+                <span className="font-semibold text-foreground">Do / Don&apos;t:</span> {selectedBriefCampaign?.doDont ?? "-"}
               </p>
             </div>
           </div>
         </div>
         {variant === "brand" ? (
           <>
-            <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Upload brief (PDF / doc)</label>
+            <div className="mt-4 rounded-xl border border-border bg-card p-4">
+              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Upload brief (PDF / doc)</label>
               <input type="file" className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
             </div>
           </>
         ) : null}
         <button
           type="button"
-          className="mt-4 rounded-lg border border-slate-200 bg-white px-3 py-2 text-xs font-semibold text-slate-700 transition hover:bg-slate-50"
+          className="mt-4 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted"
           onClick={() => downloadBlob("campaign-brief.txt", "Full brief export (demo).")}
         >
           Download brief
@@ -367,9 +367,9 @@ export function ProcessOfWorkPanel({
       </Modal>
 
       <Modal open={active === "draft"} title="Draft management" onClose={close}>
-        <div className="overflow-x-auto rounded-lg border border-slate-200">
+        <div className="overflow-x-auto rounded-lg border border-border">
           <table className="w-full min-w-[320px] text-left text-xs">
-            <thead className="bg-slate-50 text-slate-600">
+            <thead className="bg-muted text-muted-foreground">
               <tr>
                 <th className="px-2 py-2 font-semibold">Name</th>
                 <th className="px-2 py-2 font-semibold">Ver.</th>
@@ -380,11 +380,11 @@ export function ProcessOfWorkPanel({
             </thead>
             <tbody>
               {drafts.map((row) => (
-                <tr key={row.id} className="border-t border-slate-100">
-                  <td className="px-2 py-2 text-slate-800">{row.name}</td>
-                  <td className="px-2 py-2 text-slate-600">{row.version}</td>
-                  <td className="px-2 py-2 text-slate-600">{row.status}</td>
-                  <td className="px-2 py-2 text-slate-500">{row.updated}</td>
+                <tr key={row.id} className="border-t border-border">
+                  <td className="px-2 py-2 text-foreground">{row.name}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{row.version}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{row.status}</td>
+                  <td className="px-2 py-2 text-muted-foreground">{row.updated}</td>
                   <td className="px-2 py-2">
                     <button type="button" className="text-primary hover:underline" onClick={() => setSelectedDraft(row)}>
                       View
@@ -401,7 +401,7 @@ export function ProcessOfWorkPanel({
               value={newDraftName}
               onChange={(e) => setNewDraftName(e.target.value)}
               placeholder="New draft name"
-              className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+              className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1.5 text-xs"
             />
             <button type="button" onClick={addDraft} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white">
               Add draft
@@ -417,20 +417,20 @@ export function ProcessOfWorkPanel({
         zClass="z-[60]"
       >
         {selectedDraft ? (
-          <div className="space-y-3 text-sm text-slate-600">
+          <div className="space-y-3 text-sm text-muted-foreground">
             <p>
-              <span className="font-semibold text-slate-800">Version:</span> {selectedDraft.version}
+              <span className="font-semibold text-foreground">Version:</span> {selectedDraft.version}
             </p>
             <p>
-              <span className="font-semibold text-slate-800">Status:</span> {selectedDraft.status}
+              <span className="font-semibold text-foreground">Status:</span> {selectedDraft.status}
             </p>
             <p>
-              <span className="font-semibold text-slate-800">Notes:</span> {selectedDraft.notes}
+              <span className="font-semibold text-foreground">Notes:</span> {selectedDraft.notes}
             </p>
             {variant === "brand" ? (
-              <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
-                <p className="text-xs font-semibold text-slate-800">Comments</p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-slate-600">
+              <div className="rounded-lg border border-border bg-muted p-3">
+                <p className="text-xs font-semibold text-foreground">Comments</p>
+                <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-muted-foreground">
                   {(brandComments[selectedDraft.id] ?? []).map((c, i) => (
                     <li key={i}>{c}</li>
                   ))}
@@ -440,7 +440,7 @@ export function ProcessOfWorkPanel({
                     value={commentInput}
                     onChange={(e) => setCommentInput(e.target.value)}
                     placeholder="Add comment…"
-                    className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
+                    className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1.5 text-xs"
                   />
                   <button
                     type="button"
@@ -459,12 +459,12 @@ export function ProcessOfWorkPanel({
       <Modal open={active === "work"} title="Published content" onClose={close}>
         {variant === "influencer" ? (
           <>
-            <p className="text-sm text-slate-600">Paste the public URL to your published post or video for tracking.</p>
-            <label className="mt-3 block text-xs font-semibold text-slate-700">Work link</label>
+            <p className="text-sm text-muted-foreground">Paste the public URL to your published post or video for tracking.</p>
+            <label className="mt-3 block text-xs font-semibold text-foreground">Work link</label>
             <input
               value={workLink}
               onChange={(e) => setWorkLink(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
+              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
             />
             <button type="button" className="mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white" onClick={close}>
               Save link
@@ -472,7 +472,7 @@ export function ProcessOfWorkPanel({
           </>
         ) : (
           <>
-            <p className="text-sm text-slate-600">Content submitted by the influencer.</p>
+            <p className="text-sm text-muted-foreground">Content submitted by the influencer.</p>
             <a href={workLink} target="_blank" rel="noreferrer" className="mt-3 inline-block break-all text-sm font-semibold text-primary hover:underline">
               {workLink}
             </a>
@@ -481,20 +481,20 @@ export function ProcessOfWorkPanel({
       </Modal>
 
       <Modal open={active === "payment"} title="Payment" onClose={close}>
-        <div className="space-y-2 text-sm text-slate-600">
+        <div className="space-y-2 text-sm text-muted-foreground">
           <p>
-            <span className="font-semibold text-slate-800">Influencer payout:</span> THB 9,000 (fixed)
+            <span className="font-semibold text-foreground">Influencer payout:</span> THB 9,000 (fixed)
           </p>
           <p>
-            <span className="font-semibold text-slate-800">Status:</span> Pending transfer after post goes live
+            <span className="font-semibold text-foreground">Status:</span> Pending transfer after post goes live
           </p>
           <p>
-            <span className="font-semibold text-slate-800">Method:</span> Bank transfer (demo)
+            <span className="font-semibold text-foreground">Method:</span> Bank transfer (demo)
           </p>
         </div>
-        <div className="mt-4 rounded-lg border border-slate-200 bg-slate-50 p-3">
-          <p className="text-xs font-semibold text-slate-800">Proof of Payment from client/ agency</p>
-          <p className="mt-1 text-xs text-slate-600">transfer_receipt_demo.png (uploaded 2 May 2026)</p>
+        <div className="mt-4 rounded-lg border border-border bg-muted p-3">
+          <p className="text-xs font-semibold text-foreground">Proof of Payment from client/ agency</p>
+          <p className="mt-1 text-xs text-muted-foreground">transfer_receipt_demo.png (uploaded 2 May 2026)</p>
           <button
             type="button"
             className="mt-2 text-xs font-semibold text-primary hover:underline"
@@ -505,7 +505,7 @@ export function ProcessOfWorkPanel({
         </div>
         {variant === "brand" ? (
           <>
-            <label className="mt-4 block text-xs font-semibold text-slate-700">Upload payment proof (image / PDF)</label>
+            <label className="mt-4 block text-xs font-semibold text-foreground">Upload payment proof (image / PDF)</label>
             <input type="file" accept="image/*,.pdf" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
           </>
         ) : null}

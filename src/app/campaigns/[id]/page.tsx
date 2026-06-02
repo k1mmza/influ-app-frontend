@@ -114,11 +114,11 @@ export default function CampaignDetailPage() {
     const displayStatus = isCampaignFinished ? "completed" : brandCampaign.status;
     return (
       <section className="space-y-6">
-        <article className="rounded-2xl bg-white p-6 shadow-sm">
+        <article className="rounded-2xl bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 font-serif">{brandCampaign.name}</h1>
-              <p className="mt-1 text-sm text-slate-600">Influencer view — same job as brand/agency list (linked IDs).</p>
+              <h1 className="text-2xl font-bold text-foreground font-serif">{brandCampaign.name}</h1>
+              <p className="mt-1 text-sm text-muted-foreground">Influencer view — same job as brand/agency list (linked IDs).</p>
             </div>
             <span
               className={`rounded-full px-2.5 py-1 text-xs font-semibold ${
@@ -126,13 +126,13 @@ export default function CampaignDetailPage() {
                   ? "bg-emerald-100 text-emerald-800"
                   : displayStatus === "pending"
                     ? "bg-amber-100 text-amber-800"
-                    : "bg-slate-100 text-slate-600"
+                    : "bg-muted text-muted-foreground"
               }`}
             >
               {displayStatus}
             </span>
           </div>
-          <div className="mt-4 grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
+          <div className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
             <p>Objective: {brandCampaign.objective}</p>
             <p>Platform: {brandCampaign.platform}</p>
             <p>Budget: THB {brandCampaign.budget.toLocaleString()}</p>
@@ -165,7 +165,7 @@ export default function CampaignDetailPage() {
           />
         ) : null}
 
-        <Link href="/campaigns" className="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+        <Link href="/campaigns" className="inline-flex rounded-lg bg-muted px-3 py-2 text-sm font-semibold text-foreground">
           Back to campaigns
         </Link>
       </section>
@@ -175,8 +175,8 @@ export default function CampaignDetailPage() {
   if (canManageCampaign && !brandCampaign) {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900 font-serif">Campaign not found</h1>
-        <p className="text-slate-600">This ID is not in your brand campaigns list.</p>
+        <h1 className="text-2xl font-bold text-foreground font-serif">Campaign not found</h1>
+        <p className="text-muted-foreground">This ID is not in your brand campaigns list.</p>
         <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
         </Link>
@@ -190,11 +190,11 @@ export default function CampaignDetailPage() {
 
     return (
       <section className="space-y-6">
-        <article className="rounded-2xl bg-white p-6 shadow-sm">
+        <article className="rounded-2xl bg-card p-6 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
-              <h1 className="text-2xl font-bold text-slate-900 font-serif">Campaign management</h1>
-              <p className="mt-1 text-sm text-slate-600">{brandCampaign.name}</p>
+              <h1 className="text-2xl font-bold text-foreground font-serif">Campaign management</h1>
+              <p className="mt-1 text-sm text-muted-foreground">{brandCampaign.name}</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <span
@@ -203,17 +203,17 @@ export default function CampaignDetailPage() {
                     ? "bg-emerald-100 text-emerald-800"
                     : displayStatus === "pending"
                       ? "bg-amber-100 text-amber-800"
-                      : "bg-slate-100 text-slate-600"
+                      : "bg-muted text-muted-foreground"
                 }`}
               >
                 {displayStatus}
               </span>
-              <span className="rounded-full bg-slate-100 px-2.5 py-1 text-xs font-semibold text-slate-700">
+              <span className="rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-foreground">
                 {brandCampaign.visibility === "public" ? "Public" : "Private"}
               </span>
             </div>
           </div>
-          <div className="mt-4 grid gap-1 text-sm text-slate-600 sm:grid-cols-2">
+          <div className="mt-4 grid gap-1 text-sm text-muted-foreground sm:grid-cols-2">
             <p>Objective: {brandCampaign.objective}</p>
             <p>Platform: {brandCampaign.platform}</p>
             <p>Budget: THB {brandCampaign.budget.toLocaleString()}</p>
@@ -243,23 +243,23 @@ export default function CampaignDetailPage() {
         </article>
 
         <div className="grid gap-4 md:grid-cols-2">
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Influencers &amp; content</h2>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Influencers &amp; content</h2>
             {rows.length === 0 ? (
-              <p className="mt-2 text-sm text-slate-600">No submissions yet. Use Discover to invite creators for private campaigns.</p>
+              <p className="mt-2 text-sm text-muted-foreground">No submissions yet. Use Discover to invite creators for private campaigns.</p>
             ) : (
-              <ul className="mt-2 space-y-2 text-sm text-slate-600">
+              <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
                 {rows.map((r) => (
-                  <li key={r.id} className="rounded-lg border border-slate-100 px-3 py-2">
+                  <li key={r.id} className="rounded-lg border border-border px-3 py-2">
                     {r.influencerName} — {r.contentLabel}{" "}
-                    <span className="text-slate-400">({r.contentType})</span>
+                    <span className="text-muted-foreground">({r.contentType})</span>
                   </li>
                 ))}
               </ul>
             )}
           </article>
-          <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900 font-serif">Actions</h2>
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Actions</h2>
             <div className="mt-3 flex flex-wrap gap-2">
               <Link
                 href="/discover"
@@ -269,13 +269,13 @@ export default function CampaignDetailPage() {
               </Link>
               <Link
                 href="/messages"
-                className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="rounded-lg bg-muted px-3 py-1.5 text-sm font-semibold text-foreground"
               >
                 Open messages
               </Link>
               <Link
                 href="/tracking"
-                className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="rounded-lg bg-muted px-3 py-1.5 text-sm font-semibold text-foreground"
               >
                 Tracking
               </Link>
@@ -292,11 +292,11 @@ export default function CampaignDetailPage() {
           />
         ) : null}
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900 font-serif">Share influencer list</h2>
-              <p className="mt-1 text-sm text-slate-600">
+              <h2 className="text-lg font-semibold text-foreground font-serif">Share influencer list</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
                 Share a read-only list with your client (mock: Sarah Chen → David Kim). Open preview to see the same view
                 they get, including comments.
               </p>
@@ -313,7 +313,7 @@ export default function CampaignDetailPage() {
               <button
                 type="button"
                 onClick={copyShareLink}
-                className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700"
+                className="rounded-lg bg-muted px-3 py-1.5 text-sm font-semibold text-foreground"
               >
                 Copy share link
               </button>
@@ -329,7 +329,7 @@ export default function CampaignDetailPage() {
           {shareMessage && !isCampaignFinished ? <p className="mt-3 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
           <div className="mt-3 overflow-x-auto">
             <table className="w-full min-w-[900px] text-left text-sm">
-              <thead className="bg-slate-50 text-slate-600">
+              <thead className="bg-muted text-muted-foreground">
                 <tr>
                   <th className="px-4 py-2 font-medium">Marker</th>
                   <th className="px-4 py-2 font-medium">KOL name</th>
@@ -344,16 +344,16 @@ export default function CampaignDetailPage() {
               </thead>
               <tbody>
                 {influencerRows.map((row) => (
-                  <tr key={row.kolName} className="border-t border-slate-100">
-                    <td className="px-4 py-2 text-slate-700">{row.marker}</td>
-                    <td className="px-4 py-2 font-medium text-slate-900">{row.kolName}</td>
+                  <tr key={row.kolName} className="border-t border-border">
+                    <td className="px-4 py-2 text-foreground">{row.marker}</td>
+                    <td className="px-4 py-2 font-medium text-foreground">{row.kolName}</td>
                     <td className="px-4 py-2 text-primary">{row.socialMediaLink}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.platform}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.platformFollowers.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.category}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.estimateView.toLocaleString()}</td>
-                    <td className="px-4 py-2 text-slate-700">{row.engagementRate}%</td>
-                    <td className="px-4 py-2 text-slate-700">THB {row.kolRate.toLocaleString()}</td>
+                    <td className="px-4 py-2 text-foreground">{row.platform}</td>
+                    <td className="px-4 py-2 text-foreground">{row.platformFollowers.toLocaleString()}</td>
+                    <td className="px-4 py-2 text-foreground">{row.category}</td>
+                    <td className="px-4 py-2 text-foreground">{row.estimateView.toLocaleString()}</td>
+                    <td className="px-4 py-2 text-foreground">{row.engagementRate}%</td>
+                    <td className="px-4 py-2 text-foreground">THB {row.kolRate.toLocaleString()}</td>
                   </tr>
                 ))}
               </tbody>
@@ -361,7 +361,7 @@ export default function CampaignDetailPage() {
           </div>
         </article>
 
-        <Link href="/campaigns" className="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+        <Link href="/campaigns" className="inline-flex rounded-lg bg-muted px-3 py-2 text-sm font-semibold text-foreground">
           Back to campaigns
         </Link>
       </section>
@@ -370,18 +370,18 @@ export default function CampaignDetailPage() {
 
   return (
     <section className="space-y-6">
-      <article className="rounded-2xl bg-white p-6 shadow-sm">
+      <article className="rounded-2xl bg-card p-6 shadow-sm">
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div>
-            <h1 className="text-2xl font-bold text-slate-900 font-serif">Campaign Detail</h1>
-            <p className="mt-1 text-sm text-slate-600">Summer Skincare Awareness Campaign</p>
+            <h1 className="text-2xl font-bold text-foreground font-serif">Campaign Detail</h1>
+            <p className="mt-1 text-sm text-muted-foreground">Summer Skincare Awareness Campaign</p>
           </div>
           <div className="flex gap-2">
             <button className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white">Apply Now</button>
-            <button className="rounded-lg bg-slate-100 px-3 py-1.5 text-sm font-semibold text-slate-700">Save</button>
+            <button className="rounded-lg bg-muted px-3 py-1.5 text-sm font-semibold text-foreground">Save</button>
           </div>
         </div>
-        <div className="mt-4 grid gap-1 text-sm text-slate-600">
+        <div className="mt-4 grid gap-1 text-sm text-muted-foreground">
           <p>Brand: GlowLab</p>
           <p>Platform: TikTok / Instagram</p>
           <p className="text-base font-semibold text-emerald-600">Budget: THB 8,000 - THB 10,000</p>
@@ -390,9 +390,9 @@ export default function CampaignDetailPage() {
       </article>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Quick Stats</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Quick Stats</h2>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             <li>Follower requirement: 10,000+</li>
             <li>Engagement requirement: 3%+</li>
             <li>Content type: Video / Story</li>
@@ -400,9 +400,9 @@ export default function CampaignDetailPage() {
           </ul>
         </article>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Timeline</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Timeline</h2>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             <li>Apply deadline: 20 May 2026</li>
             <li>Submission date: 28 May 2026</li>
             <li>Review date: 30 May 2026</li>
@@ -411,19 +411,19 @@ export default function CampaignDetailPage() {
         </article>
       </div>
 
-      <article className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 font-serif">Campaign Brief</h2>
+      <article className="rounded-2xl bg-card p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground font-serif">Campaign Brief</h2>
         <div className="mt-3 grid gap-4 md:grid-cols-3">
           <div>
-            <h3 className="font-semibold text-slate-800 font-serif">Overview</h3>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+            <h3 className="font-semibold text-foreground font-serif">Overview</h3>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>Goal: Brand awareness</li>
               <li>Brand: Dermatologist-tested skincare</li>
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-800 font-serif">Requirements</h3>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+            <h3 className="font-semibold text-foreground font-serif">Requirements</h3>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>1 short video + 3 stories</li>
               <li>Real usage demonstration</li>
               <li>Key message: gentle for daily use</li>
@@ -431,8 +431,8 @@ export default function CampaignDetailPage() {
             </ul>
           </div>
           <div>
-            <h3 className="font-semibold text-slate-800 font-serif">Deliverables</h3>
-            <ul className="mt-2 space-y-1 text-sm text-slate-600">
+            <h3 className="font-semibold text-foreground font-serif">Deliverables</h3>
+            <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
               <li>1 TikTok video</li>
               <li>3 IG stories</li>
             </ul>
@@ -441,18 +441,18 @@ export default function CampaignDetailPage() {
       </article>
 
       <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Payment Details</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Payment Details</h2>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             <li>Budget: Range based on experience</li>
             <li>Payment type: Per post / Package</li>
             <li>Method: Bank transfer</li>
           </ul>
         </article>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900 font-serif">Brand Info</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <h2 className="text-lg font-semibold text-foreground font-serif">Brand Info</h2>
+          <ul className="mt-2 space-y-1 text-sm text-muted-foreground">
             <li>GlowLab official profile</li>
             <li>Past campaigns available on request</li>
           </ul>
@@ -460,12 +460,12 @@ export default function CampaignDetailPage() {
         </article>
       </div>
 
-      <article className="rounded-2xl bg-white p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900 font-serif">Similar Campaigns</h2>
-        <p className="mt-2 text-sm text-slate-600">Suggested jobs: Beauty routine challenge, skincare review bundle.</p>
+      <article className="rounded-2xl bg-card p-5 shadow-sm">
+        <h2 className="text-lg font-semibold text-foreground font-serif">Similar Campaigns</h2>
+        <p className="mt-2 text-sm text-muted-foreground">Suggested jobs: Beauty routine challenge, skincare review bundle.</p>
       </article>
 
-      <Link href="/campaigns" className="inline-flex rounded-lg bg-slate-100 px-3 py-2 text-sm font-semibold text-slate-700">
+      <Link href="/campaigns" className="inline-flex rounded-lg bg-muted px-3 py-2 text-sm font-semibold text-foreground">
         Back to Campaigns
       </Link>
     </section>
