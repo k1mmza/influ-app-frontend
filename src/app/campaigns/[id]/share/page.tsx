@@ -107,7 +107,7 @@ export default function CampaignSharePreviewPage() {
   if (!campaign) {
     return (
       <section className="mx-auto max-w-3xl space-y-4 p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Shared list unavailable</h1>
+        <h1 className="text-2xl font-bold text-slate-900 font-serif">Shared list unavailable</h1>
         <p className="text-slate-600">This link does not match a demo campaign.</p>
         <Link href="/campaigns" className="font-semibold text-primary hover:underline">
           Back to campaigns
@@ -120,7 +120,7 @@ export default function CampaignSharePreviewPage() {
     <section className="mx-auto max-w-5xl space-y-6 p-4 pb-16 sm:p-6">
       <header className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/5 to-white p-6 shadow-sm">
         <p className="text-xs font-semibold uppercase tracking-wide text-primary">Client-facing preview (mock)</p>
-        <h1 className="mt-1 text-2xl font-bold text-slate-900">{campaign.name}</h1>
+        <h1 className="mt-1 text-2xl font-bold text-slate-900 font-serif">{campaign.name}</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           This page simulates what a brand client sees when an agency shares a creator shortlist — inspired by the agency
           and brand personas in{" "}
@@ -138,7 +138,7 @@ export default function CampaignSharePreviewPage() {
 
       <article className="overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
         <div className="border-b border-slate-100 px-4 py-3 sm:px-6">
-          <h2 className="text-lg font-semibold text-slate-900">Influencer shortlist</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Influencer shortlist</h2>
           <p className="text-sm text-slate-500">Primary platform = where the creator has the most followers.</p>
         </div>
         <div className="overflow-x-auto">
@@ -180,7 +180,7 @@ export default function CampaignSharePreviewPage() {
       </article>
 
       <article className="rounded-2xl border border-slate-200 bg-white p-4 shadow-sm sm:p-6">
-        <h2 className="text-lg font-semibold text-slate-900">Comments on this list</h2>
+        <h2 className="text-lg font-semibold text-slate-900 font-serif">Comments on this list</h2>
         <p className="mt-1 text-sm text-slate-600">
           Mock two-way thread: the client (David) can question or approve picks; the agency (Sarah) can respond — all
           stored in the browser for this demo only.

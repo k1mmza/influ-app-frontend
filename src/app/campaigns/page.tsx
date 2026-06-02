@@ -119,7 +119,7 @@ function BrandCampaignsView() {
         <CardContent className="p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
-              <h1 className="text-3xl font-extrabold tracking-tight">Campaigns</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight font-serif">Campaigns</h1>
               <p className="text-primary-foreground/80 font-medium">Manage your active collaborations and marketplace listings.</p>
               <div className="pt-2">
                 <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
@@ -203,7 +203,7 @@ function BrandCampaignsView() {
               <div className="flex items-start justify-between">
                 <div className="space-y-1">
                   <div className="flex items-center gap-2">
-                    <h3 className="font-bold text-foreground leading-tight">{c.name}</h3>
+                    <h3 className="font-bold text-foreground leading-tight font-serif">{c.name}</h3>
                   </div>
                   <div className="flex gap-2 pt-1">
                     <Badge variant="secondary" className="text-[10px] bg-slate-100 border-none font-bold uppercase">{c.visibility}</Badge>
@@ -252,7 +252,7 @@ function BrandCampaignsView() {
             <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
               <LayoutGrid className="h-6 w-6 text-muted-foreground" />
             </div>
-            <h3 className="mt-4 text-lg font-bold">No campaigns match</h3>
+            <h3 className="mt-4 text-lg font-bold font-serif">No campaigns match</h3>
             <p className="mt-2 text-sm text-muted-foreground">Try adjusting your filters or create a new campaign.</p>
           </CardContent>
         </Card>
@@ -300,7 +300,7 @@ function InfluencerDiscoverCampaignsView() {
     <div className="space-y-6">
       <Card className="border-none shadow-sm bg-gradient-to-r from-primary to-secondary text-white">
         <CardContent className="p-8">
-          <h1 className="text-3xl font-extrabold tracking-tight">Discover Campaigns</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Campaigns</h1>
           <p className="mt-2 text-primary-foreground/80 font-medium">Find the best-fit collaborations with clear budget visibility.</p>
           <div className="pt-4">
             <Badge variant="outline" className="border-white/30 bg-white/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
@@ -367,7 +367,7 @@ function InfluencerDiscoverCampaignsView() {
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
-                  <h3 className="font-bold text-foreground leading-tight">{campaign.name}</h3>
+                  <h3 className="font-bold text-foreground leading-tight font-serif">{campaign.name}</h3>
                   <p className="text-xs font-semibold text-primary mt-1">{campaign.brand}</p>
                 </div>
                 <Badge variant="secondary" className="bg-slate-100 border-none font-bold text-[10px] uppercase">

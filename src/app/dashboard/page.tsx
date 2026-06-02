@@ -23,7 +23,7 @@ function InfluencerDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Influencer Dashboard</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Influencer Dashboard</h1>
         <p className="text-muted-foreground">Quick overview of your active campaigns, messages, and earnings.</p>
       </div>
 
@@ -40,7 +40,7 @@ function InfluencerDashboard() {
                 <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
                 <item.icon className={cn("h-4 w-4", item.color)} />
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{item.value}</p>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground font-serif">{item.value}</p>
             </CardContent>
           </Card>
         ))}
@@ -53,7 +53,7 @@ function InfluencerDashboard() {
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight text-foreground">Recommended Campaigns</h2>
+          <h2 className="text-xl font-bold tracking-tight text-foreground font-serif">Recommended Campaigns</h2>
           <Button variant="link" className="text-primary font-bold">View all</Button>
         </div>
         <div className="grid gap-6 md:grid-cols-2">
@@ -65,11 +65,11 @@ function InfluencerDashboard() {
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl">
+                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-slate-100 text-2xl font-serif">
                       {c.icon}
                     </div>
                     <div>
-                      <h3 className="font-bold text-foreground">{c.name}</h3>
+                      <h3 className="font-bold text-foreground font-serif">{c.name}</h3>
                       <p className="text-sm text-muted-foreground">{c.brand}</p>
                     </div>
                   </div>
@@ -162,7 +162,7 @@ function AgencyDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Agency Dashboard</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Agency Dashboard</h1>
         <p className="text-muted-foreground">High-level view of your portfolio and active campaign metrics.</p>
       </div>
       
@@ -179,7 +179,7 @@ function AgencyDashboard() {
                 <p className="text-sm font-medium text-muted-foreground">{label}</p>
                 <Icon className="h-4 w-4 text-primary" />
               </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground">{value}</p>
+              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground font-serif">{value}</p>
             </CardContent>
           </Card>
         ))}

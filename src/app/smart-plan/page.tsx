@@ -305,7 +305,7 @@ export default function SmartPlanPage() {
   if (role !== "brand" && role !== "agency") {
     return (
       <section className="p-6">
-        <h1 className="text-2xl font-bold text-slate-900">Smart Plan</h1>
+        <h1 className="text-2xl font-bold text-slate-900 font-serif">Smart Plan</h1>
         <p className="mt-2 text-sm text-slate-600">
           This feature is available for agency and brand workspaces. Switch role to continue.
         </p>
@@ -317,7 +317,7 @@ export default function SmartPlanPage() {
     <section className="space-y-6 p-6">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Smart Plan</h1>
+          <h1 className="text-2xl font-bold text-slate-900 font-serif">Smart Plan</h1>
           <p className="mt-1 text-sm text-slate-600">Plan your campaign from requirements through the creative brief.</p>
         </div>
         <Link
@@ -331,7 +331,7 @@ export default function SmartPlanPage() {
       {viewMode === "list" && (
         <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
           <div className="mb-3 flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">My Campaign</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">My Campaign</h2>
             <button
               type="button"
               onClick={() => setViewMode("create")}
@@ -452,7 +452,7 @@ export default function SmartPlanPage() {
           {startMode === "form" && (
             <div className="space-y-4">
               <div>
-                <h2 className="text-base font-semibold text-slate-900">Requirement</h2>
+                <h2 className="text-base font-semibold text-slate-900 font-serif">Requirement</h2>
                 <p className="mt-1 text-xs text-slate-500">Same fields as the planner requirement step. Fill what you know; you can edit later.</p>
               </div>
               <div className="space-y-3">
@@ -514,7 +514,7 @@ export default function SmartPlanPage() {
 
           {activeStep === "requirement" && (
             <div className="space-y-4 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Requirement</h2>
+              <h2 className="text-base font-semibold text-slate-900 font-serif">Requirement</h2>
               {requirementFields.map((field) => (
                 <label key={field.key} className="block">
                   <span className="mb-1 block text-xs font-medium text-slate-600">{field.label}</span>
@@ -534,7 +534,7 @@ export default function SmartPlanPage() {
 
           {activeStep === "brief" && (
             <div className="space-y-6 rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-              <h2 className="text-base font-semibold text-slate-900">Brief</h2>
+              <h2 className="text-base font-semibold text-slate-900 font-serif">Brief</h2>
               <p className="text-xs text-slate-500">Strategy, concept, and creative brief live in one place for creators and stakeholders.</p>
 
               <div className="rounded-xl border border-slate-200 bg-slate-50 p-3">

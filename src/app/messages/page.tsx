@@ -35,14 +35,14 @@ function InfluencerMessagesView() {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
-        <h1 className="text-2xl font-bold">Messages</h1>
+        <h1 className="text-2xl font-bold font-serif">Messages</h1>
         <p className="mt-1 text-sm text-primary/10">Manage active conversations, files, and campaign workflow in one place.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Conversations</h2>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary/90">3 unread</span>
           </div>
           <input
@@ -135,14 +135,14 @@ function BrandMessagesView() {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
-        <h1 className="text-2xl font-bold">Messages</h1>
+        <h1 className="text-2xl font-bold font-serif">Messages</h1>
         <p className="mt-1 text-sm text-primary/10">Chat with influencers, filter by campaign, and keep briefs in context.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Conversations</h2>
             <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary/90">2 unread</span>
           </div>
           <input

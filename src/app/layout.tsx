@@ -1,12 +1,17 @@
 import type { Metadata } from "next";
-import { Outfit } from "next/font/google";
+import { Montserrat, Playfair_Display } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
 
-const outfit = Outfit({
+const montserrat = Montserrat({
   subsets: ["latin"],
   variable: "--font-sans",
+});
+
+const playfair = Playfair_Display({
+  subsets: ["latin"],
+  variable: "--font-serif",
 });
 
 export const metadata: Metadata = {
@@ -20,8 +25,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={outfit.variable}>
-      <body className="font-sans">
+    <html lang="en" className={`${montserrat.variable} ${playfair.variable}`}>
+      <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

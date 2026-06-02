@@ -33,7 +33,7 @@ function TrackingPageContent() {
   if (role !== "brand" && role !== "agency") {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Tracking</h1>
+        <h1 className="text-2xl font-bold text-slate-900 font-serif">Tracking</h1>
         <p className="text-slate-600">Live campaign metrics are available for brand accounts.</p>
         <Link href="/dashboard" className="text-primary hover:underline">
           Back to dashboard
@@ -78,13 +78,13 @@ function TrackingPageContent() {
   return (
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
-        <h1 className="text-2xl font-bold">Tracking</h1>
+        <h1 className="text-2xl font-bold font-serif">Tracking</h1>
         <p className="mt-1 text-sm text-primary/10">Realtime-style results for published work (demo data).</p>
       </div>
 
       <article className="overflow-hidden rounded-2xl bg-white shadow-sm">
         <div className="border-b border-slate-100 px-4 py-3">
-          <h2 className="text-lg font-semibold text-slate-900">All campaigns</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">All campaigns</h2>
           <p className="text-xs text-slate-500">Click &quot;View detail&quot; to see influencer-level breakdown.</p>
         </div>
         <div className="overflow-x-auto">
@@ -131,7 +131,7 @@ function TrackingPageContent() {
         <article className="overflow-hidden rounded-2xl bg-white shadow-sm">
           <div className="flex flex-col gap-2 border-b border-slate-100 px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">Detail: {selectedCampaign.name}</h2>
+              <h2 className="text-lg font-semibold text-slate-900 font-serif">Detail: {selectedCampaign.name}</h2>
               <p className="text-xs text-slate-500">Per influencer: posts, metrics, and growth (demo).</p>
             </div>
             <div className="flex flex-wrap gap-2">

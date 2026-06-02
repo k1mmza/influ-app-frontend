@@ -56,13 +56,13 @@ function ProfileReviewsSection({ role }: { role: Role }) {
 
   return (
     <article className="rounded-2xl bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Partner review ratings</h2>
+      <h2 className="text-lg font-semibold text-slate-900 font-serif">Partner review ratings</h2>
       <p className="mt-1 text-xs text-slate-500">
         Ratings use your account display name (same as when you submit reviews on a finished campaign).
       </p>
       <div className="mt-4 grid gap-4 md:grid-cols-2">
         <div>
-          <h3 className="text-sm font-semibold text-slate-800">Comments you wrote</h3>
+          <h3 className="text-sm font-semibold text-slate-800 font-serif">Comments you wrote</h3>
           {written.length === 0 ? (
             <p className="mt-2 text-sm text-slate-500">No reviews yet. Finish a campaign, then rate partners from the campaign page.</p>
           ) : (
@@ -79,7 +79,7 @@ function ProfileReviewsSection({ role }: { role: Role }) {
           )}
         </div>
         <div>
-          <h3 className="text-sm font-semibold text-slate-800">Comments about you</h3>
+          <h3 className="text-sm font-semibold text-slate-800 font-serif">Comments about you</h3>
           {received.length === 0 ? (
             <p className="mt-2 text-sm text-slate-500">No partner feedback yet.</p>
           ) : (
@@ -152,7 +152,7 @@ function BrandProfileView() {
 
   return (
     <section key={role} className="space-y-6">
-      <h1 className="text-2xl font-bold text-slate-900">{heading}</h1>
+      <h1 className="text-2xl font-bold text-slate-900 font-serif">{heading}</h1>
       <p className="text-slate-600">{subline} Manage your password in Account.</p>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
@@ -173,7 +173,7 @@ function BrandProfileView() {
 
         <div className="space-y-4">
           <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Company &amp; user</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Company &amp; user</h2>
             <div className="mt-4 grid gap-3 sm:grid-cols-2">
               <label className="block text-sm">
                 <span className="text-slate-600">Company name</span>
@@ -228,7 +228,7 @@ function BrandProfileView() {
             </label>
 
             <div className="mt-6 border-t border-slate-100 pt-5">
-              <h3 className="text-base font-semibold text-slate-900">Website &amp; company socials</h3>
+              <h3 className="text-base font-semibold text-slate-900 font-serif">Website &amp; company socials</h3>
               <p className="mt-1 text-xs text-slate-500">Shown on campaign pages and briefs (demo fields only).</p>
               <div className="mt-4 grid gap-3 sm:grid-cols-2">
                 <label className="block text-sm sm:col-span-2">
@@ -292,7 +292,7 @@ function BrandProfileView() {
           <ProfileReviewsSection role={profileRole} />
 
           <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Account</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Account</h2>
             <p className="mt-1 text-sm text-slate-600">Change password and security settings (wireframe).</p>
             <div className="mt-3 grid gap-3 sm:max-w-md">
               <input
@@ -378,7 +378,7 @@ function InfluencerProfileView() {
     <section className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Media kit</h1>
+          <h1 className="text-2xl font-bold text-slate-900 font-serif">Media kit</h1>
           <p className="mt-1 text-sm text-slate-600">
             Edit the fields brands see in discovery. Download a JSON backup or upload a previously exported JSON; you can also attach a PDF kit
             for your records (demo: file name only).
@@ -437,7 +437,7 @@ function InfluencerProfileView() {
               role="influencer"
             />
             <div>
-              <h2 className="text-lg font-semibold text-slate-900">{kit.displayName}</h2>
+              <h2 className="text-lg font-semibold text-slate-900 font-serif">{kit.displayName}</h2>
               <p className="text-sm text-slate-600">{kit.handle}</p>
             </div>
           </div>
@@ -503,7 +503,7 @@ function InfluencerProfileView() {
 
         <div className="space-y-4">
           <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Audience snapshot</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Audience snapshot</h2>
             <p className="mt-1 text-xs text-slate-500">Headline numbers brands scan first on a media kit.</p>
             <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               <label className="block text-sm rounded-xl bg-slate-50 p-3">
@@ -551,7 +551,7 @@ function InfluencerProfileView() {
           </article>
 
           <article className="rounded-2xl bg-white p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-slate-900">Platforms &amp; handles</h2>
+            <h2 className="text-lg font-semibold text-slate-900 font-serif">Platforms &amp; handles</h2>
             <div className="mt-3 space-y-3">
               {kit.socialAccounts.map((account, index) => (
                 <div key={`${account.platform}-${index}`} className="rounded-xl border border-slate-200 p-3 text-sm">
@@ -615,7 +615,7 @@ function InfluencerProfileView() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Niches &amp; deliverables</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Niches &amp; deliverables</h2>
           <label className="mt-3 block text-sm">
             <span className="text-slate-600">Categories (comma or newline separated)</span>
             <textarea
@@ -637,7 +637,7 @@ function InfluencerProfileView() {
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Audience insights</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Audience insights</h2>
           <label className="mt-3 block text-sm">
             <span className="text-slate-600">Gender mix</span>
             <input
@@ -677,7 +677,7 @@ function InfluencerProfileView() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Rate card (THB)</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Rate card (THB)</h2>
           <div className="mt-3 grid gap-3 sm:grid-cols-3">
             <label className="block text-sm">
               <span className="text-slate-600">Post</span>
@@ -713,7 +713,7 @@ function InfluencerProfileView() {
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Case highlights &amp; partners</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Case highlights &amp; partners</h2>
           <label className="mt-3 block text-sm">
             <span className="text-slate-600">Portfolio lines (one per line)</span>
             <textarea
@@ -751,7 +751,7 @@ function InfluencerProfileView() {
 
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Availability</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Availability</h2>
           <label className="mt-2 block text-sm">
             <span className="text-slate-600">Status</span>
             <input
@@ -763,7 +763,7 @@ function InfluencerProfileView() {
         </article>
 
         <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Settings</h2>
+          <h2 className="text-lg font-semibold text-slate-900 font-serif">Settings</h2>
           <label className="mt-2 flex items-center gap-2 text-sm text-slate-700">
             <input
               type="checkbox"

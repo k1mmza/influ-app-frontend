@@ -28,7 +28,7 @@ export function SiteFooter() {
               <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-secondary text-base text-white shadow-sm">
                 IA
               </span>
-              InfluApp
+              <span className="font-serif">InfluApp</span>
             </Link>
             <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
               Discovery, campaigns, and collaboration in one unified workspace for the creator economy.

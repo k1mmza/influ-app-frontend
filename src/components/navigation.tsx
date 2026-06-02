@@ -51,7 +51,7 @@ export function Navigation() {
           <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
             IA
           </span>
-          <span>InfluApp</span>
+          <span className="font-serif">InfluApp</span>
         </Link>
 
         <div className="flex flex-wrap items-center gap-1">
@@ -93,7 +93,7 @@ export function Navigation() {
         <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
           IA
         </span>
-        <span className="text-sm font-bold text-foreground">InfluApp</span>
+        <span className="text-sm font-bold text-foreground font-serif">InfluApp</span>
       </Link>
       <div className="flex flex-col gap-1">
         {(role === "influencer" ? influencerLinks : brandLinks).map((link) => (

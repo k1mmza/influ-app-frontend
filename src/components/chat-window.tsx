@@ -22,7 +22,7 @@ export function ChatWindow() {
 
   return (
     <section className="rounded-2xl bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Deal Chat</h2>
+      <h2 className="text-lg font-semibold text-slate-900 font-serif">Deal Chat</h2>
       <div className="mt-4 h-72 space-y-3 overflow-y-auto rounded-xl bg-slate-50 p-3">
         {messages.map((message) => (
           <div key={message.id} className="rounded-lg bg-white p-3">

@@ -34,7 +34,7 @@ export function BrandDashboard() {
   return (
     <div className="space-y-8">
       <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Brand Dashboard</h1>
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Brand Dashboard</h1>
         <p className="text-muted-foreground">Monitor your campaign performance and collaborate with creators.</p>
       </div>
 
@@ -128,7 +128,7 @@ export function BrandDashboard() {
               <div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-all group-hover:scale-110", tool.color)}>
                 <tool.icon className="h-5 w-5" />
               </div>
-              <h3 className="font-bold text-foreground">{tool.title}</h3>
+              <h3 className="font-bold text-foreground font-serif">{tool.title}</h3>
               <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{tool.desc}</p>
               <Button variant="link" asChild className="mt-4 px-0 h-auto font-bold text-primary">
                 <Link href={tool.link}>Open {tool.title} <ChevronRight className="ml-1 h-3 w-3" /></Link>

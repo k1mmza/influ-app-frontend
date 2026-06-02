@@ -4,7 +4,7 @@ export default function ForgotPasswordPage() {
   return (
     <section className="mx-auto max-w-md rounded-3xl bg-white p-8 shadow-sm ring-1 ring-slate-100">
       <p className="text-xs font-semibold uppercase tracking-wider text-primary">Account recovery</p>
-      <h1 className="mt-2 text-3xl font-bold text-slate-900">Forgot password?</h1>
+      <h1 className="mt-2 text-3xl font-bold text-slate-900 font-serif">Forgot password?</h1>
       <p className="mt-2 text-sm text-slate-600">
         Enter your email and we will send a password reset link. For security, links expire in 15 minutes.
       </p>

@@ -7,7 +7,7 @@ export function FilterSidebar() {
 
   return (
     <aside className="rounded-2xl bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Filters</h2>
+      <h2 className="text-lg font-semibold text-slate-900 font-serif">Filters</h2>
       <label className="mt-4 block text-sm font-medium text-slate-600">Category</label>
       <select
         value={category}

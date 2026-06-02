@@ -19,7 +19,7 @@ export default function CreateCampaignPage() {
   if (role !== "brand") {
     return (
       <section className="space-y-4">
-        <h1 className="text-2xl font-bold text-slate-900">Create campaign</h1>
+        <h1 className="text-2xl font-bold text-slate-900 font-serif">Create campaign</h1>
         <p className="text-slate-600">Only brand accounts can create campaigns.</p>
         <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
@@ -39,7 +39,7 @@ export default function CreateCampaignPage() {
         <Link href="/campaigns" className="text-sm font-medium text-primary hover:underline">
           ← Campaigns
         </Link>
-        <h1 className="mt-2 text-2xl font-bold text-slate-900">Create campaign</h1>
+        <h1 className="mt-2 text-2xl font-bold text-slate-900 font-serif">Create campaign</h1>
         <p className="mt-1 text-sm text-slate-600">Public campaigns appear in the influencer marketplace. Private ones stay invite-only via Discover.</p>
       </div>
 

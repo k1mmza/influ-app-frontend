@@ -84,7 +84,7 @@ export function LandingHero() {
         </LandingAnimate>
 
         <LandingAnimate onMount delay={100}>
-          <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white md:text-7xl">
+          <h1 className="text-balance text-5xl font-extrabold tracking-tight text-white md:text-7xl font-serif">
             Partner with creators who <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">bring your brand to life.</span>
           </h1>
         </LandingAnimate>

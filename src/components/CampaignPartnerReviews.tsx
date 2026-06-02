@@ -37,7 +37,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
   if (!keys || keys.length === 0) {
     return (
       <article className="rounded-2xl border border-amber-200 bg-amber-50 p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-amber-900">Partner reviews</h2>
+        <h2 className="text-lg font-semibold text-amber-900 font-serif">Partner reviews</h2>
         <p className="mt-2 text-sm text-amber-800">
           Mark this campaign as finished to unlock ratings for brand, agency, and influencer partners who ran this campaign
           together.
@@ -49,7 +49,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
   if (!keys.includes(selfKey)) {
     return (
       <article className="rounded-2xl border border-slate-200 bg-slate-50 p-5 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">Partner reviews</h2>
+        <h2 className="text-lg font-semibold text-slate-900 font-serif">Partner reviews</h2>
         <p className="mt-2 text-sm text-slate-600">
           Your account name does not match this campaign&apos;s participant list. Use the same display name as when you
           completed the campaign (demo: Brand <strong>David Kim</strong>, Agency <strong>Sarah Chen</strong>, Influencer{" "}
@@ -61,7 +61,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
 
   return (
     <article className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-slate-900">Rate your campaign partners</h2>
+      <h2 className="text-lg font-semibold text-slate-900 font-serif">Rate your campaign partners</h2>
       <p className="mt-1 text-sm text-slate-600">
         After a finished campaign, leave a star rating and short note for each partner. Reviews show on their profile.
       </p>

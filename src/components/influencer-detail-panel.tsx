@@ -81,7 +81,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           <div className="flex items-center gap-4">
             <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-slate-50" />
             <div>
-              <h2 className="text-xl font-bold tracking-tight">{influencer.name}</h2>
+              <h2 className="text-xl font-bold tracking-tight font-serif">{influencer.name}</h2>
               <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
                 <MapPin className="h-3 w-3" />
                 {meta.city}, {meta.country}
@@ -115,7 +115,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           {/* Media Showcase */}
           <section className="space-y-4">
             <div className="flex items-center justify-between">
-              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Content Spotlight</h3>
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground font-serif">Content Spotlight</h3>
               <Badge variant="outline" className="font-bold text-[10px]">{topByViews.platform}</Badge>
             </div>
             {showcaseEmbed.kind === "iframe" ? (
@@ -142,7 +142,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
           {/* Performance Metrics */}
           <section className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
               <BarChart3 className="h-4 w-4" />
               Performance Metrics
             </h3>
@@ -164,7 +164,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
           {/* Audience Snapshot */}
           <section className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
               <Users className="h-4 w-4" />
               Audience Snapshot
             </h3>
@@ -194,7 +194,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
           {/* Rate Card */}
           <section className="space-y-4">
-            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
               <PlusCircle className="h-4 w-4" />
               Rate Card Estimates
             </h3>

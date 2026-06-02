@@ -41,11 +41,11 @@ export default function RegisterPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
               IA
             </span>
-            InfluApp
+            <span className="font-serif">InfluApp</span>
           </Link>
 
           <div className="relative z-10 max-w-sm">
-            <h2 className="text-4xl font-bold leading-tight tracking-tight">Build your creator growth engine.</h2>
+            <h2 className="text-4xl font-bold leading-tight tracking-tight font-serif">Build your creator growth engine.</h2>
             <p className="mt-6 text-lg text-slate-400">
               "Launch faster, match smarter, and scale your partnerships with trusted creator insights."
             </p>
@@ -62,11 +62,11 @@ export default function RegisterPage() {
 
           <div className="relative z-10 flex gap-10">
             <div>
-              <p className="text-2xl font-bold">15K+</p>
+              <p className="text-2xl font-bold font-serif">15K+</p>
               <p className="text-xs text-slate-500 uppercase tracking-wider">Active Campaigns</p>
             </div>
             <div>
-              <p className="text-2xl font-bold">2.4M</p>
+              <p className="text-2xl font-bold font-serif">2.4M</p>
               <p className="text-xs text-slate-500 uppercase tracking-wider">Creators Indexed</p>
             </div>
           </div>
@@ -77,7 +77,7 @@ export default function RegisterPage() {
             {step === 0 ? (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+                  <h1 className="text-3xl font-bold tracking-tight font-serif">Create your account</h1>
                   <p className="text-sm text-muted-foreground">Join InfluApp and start connecting with creators.</p>
                 </div>
 
@@ -139,7 +139,7 @@ export default function RegisterPage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tight">Select your role</h1>
+                  <h1 className="text-3xl font-bold tracking-tight font-serif">Select your role</h1>
                   <p className="text-sm text-muted-foreground">Choose how you will use InfluApp.</p>
                 </div>
 
@@ -159,7 +159,7 @@ export default function RegisterPage() {
                         )}
                       >
                         <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background text-2xl shadow-sm">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background text-2xl shadow-sm font-serif">
                             {r.icon}
                           </div>
                           <div>

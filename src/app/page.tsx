@@ -100,7 +100,7 @@ export default function HomePage() {
               {pricingItems.map((item, idx) => (
                 <Card key={item.title} className={cn("border-2 transition-all", idx === 0 ? "border-primary bg-primary/5 shadow-xl shadow-primary/5" : "border-border")}>
                   <CardContent className="p-8">
-                    <h3 className="text-2xl font-bold tracking-tight">{item.title}</h3>
+                    <h3 className="text-2xl font-bold tracking-tight font-serif">{item.title}</h3>
                     <p className="mt-4 text-muted-foreground leading-relaxed">{item.description}</p>
                     <ul className="mt-8 space-y-3">
                       {["Core Discovery", "Unified Chat", "Campaign Tracking", "Basic Analytics"].map(feat => (
@@ -121,7 +121,7 @@ export default function HomePage() {
           <section className="mt-32 relative overflow-hidden rounded-[2.5rem] bg-slate-950 px-8 py-16 text-center text-white sm:px-12">
             <div className="absolute inset-0 bg-gradient-to-r from-primary/20 to-secondary/20" />
             <div className="relative z-10 max-w-3xl mx-auto">
-              <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl">Ready to replace the busywork?</h2>
+              <h2 className="text-4xl font-extrabold tracking-tight sm:text-5xl font-serif">Ready to replace the busywork?</h2>
               <p className="mt-6 text-lg text-slate-400">
                 Join agencies scaling partnerships, brands launching with confidence, and creators who want steady, transparent work—all in one workspace.
               </p>

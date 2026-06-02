@@ -587,7 +587,7 @@ function DiscoverPageContent() {
           </div>
           <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight">Discover Influencers</h1>
+              <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Influencers</h1>
               <p className="mt-2 text-primary-foreground/80 font-medium">Find campaign-fit creators with smart filters and audience signals.</p>
             </div>
             <Badge variant="outline" className="w-fit border-white/30 bg-white/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
@@ -795,7 +795,7 @@ function DiscoverPageContent() {
                 <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
                   <RotateCcw className="h-6 w-6 text-muted-foreground" />
                 </div>
-                <h3 className="mt-4 text-lg font-bold">No results found</h3>
+                <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>
                 <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
                   Try adjusting your filters or search terms to find more creators.
                 </p>

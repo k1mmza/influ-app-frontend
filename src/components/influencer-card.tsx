@@ -81,7 +81,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
         </div>
 
         <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="truncate text-lg font-bold text-white tracking-tight">{influencer.name}</h3>
+          <h3 className="truncate text-lg font-bold text-white tracking-tight font-serif">{influencer.name}</h3>
           <div className="mt-2 flex flex-wrap gap-1">
             {presentationTags.slice(0, 2).map(tag => (
               <span key={tag} className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
