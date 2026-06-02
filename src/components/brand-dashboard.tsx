@@ -2,112 +2,187 @@
 
 import Link from "next/link";
 import { brandCampaigns } from "@/mock/brand-campaigns";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { 
+  Rocket, 
+  Users, 
+  Wallet, 
+  TrendingUp, 
+  BarChart3, 
+  Search, 
+  MessageSquare, 
+  BarChart2, 
+  Bell,
+  ChevronRight,
+  Target
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 const kpis = [
-  { label: "Active Campaigns", value: "2" },
-  { label: "Influencers Hired", value: "12" },
-  { label: "Budget Spent (THB)", value: "1.18M" },
-  { label: "Avg. Engagement", value: "4.6%" },
-  { label: "Total Reach", value: "2.1M" }
+  { label: "Active Campaigns", value: "2", icon: Rocket, color: "text-blue-600" },
+  { label: "Influencers Hired", value: "12", icon: Users, color: "text-primary" },
+  { label: "Budget Spent", value: "THB 1.18M", icon: Wallet, color: "text-emerald-600" },
+  { label: "Avg. Engagement", value: "4.6%", icon: TrendingUp, color: "text-primary" },
+  { label: "Total Reach", value: "2.1M", icon: Target, color: "text-amber-600" }
 ];
 
 export function BrandDashboard() {
   const active = brandCampaigns.filter((c) => c.status === "active");
 
   return (
-    <section className="space-y-8">
-      <div>
-        <h1 className="text-3xl font-bold text-slate-900">Brand Dashboard</h1>
-        <p className="mt-2 text-slate-600">Quick overview of performance, spend, and active collaborations.</p>
+    <div className="space-y-8">
+      <div className="flex flex-col gap-2">
+        <h1 className="text-3xl font-extrabold tracking-tight text-foreground">Brand Dashboard</h1>
+        <p className="text-muted-foreground">Monitor your campaign performance and collaborate with creators.</p>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpis.map((item) => (
-          <article key={item.label} className="rounded-2xl bg-white p-4 shadow-sm">
-            <p className="text-xs font-medium text-slate-500">{item.label}</p>
-            <p className="mt-1 text-xl font-bold text-slate-900">{item.value}</p>
-          </article>
+          <Card key={item.label} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
+            <CardContent className="p-5">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                <item.icon className={cn("h-4 w-4", item.color)} />
+              </div>
+              <p className="mt-2 text-xl font-bold tracking-tight text-foreground">{item.value}</p>
+            </CardContent>
+          </Card>
         ))}
       </div>
 
-      <div className="grid gap-4 lg:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Campaign performance (MVP)</h2>
-          <ul className="mt-3 space-y-2 text-sm text-slate-600">
-            <li>Impressions (7d): 4.2M</li>
-            <li>Views (7d): 890K</li>
-            <li>Engagement (likes, comments, shares): 62K</li>
-            <li>Conversions (tracked): 1,240</li>
-          </ul>
-          <p className="mt-3 text-xs text-slate-500">Charts: line (trend) and bar (compare) — wireframe in production build.</p>
-        </article>
+      <div className="grid gap-6 lg:grid-cols-2">
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <BarChart3 className="h-5 w-5 text-primary" />
+              Campaign Performance
+            </CardTitle>
+            <CardDescription>Aggregate metrics across all active channels</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-2 gap-6">
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Impressions</p>
+                <p className="text-xl font-bold">4.2M</p>
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
+                  +12% vs last week
+                </Badge>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagements</p>
+                <p className="text-xl font-bold">62K</p>
+                <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
+                  +8% vs last week
+                </Badge>
+              </div>
+            </div>
+            <div className="mt-8 h-2 w-full rounded-full bg-slate-100 overflow-hidden flex">
+              <div className="h-full bg-primary w-[65%]" />
+              <div className="h-full bg-secondary w-[25%]" />
+              <div className="h-full bg-slate-300 w-[10%]" />
+            </div>
+            <div className="mt-4 flex gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-primary" /> TikTok</span>
+              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-secondary" /> Instagram</span>
+              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-slate-300" /> Others</span>
+            </div>
+          </CardContent>
+        </Card>
 
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Active campaigns</h2>
-          <ul className="mt-3 space-y-2">
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Rocket className="h-5 w-5 text-primary" />
+              Active Campaigns
+            </CardTitle>
+            <CardDescription>Manage your current collaborations</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-3">
             {active.map((c) => (
-              <li key={c.id} className="flex items-center justify-between rounded-xl border border-slate-100 px-3 py-2 text-sm">
-                <span className="font-medium text-slate-900">{c.name}</span>
-                <Link href={`/campaigns/${c.id}`} className="text-indigo-600 hover:underline">
-                  Details
-                </Link>
-              </li>
+              <div key={c.id} className="group flex items-center justify-between rounded-xl border border-slate-100 bg-slate-50/50 px-4 py-3 transition-all hover:bg-slate-50">
+                <div className="flex items-center gap-3">
+                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="font-bold text-sm text-foreground">{c.name}</span>
+                </div>
+                <Button variant="ghost" size="sm" asChild className="h-8 px-2 font-bold text-primary hover:text-primary/80">
+                  <Link href={`/campaigns/${c.id}`}>
+                    Manage <ChevronRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </div>
             ))}
-          </ul>
-        </article>
+          </CardContent>
+        </Card>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-3">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Discover</h2>
-          <p className="mt-2 text-sm text-slate-600">Find creators for private campaigns.</p>
-          <Link
-            href="/discover"
-            className="mt-3 inline-flex rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white"
-          >
-            Open Discover
-          </Link>
-        </article>
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Messages</h2>
-          <p className="mt-2 text-sm text-slate-600">Chat with influencers and share briefs.</p>
-          <Link
-            href="/messages"
-            className="mt-3 inline-flex rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800"
-          >
-            Open Inbox
-          </Link>
-        </article>
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Tracking</h2>
-          <p className="mt-2 text-sm text-slate-600">Live post-level metrics and export.</p>
-          <Link
-            href="/tracking"
-            className="mt-3 inline-flex rounded-xl bg-slate-100 px-4 py-2 text-sm font-semibold text-slate-800"
-          >
-            View Tracking
-          </Link>
-        </article>
+      <div className="grid gap-6 md:grid-cols-3">
+        {[
+          { title: "Discover", desc: "Find new creators for your next campaign.", link: "/discover", icon: Search, color: "bg-blue-100 text-blue-600" },
+          { title: "Messages", desc: "Collaborate and share briefs in real-time.", link: "/messages", icon: MessageSquare, color: "bg-primary/10 text-primary" },
+          { title: "Tracking", desc: "Live post-level metrics and exportable reports.", link: "/tracking", icon: BarChart2, color: "bg-purple-100 text-purple-600" }
+        ].map((tool) => (
+          <Card key={tool.title} className="border-none shadow-sm transition-all hover:shadow-md group">
+            <CardContent className="p-6">
+              <div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-all group-hover:scale-110", tool.color)}>
+                <tool.icon className="h-5 w-5" />
+              </div>
+              <h3 className="font-bold text-foreground">{tool.title}</h3>
+              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{tool.desc}</p>
+              <Button variant="link" asChild className="mt-4 px-0 h-auto font-bold text-primary">
+                <Link href={tool.link}>Open {tool.title} <ChevronRight className="ml-1 h-3 w-3" /></Link>
+              </Button>
+            </CardContent>
+          </Card>
+        ))}
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Budget &amp; payments</h2>
-          <ul className="mt-2 space-y-1 text-sm text-slate-600">
-            <li>Total budget (active): THB 420,000</li>
-            <li>Spent vs remaining: 62% / 38%</li>
-            <li>Status: 9 invoices paid, 1 pending</li>
-          </ul>
-        </article>
-        <article className="rounded-2xl bg-white p-5 shadow-sm">
-          <h2 className="text-lg font-semibold text-slate-900">Notifications</h2>
-          <ul className="mt-2 list-disc pl-5 text-sm text-slate-600">
-            <li>New application: Summer Skincare</li>
-            <li>Content approved: Healthy Snack — Pat K.</li>
-            <li>Unread messages: 2</li>
-          </ul>
-        </article>
+      <div className="grid gap-6 md:grid-cols-2">
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Wallet className="h-5 w-5 text-emerald-600" />
+              Budget & Payments
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4 text-sm font-medium">
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Total Budget (Active)</span>
+              <span className="font-bold">THB 420,000</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Spent vs Remaining</span>
+              <span className="font-bold">62% / 38%</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-muted-foreground">Status</span>
+              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none font-bold">9 Paid / 1 Pending</Badge>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Bell className="h-5 w-5 text-amber-500" />
+              Recent Activity
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {[
+              "New application for Summer Skincare",
+              "Content approved for Healthy Snack campaign",
+              "Unread messages from 2 creators"
+            ].map((act, i) => (
+              <div key={i} className="flex items-center gap-3 text-sm font-medium">
+                <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                <span className="text-foreground">{act}</span>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
       </div>
-    </section>
+    </div>
   );
 }

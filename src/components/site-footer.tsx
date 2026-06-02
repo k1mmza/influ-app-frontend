@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Separator } from "@/components/ui/separator";
 
 const footerLinks = {
   product: [
@@ -19,50 +20,50 @@ const footerLinks = {
 
 export function SiteFooter() {
   return (
-    <footer className="mt-12 border-t border-slate-200 bg-white pt-10 pb-8">
+    <footer className="mt-20 border-t bg-background pt-16 pb-12">
       <div className="mx-auto max-w-6xl px-4">
-        <div className="grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-12 sm:grid-cols-2 lg:grid-cols-4">
           <div className="lg:col-span-1">
-            <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-900">
-              <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
+            <Link href="/" className="flex items-center gap-2 text-xl font-bold tracking-tight text-foreground transition hover:opacity-80">
+              <span className="inline-flex h-9 w-9 items-center justify-center rounded-xl bg-gradient-to-r from-primary to-secondary text-base text-white shadow-sm">
                 IA
               </span>
               InfluApp
             </Link>
-            <p className="mt-3 text-sm text-slate-600">
-              Discovery, campaigns, and chat in one workspace for agencies, brands, and creators.
+            <p className="mt-4 text-sm leading-relaxed text-muted-foreground">
+              Discovery, campaigns, and collaboration in one unified workspace for the creator economy.
             </p>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Product</p>
-            <ul className="mt-3 space-y-2">
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Product</h4>
+            <ul className="space-y-3">
               {footerLinks.product.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-slate-700 transition hover:text-indigo-600">
+                  <Link href={item.href} className="text-sm text-muted-foreground transition hover:text-primary">
                     {item.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Audience</p>
-            <ul className="mt-3 space-y-2">
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Audience</h4>
+            <ul className="space-y-3">
               {footerLinks.audience.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-slate-700 transition hover:text-indigo-600">
+                  <Link href={item.href} className="text-sm text-muted-foreground transition hover:text-primary">
                     {item.label}
                   </Link>
                 </li>
               ))}
             </ul>
           </div>
-          <div>
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Account</p>
-            <ul className="mt-3 space-y-2">
+          <div className="space-y-4">
+            <h4 className="text-sm font-bold uppercase tracking-widest text-foreground">Account</h4>
+            <ul className="space-y-3">
               {footerLinks.account.map((item) => (
                 <li key={item.href}>
-                  <Link href={item.href} className="text-sm text-slate-700 transition hover:text-indigo-600">
+                  <Link href={item.href} className="text-sm text-muted-foreground transition hover:text-primary">
                     {item.label}
                   </Link>
                 </li>
@@ -70,9 +71,18 @@ export function SiteFooter() {
             </ul>
           </div>
         </div>
-        <div className="mt-10 flex flex-col gap-3 border-t border-slate-100 pt-8 sm:flex-row sm:items-center sm:justify-between">
-          <p className="text-xs text-slate-500">© {new Date().getFullYear()} InfluApp. All rights reserved.</p>
-          <p className="text-xs text-slate-500">MVP demo — features and availability may change.</p>
+        
+        <Separator className="my-10" />
+        
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+          <p className="text-xs text-muted-foreground">
+            © {new Date().getFullYear()} InfluApp. All rights reserved.
+          </p>
+          <div className="flex items-center gap-6">
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Privacy Policy</Link>
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Terms of Service</Link>
+            <Link href="#" className="text-xs text-muted-foreground hover:text-foreground">Status</Link>
+          </div>
         </div>
       </div>
     </footer>

@@ -139,15 +139,15 @@ export default function CampaignDetailPage() {
             <p>Deadline: {brandCampaign.deadline}</p>
           </div>
           {!isCampaignFinished ? (
-            <div className="mt-4 rounded-xl border border-indigo-200 bg-indigo-50 p-4">
-              <p className="text-sm font-medium text-indigo-900">Wrap up this campaign</p>
-              <p className="mt-1 text-xs text-indigo-800">
+            <div className="mt-4 rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-sm font-medium text-primary-foreground">Wrap up this campaign</p>
+              <p className="mt-1 text-xs text-primary/95">
                 When deliverables are done, mark finished so you and partners can leave required ratings.
               </p>
               <button
                 type="button"
                 onClick={markCampaignFinished}
-                className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                className="mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
               >
                 Mark campaign as finished
               </button>
@@ -177,7 +177,7 @@ export default function CampaignDetailPage() {
       <section className="space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Campaign not found</h1>
         <p className="text-slate-600">This ID is not in your brand campaigns list.</p>
-        <Link href="/campaigns" className="text-indigo-600 hover:underline">
+        <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
         </Link>
       </section>
@@ -306,7 +306,7 @@ export default function CampaignDetailPage() {
                 href={`/campaigns/${bridgeId}/share`}
                 target="_blank"
                 rel="noreferrer"
-                className="rounded-lg border border-indigo-200 bg-indigo-50 px-3 py-1.5 text-sm font-semibold text-indigo-800 hover:bg-indigo-100"
+                className="rounded-lg border border-primary/20 bg-primary/5 px-3 py-1.5 text-sm font-semibold text-primary/95 hover:bg-primary/10"
               >
                 Open client preview
               </Link>
@@ -347,7 +347,7 @@ export default function CampaignDetailPage() {
                   <tr key={row.kolName} className="border-t border-slate-100">
                     <td className="px-4 py-2 text-slate-700">{row.marker}</td>
                     <td className="px-4 py-2 font-medium text-slate-900">{row.kolName}</td>
-                    <td className="px-4 py-2 text-indigo-600">{row.socialMediaLink}</td>
+                    <td className="px-4 py-2 text-primary">{row.socialMediaLink}</td>
                     <td className="px-4 py-2 text-slate-700">{row.platform}</td>
                     <td className="px-4 py-2 text-slate-700">{row.platformFollowers.toLocaleString()}</td>
                     <td className="px-4 py-2 text-slate-700">{row.category}</td>

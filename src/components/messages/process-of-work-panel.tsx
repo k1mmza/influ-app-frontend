@@ -11,10 +11,10 @@ export function isPhaseDone(phase: WorkPhase, currentPhase: WorkPhase): boolean 
 }
 
 const phaseDotClass: Record<WorkPhase, string> = {
-  contact: "bg-violet-600",
+  contact: "bg-secondary",
   brief: "bg-sky-600",
   draft: "bg-amber-500",
-  work: "bg-indigo-600",
+  work: "bg-primary",
   payment: "bg-emerald-600",
 };
 
@@ -220,7 +220,7 @@ export function ProcessOfWorkPanel({
                 className={`flex w-full flex-col gap-0.5 rounded-xl border px-3 py-2 text-left text-sm transition ${
                   done
                     ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100"
-                    : "border-slate-200 bg-slate-50/80 hover:border-indigo-200 hover:bg-white"
+                    : "border-slate-200 bg-slate-50/80 hover:border-primary/20 hover:bg-white"
                 }`}
               >
                 <span className={`text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : "text-slate-800"}`}>{s.label}</span>
@@ -238,11 +238,11 @@ export function ProcessOfWorkPanel({
             : "Upload contact or agreement documents to share with the creator. They can download copies for their records."}
         </p>
         <label className="mt-4 block text-xs font-semibold text-slate-700">Upload image</label>
-        <input type="file" accept="image/*" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700" />
+        <input type="file" accept="image/*" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
         <div className="mt-4 flex flex-wrap gap-2">
           <button
             type="button"
-            className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white"
+            className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white"
             onClick={() => downloadBlob("contact-agreement-template.txt", "Agreement template (demo)\n— replace with your PDF in production.")}
           >
             Download template
@@ -252,7 +252,7 @@ export function ProcessOfWorkPanel({
 
       <Modal open={active === "brief"} title="Brief" onClose={close}>
         <div className="space-y-4">
-          <div className="rounded-xl border border-indigo-100 bg-gradient-to-r from-indigo-50 to-sky-50 p-4">
+          <div className="rounded-xl border border-primary/10 bg-gradient-to-r from-primary/5 to-sky-50 p-4">
             <label htmlFor="brief-campaign-select" className="block text-xs font-semibold uppercase tracking-wide text-slate-600">
               Select campaign
             </label>
@@ -261,7 +261,7 @@ export function ProcessOfWorkPanel({
                 id="brief-campaign-select"
                 value={selectedBriefCampaignId}
                 onChange={(event) => setSelectedBriefCampaignId(event.target.value)}
-                className="min-w-[220px] flex-1 rounded-lg border border-indigo-200 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                className="min-w-[220px] flex-1 rounded-lg border border-primary/20 bg-white px-3 py-2 text-sm text-slate-700 shadow-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
               >
                 <option value="">No campaign selected</option>
                 {briefCampaignSeed.map((campaign) => (
@@ -287,7 +287,7 @@ export function ProcessOfWorkPanel({
                 <h4 className="text-base font-semibold text-slate-900">{selectedBriefCampaign?.name ?? "No campaign selected"}</h4>
               </div>
               {selectedBriefCampaign ? (
-                <span className="rounded-full bg-indigo-100 px-2.5 py-1 text-[11px] font-semibold text-indigo-700">Requirement-linked</span>
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/90">Requirement-linked</span>
               ) : null}
             </div>
 
@@ -329,7 +329,7 @@ export function ProcessOfWorkPanel({
                     href={selectedBriefCampaign.productLink}
                     target="_blank"
                     rel="noreferrer"
-                    className="font-medium text-indigo-600 hover:underline"
+                    className="font-medium text-primary hover:underline"
                   >
                     {selectedBriefCampaign.productLink}
                   </a>
@@ -353,7 +353,7 @@ export function ProcessOfWorkPanel({
           <>
             <div className="mt-4 rounded-xl border border-slate-200 bg-white p-4">
               <label className="block text-xs font-semibold uppercase tracking-wide text-slate-500">Upload brief (PDF / doc)</label>
-              <input type="file" className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700" />
+              <input type="file" className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
             </div>
           </>
         ) : null}
@@ -386,7 +386,7 @@ export function ProcessOfWorkPanel({
                   <td className="px-2 py-2 text-slate-600">{row.status}</td>
                   <td className="px-2 py-2 text-slate-500">{row.updated}</td>
                   <td className="px-2 py-2">
-                    <button type="button" className="text-indigo-600 hover:underline" onClick={() => setSelectedDraft(row)}>
+                    <button type="button" className="text-primary hover:underline" onClick={() => setSelectedDraft(row)}>
                       View
                     </button>
                   </td>
@@ -403,7 +403,7 @@ export function ProcessOfWorkPanel({
               placeholder="New draft name"
               className="min-w-0 flex-1 rounded-lg border border-slate-200 px-2 py-1.5 text-xs"
             />
-            <button type="button" onClick={addDraft} className="shrink-0 rounded-lg bg-indigo-600 px-3 py-1.5 text-xs font-semibold text-white">
+            <button type="button" onClick={addDraft} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white">
               Add draft
             </button>
           </div>
@@ -466,14 +466,14 @@ export function ProcessOfWorkPanel({
               onChange={(e) => setWorkLink(e.target.value)}
               className="mt-1 w-full rounded-lg border border-slate-200 px-3 py-2 text-sm"
             />
-            <button type="button" className="mt-3 rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white" onClick={close}>
+            <button type="button" className="mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white" onClick={close}>
               Save link
             </button>
           </>
         ) : (
           <>
             <p className="text-sm text-slate-600">Content submitted by the influencer.</p>
-            <a href={workLink} target="_blank" rel="noreferrer" className="mt-3 inline-block break-all text-sm font-semibold text-indigo-600 hover:underline">
+            <a href={workLink} target="_blank" rel="noreferrer" className="mt-3 inline-block break-all text-sm font-semibold text-primary hover:underline">
               {workLink}
             </a>
           </>
@@ -497,7 +497,7 @@ export function ProcessOfWorkPanel({
           <p className="mt-1 text-xs text-slate-600">transfer_receipt_demo.png (uploaded 2 May 2026)</p>
           <button
             type="button"
-            className="mt-2 text-xs font-semibold text-indigo-600 hover:underline"
+            className="mt-2 text-xs font-semibold text-primary hover:underline"
             onClick={() => downloadBlob("transfer-receipt-note.txt", "Receipt preview (demo).")}
           >
             Download sample receipt
@@ -506,7 +506,7 @@ export function ProcessOfWorkPanel({
         {variant === "brand" ? (
           <>
             <label className="mt-4 block text-xs font-semibold text-slate-700">Upload payment proof (image / PDF)</label>
-            <input type="file" accept="image/*,.pdf" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-indigo-50 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-indigo-700" />
+            <input type="file" accept="image/*,.pdf" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
           </>
         ) : null}
       </Modal>

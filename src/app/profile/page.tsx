@@ -165,7 +165,7 @@ function BrandProfileView() {
               role={profileRole}
             />
             <p className="mt-3 text-sm text-slate-500">Company logo (demo)</p>
-            <button type="button" className="mt-2 text-sm font-semibold text-indigo-600 hover:underline">
+            <button type="button" className="mt-2 text-sm font-semibold text-primary hover:underline">
               Change image
             </button>
           </div>
@@ -406,7 +406,7 @@ function InfluencerProfileView() {
       </div>
 
       {importMessage ? (
-        <p className="rounded-xl border border-indigo-100 bg-indigo-50 px-4 py-3 text-sm text-indigo-900" role="status">
+        <p className="rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary-foreground" role="status">
           {importMessage}
         </p>
       ) : null}
@@ -416,7 +416,7 @@ function InfluencerProfileView() {
           PDF on file: <span className="font-semibold text-slate-900">{kit.uploadedPdfFileName}</span>{" "}
           <button
             type="button"
-            className="ml-2 text-sm font-semibold text-indigo-600 hover:underline"
+            className="ml-2 text-sm font-semibold text-primary hover:underline"
             onClick={() => {
               setUploadedPdfFileName(null);
               setImportMessage("PDF attachment cleared.");

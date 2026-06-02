@@ -5,6 +5,12 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { Role } from "@/lib/types";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Card, CardContent } from "@/components/ui/card";
+import { Separator } from "@/components/ui/separator";
+import { cn } from "@/lib/utils";
 
 export default function RegisterPage() {
   const [step, setStep] = useState(0);
@@ -26,247 +32,173 @@ export default function RegisterPage() {
   };
 
   return (
-    <section className="mx-auto min-h-[calc(100vh-3rem)] max-w-6xl overflow-hidden rounded-3xl bg-white shadow-xl ring-1 ring-slate-200">
-      <div className="grid min-h-[calc(100vh-3rem)] md:grid-cols-[1fr_1.05fr]">
-        <aside className="relative hidden flex-col justify-between bg-gradient-to-b from-indigo-700 via-indigo-700 to-violet-700 px-10 py-8 text-white md:flex">
-          <Link href="/" className="inline-flex items-center gap-2 text-lg font-semibold transition hover:opacity-80">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
+    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
+      <Card className="grid w-full max-w-5xl overflow-hidden border-none shadow-2xl md:grid-cols-2">
+        <aside className="relative hidden flex-col justify-between bg-slate-950 p-10 text-white md:flex">
+          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20" />
+          
+          <Link href="/" className="relative z-10 inline-flex items-center gap-2 text-lg font-bold transition hover:opacity-80">
+            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
               IA
             </span>
             InfluApp
           </Link>
 
-          <div className="max-w-sm">
-            <h2 className="text-5xl font-bold leading-tight">Build your creator growth engine.</h2>
-            <p className="mt-6 text-lg text-indigo-100">
+          <div className="relative z-10 max-w-sm">
+            <h2 className="text-4xl font-bold leading-tight tracking-tight">Build your creator growth engine.</h2>
+            <p className="mt-6 text-lg text-slate-400">
               "Launch faster, match smarter, and scale your partnerships with trusted creator insights."
             </p>
-            <div className="mt-8 flex items-center gap-3">
-              <span className="inline-flex h-10 w-10 items-center justify-center rounded-full bg-white/25 text-sm font-semibold">AM</span>
+            <div className="mt-10 flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary/80 to-secondary/80 p-0.5">
+                <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-900 text-xs font-bold">AM</div>
+              </div>
               <div>
-                <p className="font-semibold">Alya Morgan</p>
-                <p className="text-sm text-indigo-100">Partnership Lead, Nexa Commerce</p>
+                <p className="text-sm font-semibold">Alya Morgan</p>
+                <p className="text-xs text-slate-500">Partnership Lead, Nexa Commerce</p>
               </div>
             </div>
           </div>
 
-          <div className="flex gap-10">
+          <div className="relative z-10 flex gap-10">
             <div>
-              <p className="text-3xl font-bold">15K+</p>
-              <p className="text-sm text-indigo-100">Active Campaigns</p>
+              <p className="text-2xl font-bold">15K+</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Active Campaigns</p>
             </div>
             <div>
-              <p className="text-3xl font-bold">2.4M</p>
-              <p className="text-sm text-indigo-100">Creators Indexed</p>
+              <p className="text-2xl font-bold">2.4M</p>
+              <p className="text-xs text-slate-500 uppercase tracking-wider">Creators Indexed</p>
             </div>
           </div>
         </aside>
 
-        <div className="flex items-center justify-center bg-white px-6 py-10 md:px-12">
-          <div className="w-full max-w-xl">
+        <CardContent className="flex flex-col justify-center bg-background p-8 md:p-12">
+          <div className="mx-auto w-full max-w-sm space-y-8">
             {step === 0 ? (
               <>
-                <h1 className="text-4xl font-bold text-slate-900">Create your account</h1>
-                <p className="mt-2 text-slate-600">Join InfluApp and start connecting with the right creators.</p>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tight">Create your account</h1>
+                  <p className="text-sm text-muted-foreground">Join InfluApp and start connecting with creators.</p>
+                </div>
 
-                <div className="mt-7 grid grid-cols-2 gap-3">
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                <div className="grid grid-cols-2 gap-3">
+                  <Button variant="outline" className="rounded-xl">
+                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
                       <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-6.9 0-.7-.1-1.5-.2-2.2H12z" />
                       <path fill="#34A853" d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.4-4H3.4v2.5A10 10 0 0 0 12 22z" />
                       <path fill="#4A90E2" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.5H3.4A10 10 0 0 0 2.4 12c0 1.6.4 3.1 1 4.5L6.6 14z" />
                       <path fill="#FBBC05" d="M12 6c1.4 0 2.6.5 3.5 1.4l2.6-2.6A10 10 0 0 0 3.4 7.5L6.6 10c.8-2.3 2.9-4 5.4-4z" />
                     </svg>
                     Google
-                  </button>
-                  <button
-                    type="button"
-                    className="inline-flex items-center justify-center gap-2 rounded-xl border border-slate-200 px-4 py-2.5 text-sm font-semibold text-slate-700 transition hover:bg-slate-50"
-                  >
-                    <svg viewBox="0 0 24 24" className="h-4 w-4" aria-hidden="true">
+                  </Button>
+                  <Button variant="outline" className="rounded-xl">
+                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
                       <path fill="currentColor" d="M17.6 12.7c0-2.4 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-1.9-1.5-.1-3 .9-3.8.9s-2-.9-3.3-.9c-1.7 0-3.2 1-4.1 2.4-1.8 3.1-.5 7.7 1.3 10.3.9 1.3 1.9 2.8 3.3 2.8 1.4-.1 1.9-.8 3.6-.8s2.1.8 3.6.8c1.5 0 2.4-1.3 3.3-2.6 1-1.5 1.4-2.9 1.4-3-.1-.1-2.7-1-2.8-4.3zM15.1 5.6c.7-.9 1.2-2.1 1.1-3.3-1 .1-2.2.7-2.9 1.6-.7.8-1.3 2-1.2 3.2 1.1.1 2.3-.6 3-1.5z" />
                     </svg>
                     Apple
-                  </button>
+                  </Button>
                 </div>
 
-                <div className="my-6 flex items-center gap-3">
-                  <span className="h-px flex-1 bg-slate-200" />
-                  <span className="text-xs font-medium text-slate-400">Or continue with email</span>
-                  <span className="h-px flex-1 bg-slate-200" />
+                <div className="relative">
+                  <div className="absolute inset-0 flex items-center">
+                    <Separator />
+                  </div>
+                  <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground font-medium">Or continue with email</span>
+                  </div>
                 </div>
 
                 <form className="space-y-4" onSubmit={handleNextStep}>
-                  <label className="block space-y-1.5">
-                    <span className="text-sm font-medium text-slate-700">Full name</span>
-                    <input
-                      type="text"
-                      required
-                      value={name}
-                      onChange={(e) => setName(e.target.value)}
-                      placeholder="Your full name"
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-indigo-500 transition focus:ring-2"
-                    />
-                  </label>
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Full Name</Label>
+                    <Input id="name" required value={name} onChange={(e) => setName(e.target.value)} placeholder="Your full name" className="rounded-xl" />
+                  </div>
 
-                  <label className="block space-y-1.5">
-                    <span className="text-sm font-medium text-slate-700">Email Address</span>
-                    <input
-                      type="email"
-                      required
-                      value={email}
-                      onChange={(e) => setEmail(e.target.value)}
-                      placeholder="name@company.com"
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-indigo-500 transition focus:ring-2"
-                    />
-                  </label>
+                  <div className="space-y-2">
+                    <Label htmlFor="email">Email Address</Label>
+                    <Input id="email" type="email" required value={email} onChange={(e) => setEmail(e.target.value)} placeholder="name@company.com" className="rounded-xl" />
+                  </div>
 
-                  <label className="block space-y-1.5">
-                    <span className="text-sm font-medium text-slate-700">Password</span>
-                    <input
-                      type="password"
-                      required
-                      value={password}
-                      onChange={(e) => setPassword(e.target.value)}
-                      placeholder="At least 8 characters"
-                      className="w-full rounded-xl border border-slate-200 px-3 py-2.5 outline-none ring-indigo-500 transition focus:ring-2"
-                    />
-                  </label>
+                  <div className="space-y-2">
+                    <Label htmlFor="password">Password</Label>
+                    <Input id="password" type="password" required value={password} onChange={(e) => setPassword(e.target.value)} placeholder="At least 8 characters" className="rounded-xl" />
+                  </div>
 
-                  <label className="inline-flex items-start gap-2 text-sm text-slate-600">
-                    <input type="checkbox" required className="mt-0.5 h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-600" />
-                    I agree to the Terms of Service and Privacy Policy.
-                  </label>
+                  <div className="flex items-center gap-2">
+                    <input type="checkbox" required className="h-4 w-4 rounded border-input bg-background" id="terms" />
+                    <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
+                      I agree to the <Link href="#" className="underline">Terms</Link> and <Link href="#" className="underline">Privacy Policy</Link>.
+                    </Label>
+                  </div>
 
-                  <button
-                    type="submit"
-                    className="w-full rounded-xl bg-indigo-600 px-4 py-2.5 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
-                  >
+                  <Button type="submit" className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
                     Create Account
-                  </button>
+                  </Button>
                 </form>
-
-                <p className="mt-6 text-center text-sm text-slate-600">
-                  Already have an account?{" "}
-                  <Link href="/login" className="font-semibold text-indigo-600 hover:underline">
-                    Log in
-                  </Link>
-                </p>
               </>
             ) : (
               <>
-                <h1 className="text-4xl font-bold text-slate-900">Select your role</h1>
-                <p className="mt-2 text-slate-600">Choose the role that best matches how you will use InfluApp.</p>
+                <div className="space-y-2">
+                  <h1 className="text-3xl font-bold tracking-tight">Select your role</h1>
+                  <p className="text-sm text-muted-foreground">Choose how you will use InfluApp.</p>
+                </div>
 
-                <div className="mt-8 space-y-6">
-                  <fieldset className="space-y-4">
-                    <div className="grid grid-cols-1 gap-4">
-                      <label className="relative cursor-pointer">
-                        <input
-                          type="radio"
-                          name="accountType"
-                          value="agency"
-                          checked={role === "agency"}
-                          onChange={() => setRole("agency")}
-                          className="peer sr-only"
-                        />
-                        <span className="flex items-center gap-4 rounded-2xl border-2 border-slate-100 bg-white p-5 transition peer-checked:border-indigo-600 peer-checked:bg-indigo-50/50 hover:border-indigo-200">
-                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-indigo-100 text-indigo-700">
-                            <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                              <path fill="currentColor" d="M4 20h16a1 1 0 0 0 1-1v-8.5a1 1 0 0 0-.3-.7l-3.5-3.5a1 1 0 0 0-.7-.3H4a1 1 0 0 0-1 1V19a1 1 0 0 0 1 1zm2-2v-3h3v3H6zm5 0v-5h3v5h-3zm5 0v-7h3v7h-3z" />
-                            </svg>
-                          </span>
-                          <span className="flex-1">
-                            <span className="block text-lg font-bold text-slate-900">Agency</span>
-                            <span className="block text-sm text-slate-600">Manage multiple top-tier talents and scale partnerships.</span>
-                          </span>
-                          <span className="h-6 w-6 rounded-full border-2 border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-600" />
-                        </span>
-                      </label>
+                <div className="space-y-4">
+                  <div className="grid gap-4">
+                    {[
+                      { id: "agency", label: "Agency", desc: "Manage multiple top-tier talents.", icon: "🏢" },
+                      { id: "brand", label: "Brand", desc: "Discover perfect creator matches.", icon: "🛍️" },
+                      { id: "influencer", label: "Influencer", desc: "Share stories and build community.", icon: "✨" },
+                    ].map((r) => (
+                      <div
+                        key={r.id}
+                        onClick={() => setRole(r.id as Role)}
+                        className={cn(
+                          "relative cursor-pointer rounded-2xl border-2 p-4 transition-all hover:border-primary/50",
+                          role === r.id ? "border-primary bg-primary/5" : "border-border bg-card"
+                        )}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background text-2xl shadow-sm">
+                            {r.icon}
+                          </div>
+                          <div>
+                            <p className="font-bold text-foreground">{r.label}</p>
+                            <p className="text-xs text-muted-foreground">{r.desc}</p>
+                          </div>
+                          {role === r.id && (
+                            <div className="ml-auto h-5 w-5 rounded-full bg-primary flex items-center justify-center">
+                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                              </svg>
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
 
-                      <label className="relative cursor-pointer">
-                        <input
-                          type="radio"
-                          name="accountType"
-                          value="brand"
-                          checked={role === "brand"}
-                          onChange={() => setRole("brand")}
-                          className="peer sr-only"
-                        />
-                        <span className="flex items-center gap-4 rounded-2xl border-2 border-slate-100 bg-white p-5 transition peer-checked:border-indigo-600 peer-checked:bg-indigo-50/50 hover:border-indigo-200">
-                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-blue-100 text-blue-700">
-                            <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                              <path fill="currentColor" d="M7 4h10l1 4v12H6V8l1-4zm2 2-.5 2h7L15 6H9z" />
-                            </svg>
-                          </span>
-                          <span className="flex-1">
-                            <span className="block text-lg font-bold text-slate-900">Brand</span>
-                            <span className="block text-sm text-slate-600">Discover and collaborate with the perfect creators.</span>
-                          </span>
-                          <span className="h-6 w-6 rounded-full border-2 border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-600" />
-                        </span>
-                      </label>
-
-                      <label className="relative cursor-pointer">
-                        <input
-                          type="radio"
-                          name="accountType"
-                          value="influencer"
-                          checked={role === "influencer"}
-                          onChange={() => setRole("influencer")}
-                          className="peer sr-only"
-                        />
-                        <span className="flex items-center gap-4 rounded-2xl border-2 border-slate-100 bg-white p-5 transition peer-checked:border-indigo-600 peer-checked:bg-indigo-50/50 hover:border-indigo-200">
-                          <span className="inline-flex h-12 w-12 items-center justify-center rounded-xl bg-purple-100 text-purple-700">
-                            <svg viewBox="0 0 24 24" className="h-6 w-6" aria-hidden="true">
-                              <path fill="currentColor" d="M12 4a4 4 0 1 0 0 8 4 4 0 0 0 0-8zm-7 14a7 7 0 0 1 14 0v2H5v-2zm14.5-6.8 1.4 1.4-1.4 1.4-1.4-1.4 1.4-1.4zM3.1 12.6l1.4-1.4 1.4 1.4-1.4 1.4-1.4-1.4z" />
-                            </svg>
-                          </span>
-                          <span className="flex-1">
-                            <span className="block text-lg font-bold text-slate-900">Influencer</span>
-                            <span className="block text-sm text-slate-600">Share your story and build your community.</span>
-                          </span>
-                          <span className="h-6 w-6 rounded-full border-2 border-slate-200 bg-white peer-checked:border-indigo-600 peer-checked:bg-indigo-600" />
-                        </span>
-                      </label>
-                    </div>
-                  </fieldset>
-
-                  <div className="flex flex-col gap-3">
-                    <button
-                      onClick={handleCompleteRegistration}
-                      className="w-full rounded-xl bg-indigo-600 px-4 py-3 font-semibold text-white shadow-lg shadow-indigo-200 transition hover:bg-indigo-700"
-                    >
+                  <div className="pt-4 space-y-3">
+                    <Button onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20">
                       Complete Registration
-                    </button>
-                    <button
-                      onClick={() => setStep(0)}
-                      className="w-full rounded-xl bg-slate-100 px-4 py-3 font-semibold text-slate-700 transition hover:bg-slate-200"
-                    >
+                    </Button>
+                    <Button variant="ghost" onClick={() => setStep(0)} className="w-full rounded-xl">
                       Go Back
-                    </button>
+                    </Button>
                   </div>
                 </div>
               </>
             )}
 
-            <div className="mt-12 flex justify-center gap-5 text-xs text-slate-400">
-              <Link href="#" className="hover:text-slate-600">
-                Privacy Policy
+            <p className="text-center text-sm text-muted-foreground">
+              Already have an account?{" "}
+              <Link href="/login" className="font-bold text-primary hover:underline">
+                Log in
               </Link>
-              <Link href="#" className="hover:text-slate-600">
-                Terms of Service
-              </Link>
-              <Link href="#" className="hover:text-slate-600">
-                Contact Support
-              </Link>
-            </div>
+            </p>
           </div>
-        </div>
-      </div>
-    </section>
+        </CardContent>
+      </Card>
+    </div>
   );
 }

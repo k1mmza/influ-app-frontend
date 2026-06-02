@@ -10,7 +10,7 @@ interface UserState {
   role: Role;
   /** Set true after sign-in so shell UI (e.g. footer) can hide for the session. */
   isLoggedIn: boolean;
-  signIn: (role: Role) => void;
+  signIn: (role: Role, name?: string, email?: string) => void;
   setRole: (role: Role) => void;
   logout: () => void;
 }

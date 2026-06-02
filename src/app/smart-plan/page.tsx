@@ -335,7 +335,7 @@ export default function SmartPlanPage() {
             <button
               type="button"
               onClick={() => setViewMode("create")}
-              className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+              className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
             >
               Create New Campaign
             </button>
@@ -367,7 +367,7 @@ export default function SmartPlanPage() {
                           applyCampaignRequirementToBrief(campaign);
                           setViewMode("detail");
                         }}
-                        className="rounded-lg border border-indigo-300 px-3 py-1 text-xs font-semibold text-indigo-700 hover:bg-indigo-50"
+                        className="rounded-lg border border-primary/30 px-3 py-1 text-xs font-semibold text-primary/90 hover:bg-primary/5"
                       >
                         See Detail
                       </button>
@@ -388,7 +388,7 @@ export default function SmartPlanPage() {
               type="button"
               onClick={() => setStartMode("form")}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                startMode === "form" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+                startMode === "form" ? "bg-primary text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
               Form
@@ -398,7 +398,7 @@ export default function SmartPlanPage() {
               type="button"
               onClick={() => setStartMode("prompt")}
               className={`rounded-xl px-4 py-2 text-sm font-semibold transition ${
-                startMode === "prompt" ? "bg-indigo-600 text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
+                startMode === "prompt" ? "bg-primary text-white" : "border border-slate-300 text-slate-700 hover:bg-slate-100"
               }`}
             >
               Prompt command
@@ -422,7 +422,7 @@ export default function SmartPlanPage() {
                 value={promptInput}
                 onChange={(event) => setPromptInput(event.target.value)}
                 placeholder={promptHint}
-                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
               />
               <div className="mt-4 flex items-center justify-end gap-3">
                 <button
@@ -441,7 +441,7 @@ export default function SmartPlanPage() {
                     }
                     setIsPlannerVisible(true);
                   }}
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
                 >
                   Create Campaign
                 </button>
@@ -462,7 +462,7 @@ export default function SmartPlanPage() {
                     <input
                       value={formDraft[field.key]}
                       onChange={(event) => updateFormDraft(field.key, event.target.value)}
-                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                      className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
                       placeholder={requirementInputPlaceholder(field.key, field.label)}
                     />
                   </label>
@@ -479,7 +479,7 @@ export default function SmartPlanPage() {
                 <button
                   type="button"
                   onClick={finishFormFlow}
-                  className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90"
                 >
                   Generate Smart Plan
                 </button>
@@ -498,7 +498,7 @@ export default function SmartPlanPage() {
                 type="button"
                 onClick={() => setActiveStep(step.id)}
                 className={`rounded-lg px-3 py-2 text-xs font-semibold transition ${
-                  activeStep === step.id ? "bg-indigo-600 text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
+                  activeStep === step.id ? "bg-primary text-white" : "bg-slate-100 text-slate-700 hover:bg-slate-200"
                 }`}
               >
                 {index + 1}. {step.label}
@@ -507,7 +507,7 @@ export default function SmartPlanPage() {
           </div>
 
           {viewMode === "detail" && selectedCampaign && (
-            <div className="rounded-xl border border-indigo-200 bg-indigo-50 p-3 text-sm text-indigo-700">
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-3 text-sm text-primary/90">
               Viewing campaign: <span className="font-semibold">{selectedCampaign.name}</span>
             </div>
           )}
@@ -521,12 +521,12 @@ export default function SmartPlanPage() {
                   <input
                     value={requirements[field.key]}
                     onChange={(event) => updateRequirement(field.key, event.target.value)}
-                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                    className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
                     placeholder={requirementInputPlaceholder(field.key, field.label)}
                   />
                 </label>
               ))}
-              <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+              <button type="button" className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90">
                 Save Requirement
               </button>
             </div>
@@ -551,7 +551,7 @@ export default function SmartPlanPage() {
                   <button
                     type="button"
                     onClick={() => setIsBriefCampaignPickerOpen(true)}
-                    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                    className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
                   >
                     Select campaign
                   </button>
@@ -576,7 +576,7 @@ export default function SmartPlanPage() {
                         applyCampaignRequirementToBrief(campaign);
                         setIsBriefCampaignPickerOpen(false);
                       }}
-                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 transition hover:border-indigo-300 hover:bg-indigo-50"
+                      className="flex w-full items-center justify-between rounded-lg border border-slate-200 px-3 py-2 text-left text-sm text-slate-700 transition hover:border-primary/30 hover:bg-primary/5"
                     >
                       <span>{campaign.name}</span>
                       <span className="text-xs text-slate-500">{campaign.status}</span>
@@ -591,7 +591,7 @@ export default function SmartPlanPage() {
                   rows={5}
                   value={strategyText}
                   onChange={(event) => setStrategyText(event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
                 />
               </div>
 
@@ -601,7 +601,7 @@ export default function SmartPlanPage() {
                   rows={5}
                   value={conceptText}
                   onChange={(event) => setConceptText(event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
                 />
               </div>
 
@@ -611,11 +611,11 @@ export default function SmartPlanPage() {
                   rows={5}
                   value={briefText}
                   onChange={(event) => setBriefText(event.target.value)}
-                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+                  className="w-full rounded-lg border border-slate-200 px-3 py-2 text-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
                 />
               </div>
 
-              <button type="button" className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
+              <button type="button" className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90">
                 Save brief
               </button>
             </div>
@@ -631,11 +631,11 @@ export default function SmartPlanPage() {
               value={promptInput}
               onChange={(event) => setPromptInput(event.target.value)}
               placeholder={promptHint}
-              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-indigo-500 focus:ring-2 focus:ring-indigo-100"
+              className="w-full rounded-xl border border-slate-200 px-4 py-3 text-sm text-slate-700 outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
             />
             <div className="mt-3 flex items-center justify-between gap-3">
               <p className="text-xs text-slate-500">{promptHint}</p>
-              <button type="submit" className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700">
+              <button type="submit" className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90">
                 Run AI Prompt
               </button>
             </div>

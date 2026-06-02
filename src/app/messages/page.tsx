@@ -34,16 +34,16 @@ function InfluencerMessagesView() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold">Messages</h1>
-        <p className="mt-1 text-sm text-indigo-100">Manage active conversations, files, and campaign workflow in one place.</p>
+        <p className="mt-1 text-sm text-primary/10">Manage active conversations, files, and campaign workflow in one place.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">3 unread</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary/90">3 unread</span>
           </div>
           <input
             placeholder="Search brand or campaign"
@@ -60,7 +60,7 @@ function InfluencerMessagesView() {
               <div key={`${brand}-${campaign}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-indigo-950">{brand}</p>
+                    <p className="text-sm font-semibold text-primary-foreground">{brand}</p>
                     <p className="text-xs text-slate-500">{campaign}</p>
                   </div>
                   <span className="shrink-0 text-xs text-slate-400">{time}</span>
@@ -68,7 +68,7 @@ function InfluencerMessagesView() {
                 <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <WorkStatusDot phase={phase} />
-                  {unread ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">New</span> : null}
+                  {unread ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/90">New</span> : null}
                 </div>
               </div>
             ))}
@@ -103,9 +103,9 @@ function InfluencerMessagesView() {
               <p className="mt-1 text-[11px] text-slate-400">10:04</p>
             </div>
 
-            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-primary px-3 py-2 text-sm text-white">
               Sure! I&apos;ll send the TikTok draft tomorrow for early review.
-              <p className="mt-1 text-[11px] text-indigo-200">10:07 • Seen</p>
+              <p className="mt-1 text-[11px] text-primary/20">10:07 • Seen</p>
             </div>
 
             <div className="w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
@@ -121,7 +121,7 @@ function InfluencerMessagesView() {
 
           <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
             <input placeholder="Type your message..." className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
+            <button className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">Send</button>
           </div>
         </article>
       </div>
@@ -134,16 +134,16 @@ function BrandMessagesView() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold">Messages</h1>
-        <p className="mt-1 text-sm text-indigo-100">Chat with influencers, filter by campaign, and keep briefs in context.</p>
+        <p className="mt-1 text-sm text-primary/10">Chat with influencers, filter by campaign, and keep briefs in context.</p>
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
         <aside className="rounded-2xl bg-white p-4 shadow-sm">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-semibold text-slate-900">Conversations</h2>
-            <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-xs font-semibold text-indigo-700">2 unread</span>
+            <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-semibold text-primary/90">2 unread</span>
           </div>
           <input
             placeholder="Search influencer or campaign"
@@ -160,7 +160,7 @@ function BrandMessagesView() {
               <div key={`${name}-${campaign}`} className="rounded-xl border border-slate-200 bg-white p-3 shadow-sm">
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
-                    <p className="text-sm font-semibold text-indigo-950">{name}</p>
+                    <p className="text-sm font-semibold text-primary-foreground">{name}</p>
                     <p className="text-xs text-slate-500">{campaign}</p>
                   </div>
                   <span className="shrink-0 text-xs text-slate-400">{time}</span>
@@ -168,7 +168,7 @@ function BrandMessagesView() {
                 <p className="mt-1 line-clamp-1 text-xs text-slate-600">{preview}</p>
                 <div className="mt-2 flex items-center justify-between gap-2">
                   <WorkStatusDot phase={phase} />
-                  {unread ? <span className="rounded-full bg-indigo-100 px-2 py-0.5 text-[10px] font-semibold text-indigo-700">New</span> : null}
+                  {unread ? <span className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-semibold text-primary/90">New</span> : null}
                 </div>
               </div>
             ))}
@@ -198,9 +198,9 @@ function BrandMessagesView() {
           <div className="space-y-3 py-4">
             <p className="text-center text-xs text-slate-400">Today</p>
 
-            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-primary px-3 py-2 text-sm text-white">
               Hi Lina, can you submit the first draft by Friday 5 PM?
-              <p className="mt-1 text-[11px] text-indigo-200">10:04</p>
+              <p className="mt-1 text-[11px] text-primary/20">10:04</p>
             </div>
 
             <div className="w-fit max-w-[80%] rounded-2xl rounded-tl-md bg-slate-100 px-3 py-2 text-sm text-slate-700">
@@ -208,15 +208,15 @@ function BrandMessagesView() {
               <p className="mt-1 text-[11px] text-slate-400">10:07</p>
             </div>
 
-            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-indigo-600 px-3 py-2 text-sm text-white">
+            <div className="ml-auto w-fit max-w-[80%] rounded-2xl rounded-tr-md bg-primary px-3 py-2 text-sm text-white">
               Attached: updated brief + do/don&apos;t list. Ping me if anything is unclear.
-              <p className="mt-1 text-[11px] text-indigo-200">10:10</p>
+              <p className="mt-1 text-[11px] text-primary/20">10:10</p>
             </div>
           </div>
 
           <div className="mt-3 flex items-center gap-2 border-t border-slate-100 pt-3">
             <input placeholder="Type a message to influencer…" className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm" />
-            <button className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white">Send</button>
+            <button className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white">Send</button>
           </div>
         </article>
       </div>

@@ -60,7 +60,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
   }
 
   return (
-    <article className="rounded-2xl border border-indigo-200 bg-white p-5 shadow-sm">
+    <article className="rounded-2xl border border-primary/20 bg-white p-5 shadow-sm">
       <h2 className="text-lg font-semibold text-slate-900">Rate your campaign partners</h2>
       <p className="mt-1 text-sm text-slate-600">
         After a finished campaign, leave a star rating and short note for each partner. Reviews show on their profile.
@@ -149,7 +149,7 @@ export function CampaignPartnerReviews({ campaignId, campaignName, currentRole, 
                         setMessage({ type: "err", text: result.reason });
                       }
                     }}
-                    className="rounded-lg bg-indigo-600 px-3 py-2 text-xs font-semibold text-white hover:bg-indigo-700"
+                    className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white hover:bg-primary/90"
                   >
                     Submit review
                   </button>

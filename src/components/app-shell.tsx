@@ -11,12 +11,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isSmartPlanPage = pathname === "/smart-plan" || pathname.startsWith("/smart-plan/");
 
   if (isAuthPage) {
-    return <main className="mx-auto min-h-screen max-w-6xl px-4 py-6">{children}</main>;
+    return <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">{children}</main>;
   }
 
   if (isLandingPage) {
     return (
-      <main className="flex min-h-screen flex-col">
+      <main className="flex min-h-screen flex-col bg-background">
         <div className="mx-auto w-full max-w-6xl px-4 pt-6">
           <Navigation />
         </div>
@@ -29,17 +29,17 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   if (isSmartPlanPage) {
-    return <main className="min-h-screen bg-white px-4 py-6 lg:px-6">{children}</main>;
+    return <main className="min-h-screen bg-background px-4 py-6 lg:px-6">{children}</main>;
   }
 
   return (
-    <main className="flex min-h-screen flex-col px-4 py-6 lg:px-6">
-      <div className="grid flex-1 gap-6 lg:grid-cols-[220px_1fr]">
-        <aside>
+    <main className="flex min-h-screen flex-col bg-slate-50/50 px-4 py-6 lg:px-8">
+      <div className="mx-auto grid w-full max-w-7xl flex-1 gap-8 lg:grid-cols-[240px_1fr]">
+        <aside className="sticky top-6 self-start">
           <Navigation />
           <div id="app-sidebar-slot" className="mt-4" />
         </aside>
-        <section>{children}</section>
+        <section className="min-h-[calc(100vh-3rem)]">{children}</section>
       </div>
     </main>
   );

@@ -4,6 +4,7 @@ import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
+import { Button } from "@/components/ui/button";
 
 const brandLinks = [
   { href: "/dashboard", label: "Dashboard" },
@@ -45,77 +46,78 @@ export function Navigation() {
 
   if (isLandingPage) {
     return (
-      <nav className="mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl bg-white/90 px-4 py-3 shadow-sm">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-slate-900">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
+      <nav className="sticky top-6 z-50 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-background/80 px-4 py-2.5 shadow-sm backdrop-blur-md">
+        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground transition hover:opacity-80">
+          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
             IA
           </span>
           <span>InfluApp</span>
         </Link>
 
-        <div className="flex flex-wrap items-center gap-2">
-          <Link href="/discover" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Discover
-          </Link>
-          <Link href="/#for-teams" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Agencies
-          </Link>
-          <Link href="/#for-brands" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Brands
-          </Link>
-          <Link href="/#for-creators" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Creators
-          </Link>
-          <Link href="/#how-it-works" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            How it works
-          </Link>
-          <Link href="/#pricing" className="rounded-full px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-100">
-            Pricing
-          </Link>
+        <div className="flex flex-wrap items-center gap-1">
+          <Button variant="ghost" asChild className="rounded-full">
+            <Link href="/discover">Discover</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
+            <Link href="/#for-teams">Agencies</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
+            <Link href="/#for-brands">Brands</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
+            <Link href="/#for-creators">Creators</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-full">
+            <Link href="/#how-it-works">Process</Link>
+          </Button>
+          <Button variant="ghost" asChild className="rounded-full">
+            <Link href="/#pricing">Pricing</Link>
+          </Button>
         </div>
 
         <div className="flex items-center gap-2">
-          <Link href="/login" className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 hover:bg-slate-100">
-            Login
-          </Link>
-          <Link href="/register" className="rounded-full bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:opacity-90">
-            Register
-          </Link>
+          <Button variant="ghost" asChild className="rounded-full">
+            <Link href="/login">Login</Link>
+          </Button>
+          <Button asChild className="rounded-full shadow-md">
+            <Link href="/register">Get Started</Link>
+          </Button>
         </div>
       </nav>
     );
   }
 
   return (
-    <nav className="rounded-2xl bg-white p-3 shadow-sm">
-      <Link href="/" className="mb-3 flex items-center gap-2 px-2 transition hover:opacity-80">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-indigo-600 to-purple-600 text-sm text-white">
+    <nav className="flex flex-col gap-1 rounded-2xl border bg-card p-2 shadow-sm">
+      <Link href="/" className="mb-4 flex items-center gap-2 px-3 py-2 transition hover:opacity-80">
+        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
           IA
         </span>
-        <span className="text-sm font-bold text-slate-900">InfluApp</span>
+        <span className="text-sm font-bold text-foreground">InfluApp</span>
       </Link>
-      <div className="flex flex-col gap-2">
+      <div className="flex flex-col gap-1">
         {(role === "influencer" ? influencerLinks : brandLinks).map((link) => (
-          <Link
+          <Button
             key={link.href}
-            href={link.href}
+            variant={isNavActive(pathname, link.href) ? "default" : "ghost"}
+            asChild
             className={cn(
-              "rounded-xl px-4 py-2 text-sm font-medium transition",
-              isNavActive(pathname, link.href) ? "bg-primary text-white" : "text-slate-700 hover:bg-slate-100"
+              "justify-start rounded-xl px-4 py-2 text-sm font-medium transition",
+              !isNavActive(pathname, link.href) && "text-muted-foreground hover:text-foreground"
             )}
           >
-            {link.label}
-          </Link>
+            <Link href={link.href}>{link.label}</Link>
+          </Button>
         ))}
       </div>
-      <div className="mt-4 border-t border-slate-100 px-2 pt-4">
-        <button
-          type="button"
+      <div className="mt-4 border-t border-border px-1 pt-4">
+        <Button
+          variant="ghost"
           onClick={handleLogout}
-          className="w-full rounded-xl bg-slate-100 px-4 py-2 text-left text-sm font-medium text-slate-700 transition hover:bg-slate-200"
+          className="w-full justify-start rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
         >
           Log out
-        </button>
+        </Button>
       </div>
     </nav>
   );

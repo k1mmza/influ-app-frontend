@@ -8,6 +8,25 @@ import { influencers } from "@/mock/influencers";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { 
+  Search, 
+  Filter, 
+  RotateCcw, 
+  ChevronDown, 
+  ChevronUp, 
+  Globe, 
+  Users, 
+  Target, 
+  Sparkles,
+  Layers
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type FollowerRange = "All" | "Nano" | "Micro" | "Mid" | "Macro" | "Mega";
 type InfluencerMeta = {
@@ -137,7 +156,10 @@ export default function DiscoverPage() {
 
 function DiscoverPageFallback() {
   return (
-    <div className="flex min-h-[40vh] items-center justify-center text-sm text-slate-500">Loading discovery…</div>
+    <div className="flex min-h-[40vh] items-center justify-center text-sm text-muted-foreground animate-pulse font-medium">
+      <Layers className="mr-2 h-4 w-4 animate-bounce" />
+      Syncing discovery engine...
+    </div>
   );
 }
 
@@ -557,181 +579,139 @@ function DiscoverPageContent() {
   }, [discoverCards, selectedInfluencerId]);
 
   return (
-    <section className="space-y-4 rounded-3xl bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 p-4 lg:p-6">
-      <div className="mb-4 rounded-3xl bg-gradient-to-r from-indigo-600 via-indigo-600 to-violet-600 p-6 text-white shadow-lg shadow-indigo-200">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <h1 className="text-2xl font-bold">Discover Influencers</h1>
-            <p className="mt-1 text-sm text-indigo-100">Find campaign-fit creators with smart filters and audience signals.</p>
+    <div className="space-y-6">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-primary to-secondary text-white overflow-hidden">
+        <CardContent className="p-8 relative">
+          <div className="absolute top-0 right-0 p-8 opacity-10">
+            <Globe className="h-32 w-32" />
           </div>
-          <div className="inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-semibold text-white">
-            {filtered.length} influencers matched
+          <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
+            <div>
+              <h1 className="text-3xl font-extrabold tracking-tight">Discover Influencers</h1>
+              <p className="mt-2 text-primary-foreground/80 font-medium">Find campaign-fit creators with smart filters and audience signals.</p>
+            </div>
+            <Badge variant="outline" className="w-fit border-white/30 bg-white/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
+              {filtered.length} matches found
+            </Badge>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
 
       {sidebarSlot
         ? createPortal(
-            <aside className="rounded-2xl border border-white/80 bg-white/90 p-4 shadow-sm backdrop-blur">
-              <div className="flex items-center justify-between">
-                <h2 className="text-base font-semibold text-slate-900">Filters</h2>
-                <button
-                  type="button"
-                  onClick={resetFilters}
-                  className="text-xs font-semibold text-indigo-600 hover:underline"
-                >
-                  Reset
-                </button>
-              </div>
-              <div className="mt-3 space-y-3">
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">Platform</label>
-                  <div className="mt-2 space-y-1.5">
-                    {platforms.map((item) => (
-                      <label key={item} className="flex items-center gap-2 text-xs text-slate-700">
+            <Card className="border-none shadow-sm bg-background">
+              <CardHeader className="pb-4">
+                <div className="flex items-center justify-between">
+                  <CardTitle className="text-base flex items-center gap-2">
+                    <Filter className="h-4 w-4" />
+                    Filters
+                  </CardTitle>
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-2 text-xs font-bold text-primary">
+                    <RotateCcw className="mr-1.5 h-3 w-3" />
+                    Reset
+                  </Button>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform</Label>
+                  <div className="space-y-2">
+                    {platforms.slice(0, 5).map((item) => (
+                      <div key={item} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
+                          id={`p-${item}`}
                           checked={selectedPlatforms.includes(item)}
-                          onChange={(event) => {
-                            if (event.target.checked) {
-                              setSelectedPlatforms((current) => [...current, item]);
-                              return;
-                            }
-                            setSelectedPlatforms((current) => current.filter((value) => value !== item));
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedPlatforms(p => [...p, item]);
+                            else setSelectedPlatforms(p => p.filter(v => v !== item));
                           }}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary"
+                          className="h-4 w-4 rounded border-input bg-background"
                         />
-                        {item}
-                      </label>
+                        <Label htmlFor={`p-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">Main audience platform</label>
-                  <p className="mt-0.5 text-[11px] text-slate-500">Where this creator has the most followers.</p>
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Main Platform</Label>
                   <select
                     value={mainPlatformFilter}
-                    onChange={(event) => setMainPlatformFilter(event.target.value)}
-                    className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
+                    onChange={(e) => setMainPlatformFilter(e.target.value)}
+                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
                   >
                     <option value="All">Any platform</option>
                     {platforms.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
+                      <option key={item} value={item}>{item}</option>
                     ))}
                   </select>
                 </div>
 
-                <div>
-                  <label className="block text-xs font-medium text-slate-600">Campaign intent</label>
-                  <div className="mt-2 space-y-1.5">
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
+                  <div className="space-y-2">
                     {campaignIntents.map((intent) => (
-                      <label key={intent} className="flex items-center gap-2 text-xs text-slate-700">
+                      <div key={intent} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
+                          id={`i-${intent}`}
                           checked={selectedCampaignIntents.includes(intent)}
-                          onChange={(event) => {
-                            if (event.target.checked) {
-                              setSelectedCampaignIntents((current) => [...current, intent]);
-                              return;
-                            }
-                            setSelectedCampaignIntents((current) => current.filter((value) => value !== intent));
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedCampaignIntents(p => [...p, intent]);
+                            else setSelectedCampaignIntents(p => p.filter(v => v !== intent));
                           }}
-                          className="h-3.5 w-3.5 rounded border-slate-300 text-primary focus:ring-primary"
+                          className="h-4 w-4 rounded border-input bg-background"
                         />
-                        {intent}
-                      </label>
+                        <Label htmlFor={`i-${intent}`} className="text-xs font-medium cursor-pointer">{intent}</Label>
+                      </div>
                     ))}
                   </div>
                 </div>
 
-                <button
-                  type="button"
-                  onClick={() => setShowAdvancedFilters((current) => !current)}
-                  className="w-full rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-left text-xs font-semibold text-slate-700 hover:bg-slate-100"
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
+                  className="w-full justify-between rounded-xl font-bold text-xs"
                 >
-                  Advanced {showAdvancedFilters ? "▲" : "▼"}
-                </button>
+                  Advanced Filters
+                  {showAdvancedFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
+                </Button>
 
                 {showAdvancedFilters && (
-                  <div className="space-y-3 rounded-xl border border-slate-200 p-3">
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Country</label>
-                      <select
-                        value={country}
-                        onChange={(event) => {
-                          setCountry(event.target.value);
-                          setCity("All");
-                        }}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {countries.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">City</label>
-                      <select
-                        value={city}
-                        onChange={(event) => setCity(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {cities.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Audience % threshold</label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={audienceThreshold}
-                          onChange={(event) => updateAudienceThreshold(Number(event.target.value))}
-                          className="w-full"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={audienceThreshold}
-                          onChange={(event) => updateAudienceThreshold(Number(event.target.value) || 0)}
-                          className="w-16 rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                        />
+                  <div className="pt-2 space-y-6">
+                    <div className="space-y-3">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Location</Label>
+                      <div className="grid gap-2">
+                        <select
+                          value={country}
+                          onChange={(e) => { setCountry(e.target.value); setCity("All"); }}
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        >
+                          {countries.map((item) => <option key={item} value={item}>{item}</option>)}
+                        </select>
+                        <select
+                          value={city}
+                          onChange={(e) => setCity(e.target.value)}
+                          className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        >
+                          {cities.map((item) => <option key={item} value={item}>{item}</option>)}
+                        </select>
                       </div>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Content category</label>
-                      <select
-                        value={category}
-                        onChange={(event) => setCategory(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {categories.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Follower range</label>
+
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Follower Range</Label>
+                        <Badge variant="secondary" className="text-[10px] h-4">{followerRange}</Badge>
+                      </div>
                       <select
                         value={followerRange}
-                        onChange={(event) => setFollowerRange(event.target.value as FollowerRange)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
+                        onChange={(e) => setFollowerRange(e.target.value as FollowerRange)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
                       >
-                        <option value="All">All</option>
+                        <option value="All">All Ranges</option>
                         <option value="Nano">Nano (1K - 10K)</option>
                         <option value="Micro">Micro (10K - 100K)</option>
                         <option value="Mid">Mid (100K - 500K)</option>
@@ -739,215 +719,67 @@ function DiscoverPageContent() {
                         <option value="Mega">Mega (1M+)</option>
                       </select>
                     </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min average views</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={minAverageViews}
-                        onChange={(event) => setMinAverageViews(Number(event.target.value) || 0)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min engagement rate (%)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        step="0.1"
-                        value={minEngagementRate}
-                        onChange={(event) => setMinEngagementRate(Number(event.target.value) || 0)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Audience gender</label>
-                      <select
-                        value={audienceGender}
-                        onChange={(event) => setAudienceGender(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {audienceGenders.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Audience age group</label>
-                      <select
-                        value={audienceAgeGroup}
-                        onChange={(event) => setAudienceAgeGroup(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {ageGroups.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Style present</label>
-                      <select
-                        value={stylePresent}
-                        onChange={(event) => setStylePresent(event.target.value)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      >
-                        {stylePresentOptions.map((item) => (
-                          <option key={item} value={item}>
-                            {item}
-                          </option>
-                        ))}
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min audience quality score</label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={minQualityScore}
-                          onChange={(event) => updateQualityScore(Number(event.target.value))}
-                          className="w-full"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={minQualityScore}
-                          onChange={(event) => updateQualityScore(Number(event.target.value) || 0)}
-                          className="w-16 rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                        />
+
+                    <div className="space-y-4">
+                      <div className="flex items-center justify-between">
+                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Quality Score</Label>
+                        <span className="text-xs font-bold text-primary">{minQualityScore}%</span>
                       </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min growth rate (%)</label>
                       <input
-                        type="number"
+                        type="range"
                         min={0}
-                        step="0.1"
-                        value={minGrowthRate}
-                        onChange={(event) => setMinGrowthRate(Number(event.target.value) || 0)}
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min performance score</label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={minPerformanceScore}
-                          onChange={(event) => updatePerformanceScore(Number(event.target.value))}
-                          className="w-full"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={minPerformanceScore}
-                          onChange={(event) => updatePerformanceScore(Number(event.target.value) || 0)}
-                          className="w-16 rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Max pricing / cost estimate ($)</label>
-                      <input
-                        type="number"
-                        min={0}
-                        value={maxRatePerPost}
-                        onChange={(event) => setMaxRatePerPost(Math.max(0, Number(event.target.value) || 0))}
-                        placeholder="0 = no limit"
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Min availability / response rate (%)</label>
-                      <div className="mt-1 flex items-center gap-2">
-                        <input
-                          type="range"
-                          min={0}
-                          max={100}
-                          step={1}
-                          value={minResponseRate}
-                          onChange={(event) => updateResponseRate(Number(event.target.value))}
-                          className="w-full"
-                        />
-                        <input
-                          type="number"
-                          min={0}
-                          max={100}
-                          value={minResponseRate}
-                          onChange={(event) => updateResponseRate(Number(event.target.value) || 0)}
-                          className="w-16 rounded-xl border border-slate-200 px-2 py-2 text-xs"
-                        />
-                      </div>
-                    </div>
-                    <div>
-                      <label className="block text-xs font-medium text-slate-600">Keywords / hashtags</label>
-                      <input
-                        type="text"
-                        value={keyword}
-                        onChange={(event) => setKeyword(event.target.value)}
-                        placeholder="beauty, workout, fashion"
-                        className="mt-1 w-full rounded-xl border border-slate-200 px-2 py-2 text-xs"
+                        max={100}
+                        value={minQualityScore}
+                        onChange={(e) => updateQualityScore(Number(e.target.value))}
+                        className="w-full accent-primary h-1 bg-slate-100 rounded-lg appearance-none cursor-pointer"
                       />
                     </div>
                   </div>
                 )}
-              </div>
-            </aside>,
+              </CardContent>
+            </Card>,
             sidebarSlot
           )
         : null}
 
-      <div className="space-y-4">
-        <div className="min-w-0 space-y-4">
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
-          <div className="flex flex-col gap-2">
-            <label className="text-sm font-semibold text-slate-700">Search influencer (social URL or Smart Search)</label>
-            <div className="flex flex-col gap-2 md:flex-row">
-              <input
-                type="text"
-                value={unifiedSearchInput}
-                onChange={(event) => setUnifiedSearchInput(event.target.value)}
-                placeholder="https://instagram.com/creator_name or beauty tiktok thailand micro"
-                className="w-full rounded-xl border border-slate-200 px-3 py-2 text-sm"
-              />
-              <button
-                type="button"
-                onClick={handleUnifiedSearch}
-                className="rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
-              >
+      <div className="space-y-6">
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-1">
+            <div className="flex flex-col gap-1 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={unifiedSearchInput}
+                  onChange={(e) => setUnifiedSearchInput(e.target.value)}
+                  placeholder="Enter creator URL or type keywords for Smart Search..."
+                  className="h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm"
+                />
+              </div>
+              <Button onClick={handleUnifiedSearch} className="h-12 rounded-none px-8 font-bold text-sm shadow-none">
                 Search
-              </button>
+              </Button>
             </div>
-            {urlSearchError && <p className="text-xs text-rose-600">{urlSearchError}</p>}
-            <p className="text-xs text-slate-500">Tip: Paste a creator URL to generate profile detail, or type keywords to apply smart filters.</p>
-          </div>
-        </div>
-        <div className="rounded-2xl border border-slate-200 bg-white/90 p-4 shadow-sm">
+          </CardContent>
+        </Card>
+
+        {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-sm font-semibold text-slate-700">Active filters:</span>
-            {activeChips.length === 0 ? (
-              <span className="text-sm text-slate-500">None</span>
-            ) : (
-              activeChips.map((chip) => (
-                <span key={chip} className="rounded-full bg-indigo-50 px-2.5 py-1 text-xs font-medium text-indigo-700">
-                  {chip}
-                </span>
-              ))
-            )}
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-2">Active:</span>
+            {activeChips.map((chip) => (
+              <Badge key={chip} variant="secondary" className="rounded-full bg-slate-100 text-slate-700 font-semibold px-3 py-1 border-none">
+                {chip}
+              </Badge>
+            ))}
           </div>
-        </div>
-        <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-4 2xl:grid-cols-5">
+        )}
+
+        {urlSearchError && (
+          <Badge variant="destructive" className="bg-rose-50 text-rose-600 border-rose-100 font-medium px-4 py-1">
+            {urlSearchError}
+          </Badge>
+        )}
+
+        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
           {discoverCards.map((influencer) => (
             <InfluencerCard
               key={influencer.id}
@@ -956,14 +788,26 @@ function DiscoverPageContent() {
               onSelect={(selected) => setSelectedInfluencerId(selected.id)}
             />
           ))}
+          
           {discoverCards.length === 0 && (
-            <article className="rounded-2xl border border-dashed border-slate-300 bg-white p-8 text-center text-sm text-slate-600 md:col-span-2 xl:col-span-4 2xl:col-span-5">
-              No influencers matched these filters. Try broadening your criteria.
-            </article>
+            <Card className="col-span-full border-2 border-dashed bg-slate-50/50 py-20 text-center">
+              <CardContent>
+                <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-slate-100">
+                  <RotateCcw className="h-6 w-6 text-muted-foreground" />
+                </div>
+                <h3 className="mt-4 text-lg font-bold">No results found</h3>
+                <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+                  Try adjusting your filters or search terms to find more creators.
+                </p>
+                <Button variant="outline" onClick={resetFilters} className="mt-6 rounded-xl font-bold">
+                  Clear all filters
+                </Button>
+              </CardContent>
+            </Card>
           )}
         </div>
-        </div>
       </div>
+
       {selectedInfluencer && selectedInfluencerMeta && (
         <InfluencerDetailPanel
           influencer={selectedInfluencer}
@@ -971,6 +815,6 @@ function DiscoverPageContent() {
           onClose={() => setSelectedInfluencerId(null)}
         />
       )}
-    </section>
+    </div>
   );
 }

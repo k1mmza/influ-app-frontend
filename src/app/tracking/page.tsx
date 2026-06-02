@@ -35,7 +35,7 @@ function TrackingPageContent() {
       <section className="space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Tracking</h1>
         <p className="text-slate-600">Live campaign metrics are available for brand accounts.</p>
-        <Link href="/dashboard" className="text-indigo-600 hover:underline">
+        <Link href="/dashboard" className="text-primary hover:underline">
           Back to dashboard
         </Link>
       </section>
@@ -77,9 +77,9 @@ function TrackingPageContent() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-indigo-600 to-violet-600 p-6 text-white shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold">Tracking</h1>
-        <p className="mt-1 text-sm text-indigo-100">Realtime-style results for published work (demo data).</p>
+        <p className="mt-1 text-sm text-primary/10">Realtime-style results for published work (demo data).</p>
       </div>
 
       <article className="overflow-hidden rounded-2xl bg-white shadow-sm">
@@ -114,7 +114,7 @@ function TrackingPageContent() {
                       <button
                         type="button"
                         onClick={() => setSelectedId(c.id)}
-                        className="text-sm font-semibold text-indigo-600 hover:underline"
+                        className="text-sm font-semibold text-primary hover:underline"
                       >
                         View detail
                       </button>

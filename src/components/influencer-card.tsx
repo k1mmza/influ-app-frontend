@@ -10,6 +10,10 @@ import {
   SiXiaohongshu,
   SiYoutube,
 } from "react-icons/si";
+import { Card, CardContent } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 type PlatformPresentation = {
   Icon: IconType;
@@ -55,81 +59,76 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
   );
 
   return (
-    <article
-      role={onSelect ? "button" : undefined}
-      tabIndex={onSelect ? 0 : undefined}
+    <Card
       onClick={() => onSelect?.(influencer)}
-      onKeyDown={(event) => {
-        if (!onSelect) return;
-        if (event.key === "Enter" || event.key === " ") {
-          event.preventDefault();
-          onSelect(influencer);
-        }
-      }}
-      className={`w-full overflow-hidden rounded-2xl border bg-white shadow-sm transition hover:shadow-md ${
-        isActive ? "border-indigo-400 ring-2 ring-indigo-200" : "border-slate-200"
-      } ${onSelect ? "cursor-pointer" : ""}`}
+      className={cn(
+        "group cursor-pointer overflow-hidden border-none shadow-sm transition-all hover:shadow-xl hover:translate-y-[-4px]",
+        isActive ? "ring-2 ring-primary ring-offset-2" : ""
+      )}
     >
-      <div className="relative border-b border-slate-100">
-        <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-60 w-full object-cover" />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900/70 via-slate-900/20 to-transparent" />
-        <span className="absolute right-4 top-4 z-10 rounded-full bg-white/90 px-2.5 py-1 text-xs font-semibold text-indigo-700 shadow-sm backdrop-blur-sm">
-          Score {influencer.performanceScore}
-        </span>
-        <div className="absolute inset-x-0 bottom-0 p-4">
-          <div className="min-w-0">
-            <h3 className="truncate text-lg font-semibold text-white">{influencer.name}</h3>
-            <p className="mt-2 line-clamp-2 text-sm text-slate-100">
-              {presentationTags.join(", ")}
-            </p>
-            <p className="mt-2 truncate text-xs font-medium text-emerald-100">
-              {main.platform} · {main.followers.toLocaleString()} followers
-            </p>
+      <div className="relative aspect-[4/5] overflow-hidden">
+        <img 
+          src={avatarUrl} 
+          alt={`${influencer.name} profile`} 
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+        />
+        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
+        
+        <div className="absolute top-3 right-3">
+          <Badge className="bg-white/90 text-primary font-bold backdrop-blur-sm border-none shadow-sm hover:bg-white">
+            Score {influencer.performanceScore}
+          </Badge>
+        </div>
+
+        <div className="absolute bottom-0 left-0 right-0 p-4">
+          <h3 className="truncate text-lg font-bold text-white tracking-tight">{influencer.name}</h3>
+          <div className="mt-2 flex flex-wrap gap-1">
+            {presentationTags.slice(0, 2).map(tag => (
+              <span key={tag} className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
+                {tag}
+              </span>
+            ))}
           </div>
+          <p className="mt-1 truncate text-xs font-semibold text-emerald-400">
+            {main.platform} · {main.followers.toLocaleString()}
+          </p>
         </div>
       </div>
 
-      <div className="p-4">
-        <div className="flex flex-wrap gap-1.5" role="list" aria-label="Supported platforms">
+      <CardContent className="p-4 space-y-4 bg-background">
+        <div className="flex flex-wrap gap-1.5" role="list">
           {influencer.platforms.map((platform) => {
             const { Icon, iconClassName } = platformPresentation(platform);
             return (
-              <span
+              <div
                 key={platform}
-                role="listitem"
                 title={platform}
-                className="inline-flex size-9 items-center justify-center rounded-full border border-slate-200 bg-white"
+                className="flex size-8 items-center justify-center rounded-full border border-slate-100 bg-slate-50/50 transition-colors hover:bg-slate-100"
               >
-                <Icon className={`size-[22px] shrink-0 ${iconClassName}`} aria-hidden />
-                <span className="sr-only">{platform}</span>
-              </span>
+                <Icon className={cn("size-4 shrink-0", iconClassName)} />
+              </div>
             );
           })}
         </div>
-      </div>
 
-      <div className="space-y-4 px-4 pb-4">
-        <div className="grid grid-cols-2 gap-2 text-sm">
-          <div className="rounded-xl bg-slate-50 p-2.5">
-            <p className="text-slate-500">Total reach</p>
-            <p className="font-semibold text-slate-900">{influencer.followers.toLocaleString()}</p>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="rounded-xl bg-slate-50/80 p-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
+            <p className="text-sm font-bold text-foreground">{influencer.followers.toLocaleString()}</p>
           </div>
-          <div className="rounded-xl bg-slate-50 p-2.5">
-            <p className="text-slate-500">Engagement</p>
-            <p className="font-semibold text-slate-900">{influencer.engagementRate}%</p>
+          <div className="rounded-xl bg-slate-50/80 p-2.5">
+            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engage</p>
+            <p className="text-sm font-bold text-foreground">{influencer.engagementRate}%</p>
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={(event) => {
-            event.stopPropagation();
-          }}
-          className="w-full rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white transition hover:bg-indigo-700"
+        <Button 
+          className="w-full rounded-xl font-bold text-xs h-10 shadow-sm"
+          onClick={(e) => { e.stopPropagation(); }}
         >
-          Add to list
-        </button>
-      </div>
-    </article>
+          Add to Campaign
+        </Button>
+      </CardContent>
+    </Card>
   );
 }

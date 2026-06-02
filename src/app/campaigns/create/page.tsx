@@ -21,7 +21,7 @@ export default function CreateCampaignPage() {
       <section className="space-y-4">
         <h1 className="text-2xl font-bold text-slate-900">Create campaign</h1>
         <p className="text-slate-600">Only brand accounts can create campaigns.</p>
-        <Link href="/campaigns" className="text-indigo-600 hover:underline">
+        <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
         </Link>
       </section>
@@ -36,7 +36,7 @@ export default function CreateCampaignPage() {
   return (
     <section className="mx-auto max-w-2xl space-y-6">
       <div>
-        <Link href="/campaigns" className="text-sm font-medium text-indigo-600 hover:underline">
+        <Link href="/campaigns" className="text-sm font-medium text-primary hover:underline">
           ← Campaigns
         </Link>
         <h1 className="mt-2 text-2xl font-bold text-slate-900">Create campaign</h1>

@@ -109,7 +109,7 @@ export default function CampaignSharePreviewPage() {
       <section className="mx-auto max-w-3xl space-y-4 p-6">
         <h1 className="text-2xl font-bold text-slate-900">Shared list unavailable</h1>
         <p className="text-slate-600">This link does not match a demo campaign.</p>
-        <Link href="/campaigns" className="font-semibold text-indigo-600 hover:underline">
+        <Link href="/campaigns" className="font-semibold text-primary hover:underline">
           Back to campaigns
         </Link>
       </section>
@@ -118,8 +118,8 @@ export default function CampaignSharePreviewPage() {
 
   return (
     <section className="mx-auto max-w-5xl space-y-6 p-4 pb-16 sm:p-6">
-      <header className="rounded-2xl border border-indigo-100 bg-gradient-to-br from-indigo-50 to-white p-6 shadow-sm">
-        <p className="text-xs font-semibold uppercase tracking-wide text-indigo-600">Client-facing preview (mock)</p>
+      <header className="rounded-2xl border border-primary/10 bg-gradient-to-br from-primary/5 to-white p-6 shadow-sm">
+        <p className="text-xs font-semibold uppercase tracking-wide text-primary">Client-facing preview (mock)</p>
         <h1 className="mt-1 text-2xl font-bold text-slate-900">{campaign.name}</h1>
         <p className="mt-2 max-w-2xl text-sm text-slate-600">
           This page simulates what a brand client sees when an agency shares a creator shortlist — inspired by the agency
@@ -161,7 +161,7 @@ export default function CampaignSharePreviewPage() {
                 <tr key={row.name} className="border-t border-slate-100">
                   <td className="px-4 py-2.5 text-slate-600 sm:px-6">{row.marker}</td>
                   <td className="px-4 py-2.5 font-medium text-slate-900 sm:px-6">{row.name}</td>
-                  <td className="px-4 py-2.5 text-indigo-600 sm:px-6">
+                  <td className="px-4 py-2.5 text-primary sm:px-6">
                     <a href={row.link} className="hover:underline" target="_blank" rel="noreferrer">
                       {row.link}
                     </a>
@@ -191,7 +191,7 @@ export default function CampaignSharePreviewPage() {
             <li
               key={msg.id}
               className={`rounded-xl border p-4 ${
-                msg.side === "agency" ? "border-indigo-100 bg-indigo-50/60" : "border-emerald-100 bg-emerald-50/50"
+                msg.side === "agency" ? "border-primary/10 bg-primary/5" : "border-emerald-100 bg-emerald-50/50"
               }`}
             >
               <div className="flex flex-wrap items-baseline justify-between gap-2">
@@ -226,7 +226,7 @@ export default function CampaignSharePreviewPage() {
             </button>
           </div>
           <div>
-            <label className="text-sm font-semibold text-indigo-900">Sarah Chen (agency)</label>
+            <label className="text-sm font-semibold text-primary-foreground">Sarah Chen (agency)</label>
             <p className="text-xs text-slate-500">Clarify strategy, swap names, or confirm next steps.</p>
             <textarea
               value={agencyDraft}
@@ -238,7 +238,7 @@ export default function CampaignSharePreviewPage() {
             <button
               type="button"
               onClick={() => pushMessage("agency", agencyDraft, () => setAgencyDraft(""))}
-              className="mt-2 rounded-xl bg-indigo-600 px-4 py-2 text-sm font-semibold text-white hover:bg-indigo-700"
+              className="mt-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white hover:bg-primary/90"
             >
               Post as agency
             </button>

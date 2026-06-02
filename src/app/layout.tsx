@@ -1,7 +1,13 @@
 import type { Metadata } from "next";
+import { Outfit } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
+
+const outfit = Outfit({
+  subsets: ["latin"],
+  variable: "--font-sans",
+});
 
 export const metadata: Metadata = {
   title: "InfluApp MVP",
@@ -14,8 +20,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
-      <body>
+    <html lang="en" className={outfit.variable}>
+      <body className="font-sans">
         <Providers>
           <AppShell>{children}</AppShell>
         </Providers>

@@ -1,5 +1,23 @@
 import { getMainFollowerPlatform, getShowcaseDemoEmbed, getTopAvgViewsPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Separator } from "@/components/ui/separator";
+import { 
+  X, 
+  MapPin, 
+  BarChart3, 
+  Users, 
+  TrendingUp, 
+  ShieldCheck, 
+  Video, 
+  MessageCircle,
+  PlusCircle,
+  ExternalLink,
+  Target
+} from "lucide-react";
+import { cn } from "@/lib/utils";
 
 interface InfluencerMeta {
   country: string;
@@ -57,204 +75,154 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
 
   return (
-    <aside className="fixed right-4 top-20 z-30 h-[calc(100vh-6rem)] w-full max-w-xl overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-2xl">
+    <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
       <div className="flex h-full flex-col">
-        <header className="sticky top-0 z-10 border-b border-slate-100 bg-white/95 p-4 backdrop-blur">
-          <div className="flex items-start justify-between gap-3">
-            <div className="flex items-center gap-3">
-              <img src={avatarUrl} alt={`${influencer.name} profile`} className="h-12 w-12 rounded-full border border-slate-200" />
-              <div>
-                <p className="text-[11px] font-semibold uppercase tracking-wide text-indigo-600">Creator media kit</p>
-                <p className="text-lg font-semibold text-slate-900">{influencer.name}</p>
-                <p className="text-xs text-slate-600">
-                  @{influencer.name.toLowerCase().replace(/\s+/g, "")} • {meta.city}, {meta.country}
-                </p>
+        <header className="flex items-center justify-between border-b px-6 py-4">
+          <div className="flex items-center gap-4">
+            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-slate-50" />
+            <div>
+              <h2 className="text-xl font-bold tracking-tight">{influencer.name}</h2>
+              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                <MapPin className="h-3 w-3" />
+                {meta.city}, {meta.country}
               </div>
             </div>
-            <button
-              type="button"
-              onClick={onClose}
-              className="rounded-lg border border-slate-200 px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:bg-slate-50"
-            >
-              Close
-            </button>
           </div>
+          <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-slate-100">
+            <X className="h-5 w-5 text-muted-foreground" />
+          </Button>
         </header>
 
-        <div className="space-y-4 overflow-y-auto p-4 text-sm">
-          <section className="rounded-xl border border-indigo-100 bg-gradient-to-b from-indigo-50/80 to-white p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">Spotlight · highest avg views</p>
-            <div className="mt-2 flex flex-wrap items-center justify-between gap-2">
-              <span className="rounded-full bg-indigo-600 px-2.5 py-1 text-xs font-semibold text-white">{topByViews.platform}</span>
-              <span className="text-xs text-slate-600">~{headlineAvgViews.toLocaleString()} avg views on this platform</span>
+        <div className="flex-1 overflow-y-auto p-6 space-y-8">
+          {/* Top Performance Stats */}
+          <div className="grid grid-cols-3 gap-4">
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
+              <p className="text-lg font-bold">{influencer.followers.toLocaleString()}</p>
             </div>
-            <p className="mt-1 text-[11px] text-slate-500">Demo sample video for this platform — not this creator’s real post.</p>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
+              <p className="text-lg font-bold text-primary">{influencer.engagementRate}%</p>
+            </div>
+            <div className="space-y-1">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quality</p>
+              <p className="text-lg font-bold text-emerald-600">{meta.qualityScore}%</p>
+            </div>
+          </div>
+
+          <Separator />
+
+          {/* Media Showcase */}
+          <section className="space-y-4">
+            <div className="flex items-center justify-between">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground">Content Spotlight</h3>
+              <Badge variant="outline" className="font-bold text-[10px]">{topByViews.platform}</Badge>
+            </div>
             {showcaseEmbed.kind === "iframe" ? (
-              <div className="mt-3 overflow-hidden rounded-xl border border-slate-200 bg-black shadow-inner">
+              <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
                 <div className="relative aspect-video w-full">
                   <iframe
                     title={showcaseEmbed.title}
                     src={showcaseEmbed.src}
                     className="absolute inset-0 h-full w-full border-0"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
                     allowFullScreen
                   />
                 </div>
-              </div>
+              </Card>
             ) : (
-              <a
-                href={showcaseEmbed.href}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-3 inline-flex w-full items-center justify-center rounded-xl border border-slate-200 bg-white px-3 py-3 text-xs font-semibold text-indigo-700 shadow-sm hover:bg-slate-50"
-              >
-                {showcaseEmbed.label}
-              </a>
+              <Button variant="outline" asChild className="w-full h-24 rounded-2xl border-dashed">
+                <a href={showcaseEmbed.href} target="_blank" rel="noopener noreferrer">
+                  <ExternalLink className="mr-2 h-4 w-4" />
+                  View Portfolio on {topByViews.platform}
+                </a>
+              </Button>
             )}
+            <p className="text-[10px] text-center text-muted-foreground font-medium italic">Demo sample video shown for context.</p>
           </section>
 
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Identity &amp; platforms</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {allPlatforms.map((platform) => (
-                <span key={platform} className="rounded-full bg-slate-100 px-2 py-1 text-xs text-slate-700">
-                  {platform}
-                </span>
-              ))}
-            </div>
-            <p className="mt-2 text-xs text-slate-600">
-              <span className="font-semibold text-slate-800">Primary footprint:</span> {mainFollowers.platform} ·{" "}
-              {mainFollowers.followers.toLocaleString()} followers
-            </p>
-            <div className="mt-3 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Total reach</p>
-                <p className="font-semibold text-slate-900">{influencer.followers.toLocaleString()}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Avg views</p>
-                <p className="font-semibold text-slate-900">{meta.averageViews.toLocaleString()}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Engagement</p>
-                <p className="font-semibold text-slate-900">{influencer.engagementRate}%</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Growth</p>
-                <p className="font-semibold text-slate-900">{meta.growthRate}%</p>
-              </div>
+          {/* Performance Metrics */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+              <BarChart3 className="h-4 w-4" />
+              Performance Metrics
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <Card className="border-none bg-slate-50/80 shadow-none">
+                <CardContent className="p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Avg Views</p>
+                  <p className="text-base font-bold">{meta.averageViews.toLocaleString()}</p>
+                </CardContent>
+              </Card>
+              <Card className="border-none bg-slate-50/80 shadow-none">
+                <CardContent className="p-4 space-y-1">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Growth Rate</p>
+                  <p className="text-base font-bold text-emerald-600">+{meta.growthRate}%</p>
+                </CardContent>
+              </Card>
             </div>
           </section>
 
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Performance benchmarks</p>
-            <div className="mt-2 grid grid-cols-3 gap-2 text-xs">
-              <div className="rounded-lg bg-indigo-50 p-2">
-                <p className="text-indigo-600">Platform Score</p>
-                <p className="font-semibold text-indigo-900">{influencer.performanceScore}/100</p>
-              </div>
-              <div className="rounded-lg bg-emerald-50 p-2">
-                <p className="text-emerald-600">Consistency</p>
-                <p className="font-semibold text-emerald-900">{consistencyScore}/100</p>
-              </div>
-              <div className="rounded-lg bg-amber-50 p-2">
-                <p className="text-amber-600">30d Trend</p>
-                <p className="font-semibold text-amber-900">{meta.growthRate > 0 ? "Up" : "Down"}</p>
-              </div>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Audience snapshot</p>
-            <div className="mt-2 space-y-1 text-xs text-slate-700">
-              <p>Gender mix: {meta.audienceGender}</p>
-              <p>Age group: {meta.audienceAgeGroup}</p>
-              <p>Top countries: {topCountries.join(", ")}</p>
-              <p>Top cities: {topCities.join(", ")}</p>
-              <p>Audience quality: {meta.qualityScore}/100</p>
-              <p>Engagement authenticity: {engagementAuthenticity}%</p>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Content reel (preview)</p>
-            <div className="mt-2 grid grid-cols-3 gap-2">
-              {[1, 2, 3].map((item) => (
-                <div key={item} className="rounded-lg border border-slate-200 p-2 text-xs">
-                  <div className="mb-2 h-12 rounded bg-slate-100" />
-                  <p className="font-medium text-slate-800">Top Post #{item}</p>
-                  <p className="text-slate-600">{Math.round(meta.averageViews * (1.2 - item * 0.1)).toLocaleString()} views</p>
-                  <p className="text-slate-600">{Math.round(meta.averageViews * 0.03).toLocaleString()} likes</p>
+          {/* Audience Snapshot */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+              <Users className="h-4 w-4" />
+              Audience Snapshot
+            </h3>
+            <Card className="border-none bg-slate-50/80 shadow-none">
+              <CardContent className="p-5 space-y-4">
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-muted-foreground">Gender Mix</span>
+                  <span className="text-foreground">{meta.audienceGender}</span>
                 </div>
-              ))}
-            </div>
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-muted-foreground">Core Age Group</span>
+                  <span className="text-foreground">{meta.audienceAgeGroup}</span>
+                </div>
+                <div className="flex items-center justify-between text-xs font-medium">
+                  <span className="text-muted-foreground">Audience Authentic</span>
+                  <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
+                </div>
+                <div className="pt-2">
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
+                  <div className="flex flex-wrap gap-2">
+                    {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-white text-slate-700">{c}</Badge>)}
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </section>
 
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Niche, tone &amp; tags</p>
-            <p className="mt-2 text-xs text-slate-700">Tone: {getTone(influencer.stylePresent)}</p>
-            <div className="mt-2 flex flex-wrap gap-1.5">
-              {meta.keywords.map((word) => (
-                <span key={word} className="rounded-full border border-indigo-200 bg-indigo-50 px-2 py-1 text-xs text-indigo-700">
-                  #{word}
-                </span>
-              ))}
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Rate card &amp; estimates</p>
-            <div className="mt-2 grid grid-cols-2 gap-2 text-xs">
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Price / Post</p>
-                <p className="font-semibold text-slate-900">${influencer.ratePerPost}</p>
+          {/* Rate Card */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2">
+              <PlusCircle className="h-4 w-4" />
+              Rate Card Estimates
+            </h3>
+            <div className="grid grid-cols-2 gap-4">
+              <div className="p-4 rounded-2xl border bg-card">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Price per Post</p>
+                <p className="text-xl font-bold mt-1">${influencer.ratePerPost}</p>
               </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Price / Video</p>
-                <p className="font-semibold text-slate-900">${Math.round(influencer.ratePerPost * 1.3)}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Est. CPM</p>
-                <p className="font-semibold text-slate-900">${estimatedCpm}</p>
-              </div>
-              <div className="rounded-lg bg-slate-50 p-2">
-                <p className="text-slate-500">Cost / Engagement</p>
-                <p className="font-semibold text-slate-900">${estimatedCostPerEngagement}</p>
+              <div className="p-4 rounded-2xl border bg-card">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estimated CPM</p>
+                <p className="text-xl font-bold mt-1">${estimatedCpm}</p>
               </div>
             </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Turnaround &amp; reliability</p>
-            <div className="mt-2 space-y-1 text-xs text-slate-700">
-              <p>Status: {meta.responseRate >= 75 ? "Available" : "Busy"}</p>
-              <p>Response rate: {meta.responseRate}%</p>
-              <p>Avg response time: {meta.responseRate >= 75 ? "2-6 hours" : "12-24 hours"}</p>
-            </div>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Featured collaborations</p>
-            <ul className="mt-2 space-y-1 text-xs text-slate-700">
-              <li>GlowLab - Product seeding campaign</li>
-              <li>Nova Retail - Seasonal launch bundle</li>
-              <li>Peak Media - UGC conversion sprint</li>
-            </ul>
-          </section>
-
-          <section className="rounded-xl border border-slate-200 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-slate-500">Next step</p>
-            <div className="mt-2 grid grid-cols-2 gap-2">
-              <button type="button" className="rounded-lg bg-indigo-600 px-2 py-2 text-xs font-semibold text-white hover:bg-indigo-700">
-                Add to list
-              </button>
-              <button type="button" className="rounded-lg border border-slate-200 px-2 py-2 text-xs font-semibold text-slate-700 hover:bg-slate-50">
-                Send Message
-              </button>
-            </div>
-            <p className="mt-2 text-[11px] text-slate-500">Request the full PDF kit or historical screenshots from the creator in chat.</p>
           </section>
         </div>
+
+        <footer className="sticky bottom-0 border-t bg-background/80 p-6 backdrop-blur-md">
+          <div className="flex gap-3">
+            <Button className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20">
+              <PlusCircle className="mr-2 h-5 w-5" />
+              Add to Campaign
+            </Button>
+            <Button variant="outline" className="flex-1 rounded-xl h-12 text-base font-bold">
+              <MessageCircle className="mr-2 h-5 w-5" />
+              Message
+            </Button>
+          </div>
+        </footer>
       </div>
     </aside>
   );
