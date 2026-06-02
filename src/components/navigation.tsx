@@ -6,6 +6,8 @@ import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
 
+import { ThemeToggle } from "@/components/theme-toggle";
+
 const brandLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/campaigns", label: "Campaign" },
@@ -76,6 +78,7 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ThemeToggle />
           <Button variant="ghost" asChild className="rounded-full">
             <Link href="/login">Login</Link>
           </Button>
@@ -110,14 +113,15 @@ export function Navigation() {
           </Button>
         ))}
       </div>
-      <div className="mt-4 border-t border-border px-1 pt-4">
+      <div className="mt-4 flex items-center justify-between border-t border-border px-1 pt-4">
         <Button
           variant="ghost"
           onClick={handleLogout}
-          className="w-full justify-start rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+          className="flex-1 justify-start rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
         >
           Log out
         </Button>
+        <ThemeToggle />
       </div>
     </nav>
   );
