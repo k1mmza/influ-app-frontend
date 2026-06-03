@@ -94,6 +94,13 @@ function DiscoverPageContent() {
   const [audienceThreshold, setAudienceThreshold] = useState(0);
   const [category, setCategory] = useState("All");
   const [followerRange, setFollowerRange] = useState<FollowerRange>("All");
+
+  const categoryFromUrl = searchParams.get("category");
+  useEffect(() => {
+    if (categoryFromUrl && categories.includes(categoryFromUrl)) {
+      setCategory(categoryFromUrl);
+    }
+  }, [categoryFromUrl]);
   const [minAverageViews, setMinAverageViews] = useState(0);
   const [minEngagementRate, setMinEngagementRate] = useState(0);
   const [minGrowthRate, setMinGrowthRate] = useState(0);

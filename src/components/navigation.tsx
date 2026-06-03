@@ -35,7 +35,7 @@ export function Navigation() {
   const router = useRouter();
   const { role, logout, isLoggedIn, name } = useUserStore();
   const isLandingPage = pathname === "/";
-  const isPublicPage = isLandingPage || (pathname === "/discover" && !isLoggedIn);
+  const isPublicPage = isLandingPage || pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies" || (pathname === "/discover" && !isLoggedIn);
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
 
   const handleLogout = () => {
@@ -47,37 +47,49 @@ export function Navigation() {
     return null;
   }
 
+  const publicNavLinks = [
+    { href: "/discover",      label: "Discover",         tip: "Search and filter creators"    },
+    { href: "/how-it-works",  label: "How it Works",     tip: "See how InfluApp works"         },
+    { href: "/creators",      label: "Creators",         tip: "Join as a creator"              },
+    { href: "/agencies",      label: "Agencies & Brands", tip: "Start running campaigns"       },
+  ];
+
   if (isPublicPage) {
     return (
-      <nav className="sticky top-6 z-50 mb-8 flex flex-wrap items-center justify-between gap-4 rounded-2xl border bg-background/80 px-4 py-2.5 shadow-sm backdrop-blur-md">
-        <Link href="/" className="flex items-center gap-2 text-lg font-bold text-foreground transition hover:opacity-80">
-          <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
-            IA
-          </span>
-          <span className="font-serif">InfluApp</span>
-        </Link>
-
-        <div className="flex flex-wrap items-center gap-1">
-          <Button variant="ghost" asChild className="rounded-full">
-            <Link href="/discover">Discover</Link>
-          </Button>
-          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
-            <Link href="/#for-agencies">Agencies</Link>
-          </Button>
-          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
-            <Link href="/#for-agencies">Brands</Link>
-          </Button>
-          <Button variant="ghost" asChild className="rounded-full hidden md:flex">
-            <Link href="/#for-creators">Creators</Link>
-          </Button>
-          <Button variant="ghost" asChild className="rounded-full">
-            <Link href="/#capabilities">Capabilities</Link>
-          </Button>
-          <Button variant="ghost" asChild className="rounded-full">
-            <Link href="/#pricing">Pricing</Link>
-          </Button>
+      <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border bg-background/80 px-6 py-3 shadow-sm backdrop-blur-md sm:px-8">
+        {/* Left: name + links */}
+        <div className="flex items-center gap-6">
+          <Link href="/" className="text-xl font-bold font-serif text-foreground transition hover:opacity-80 shrink-0">
+            InfluApp
+          </Link>
+          <div className="hidden md:flex items-center gap-1 ml-6">
+            {publicNavLinks.map(({ href, label, tip }) => {
+              const active = pathname === href;
+              return (
+                <div key={href} className="group relative">
+                  <Link
+                    href={href}
+                    className={cn(
+                      "inline-flex items-center rounded-full px-5 py-2 text-base font-semibold font-serif tracking-wide transition-all",
+                      active
+                        ? "bg-primary text-primary-foreground shadow-sm"
+                        : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                    )}
+                  >
+                    {label}
+                  </Link>
+                  {/* Hover tooltip bubble */}
+                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                    {tip}
+                    <div className="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-border bg-popover" />
+                  </div>
+                </div>
+              );
+            })}
+          </div>
         </div>
 
+        {/* Right: auth + theme */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {isLoggedIn ? (
@@ -90,10 +102,10 @@ export function Navigation() {
             </Link>
           ) : (
             <>
-              <Button variant="ghost" asChild className="rounded-full">
+              <Button variant="ghost" asChild className="rounded-full font-medium font-serif tracking-wide">
                 <Link href="/login">Login</Link>
               </Button>
-              <Button asChild className="rounded-full shadow-md">
+              <Button asChild className="rounded-full shadow-md font-semibold font-serif tracking-wide">
                 <Link href="/register">Get Started</Link>
               </Button>
             </>
@@ -105,11 +117,8 @@ export function Navigation() {
 
   return (
     <nav className="flex flex-col gap-1 rounded-2xl border bg-card p-2 shadow-sm">
-      <Link href="/" className="mb-4 flex items-center gap-2 px-3 py-2 transition hover:opacity-80">
-        <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
-          IA
-        </span>
-        <span className="text-sm font-bold text-foreground font-serif">InfluApp</span>
+      <Link href="/" className="mb-4 flex items-center px-3 py-2 transition hover:opacity-80">
+        <span className="text-base font-bold text-foreground font-serif">InfluApp</span>
       </Link>
       <div className="flex flex-col gap-1">
         {(role === "influencer" ? influencerLinks : brandLinks).map((link) => (

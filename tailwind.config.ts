@@ -11,6 +11,8 @@ const config: Config = {
       fontFamily: {
         sans: ["var(--font-sans)", "sans-serif"],
         serif: ["var(--font-serif)", "serif"],
+        grotesk: ["var(--font-grotesk)", "sans-serif"],
+        dm: ["var(--font-dm)", "sans-serif"],
       },
   		colors: {
   			border: 'hsl(var(--border))',

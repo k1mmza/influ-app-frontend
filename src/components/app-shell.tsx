@@ -9,6 +9,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
   const isSmartPlanPage = pathname === "/smart-plan" || pathname.startsWith("/smart-plan/");
   const { isLoggedIn } = useUserStore();
 
@@ -16,10 +17,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">{children}</main>;
   }
 
-  if (isLandingPage) {
+  if (isLandingPage || isPublicInfoPage) {
     return (
       <main className="flex min-h-screen flex-col bg-background">
-        <div className="mx-auto w-full max-w-6xl px-4 pt-6">
+        <div className="mx-auto w-full max-w-7xl px-4 pt-6">
           <Navigation />
         </div>
         <div className="flex-1">{children}</div>
