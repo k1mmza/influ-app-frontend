@@ -8,7 +8,7 @@ import { useUserStore } from "@/store/useUserStore";
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
-  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
   const isSmartPlanPage = pathname === "/smart-plan" || pathname.startsWith("/smart-plan/");
   const { isLoggedIn } = useUserStore();

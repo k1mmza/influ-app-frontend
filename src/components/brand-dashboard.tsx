@@ -55,9 +55,9 @@ export function BrandDashboard({ data }: { data: any }) {
                 <item.icon className={cn("h-4 w-4", item.color)} />
               </div>
               <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
-                {item.key === "budgetSpent" && typeof stats[item.key] === "number" 
-                  ? `THB ${stats[item.key].toLocaleString()}` 
-                  : stats[item.key]}
+                {item.key === "budgetSpent" && typeof (stats as any)[item.key] === "number"
+                  ? `THB ${(stats as any)[item.key].toLocaleString()}`
+                  : (stats as any)[item.key]}
               </p>
             </CardContent>
           </Card>

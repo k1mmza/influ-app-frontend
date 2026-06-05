@@ -6,6 +6,14 @@ import { persist } from "zustand/middleware";
 import { apiLogin, apiRegister, apiSelectRole } from "@/lib/api";
 import { useMediaKitStore } from "@/store/useMediaKitStore";
 
+interface OAuthSession {
+  token: string;
+  name: string;
+  email: string;
+  role: Role | null;
+  isRoleSelected: boolean;
+}
+
 interface UserState {
   name: string;
   email: string;
@@ -15,6 +23,7 @@ interface UserState {
   isLoggedIn: boolean;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: Role) => Promise<void>;
+  setOAuthSession: (session: OAuthSession) => void;
   setRole: (role: Role) => void;
   logout: () => void;
 }
@@ -55,6 +64,15 @@ export const useUserStore = create<UserState>()(
           isLoggedIn: true,
         });
       },
+      setOAuthSession: (session) =>
+        set({
+          token: session.token,
+          name: session.name,
+          email: session.email,
+          role: session.role,
+          isRoleSelected: session.isRoleSelected,
+          isLoggedIn: true,
+        }),
       setRole: (role) => set({ role, isRoleSelected: true }),
       logout: () => {
         set({ role: null, name: "", email: "", token: null, isRoleSelected: false, isLoggedIn: false });
