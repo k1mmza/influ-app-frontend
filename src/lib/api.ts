@@ -97,6 +97,44 @@ export async function apiGetProfile(token: string) {
   return res.json();
 }
 
+export async function apiLookupInfluencerByUrl(
+  platform: string,
+  handle: string,
+): Promise<{ found: boolean; influencer?: any }> {
+  const params = new URLSearchParams({ platform, handle });
+  const res = await fetch(`${API_URL}/influencers/lookup?${params}`);
+  if (!res.ok) throw new Error("Lookup failed");
+  return res.json();
+}
+
+export async function apiGetClaimCandidates(
+  token: string,
+  influencerId: string,
+): Promise<any[]> {
+  const res = await fetch(
+    `${API_URL}/influencers/claim-candidates?influencerId=${influencerId}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new Error("Failed to fetch claim candidates");
+  return res.json();
+}
+
+export async function apiClaimProfile(
+  token: string,
+  externalInfluencerId: string,
+  claimerInfluencerId: string,
+): Promise<void> {
+  const res = await fetch(`${API_URL}/influencers/claim/${externalInfluencerId}`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ claimerInfluencerId }),
+  });
+  if (!res.ok) throw new Error("Claim failed");
+}
+
 export async function apiUpdateProfile(token: string, data: Record<string, any>) {
   const res = await fetch(`${API_URL}/profile`, {
     method: "PATCH",

@@ -6,6 +6,7 @@ import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
 import * as api from "@/lib/api";
+import { apiLookupInfluencerByUrl } from "@/lib/api";
 import { useSearchParams } from "next/navigation";
 import { Suspense, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -15,18 +16,20 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
-import { 
-  Search, 
-  Filter, 
-  RotateCcw, 
-  ChevronDown, 
-  ChevronUp, 
-  Globe, 
-  Users, 
-  Target, 
+import {
+  Search,
+  Filter,
+  RotateCcw,
+  ChevronDown,
+  ChevronUp,
+  Globe,
+  Users,
+  Target,
   Sparkles,
   Layers,
-  Loader2
+  Loader2,
+  CheckCircle2,
+  AlertCircle,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -121,6 +124,8 @@ function DiscoverPageContent() {
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | null>(null);
   const [unifiedSearchInput, setUnifiedSearchInput] = useState("");
   const [urlSearchError, setUrlSearchError] = useState("");
+  const [isUrlSearching, setIsUrlSearching] = useState(false);
+  const [urlLookupStatus, setUrlLookupStatus] = useState<"found" | "not-found" | null>(null);
   const [generatedInfluencer, setGeneratedInfluencer] = useState<Influencer | null>(null);
   const [generatedInfluencerMeta, setGeneratedInfluencerMeta] = useState<InfluencerMeta | null>(null);
 
@@ -296,7 +301,21 @@ function DiscoverPageContent() {
     return Math.round(min + normalized * (max - min));
   };
 
-  const buildInfluencerFromSocialUrl = (input: string) => {
+  const extractHandle = (platform: string, pathname: string): string => {
+    const segments = pathname.split("/").filter(Boolean);
+    if (platform === "YouTube") {
+      // /channel/UCxxx | /@handle | /c/name | /user/name
+      const atHandle = segments.find((s) => s.startsWith("@"));
+      if (atHandle) return atHandle.replace(/^@/, "");
+      const idx = segments.findIndex((s) => ["channel", "c", "user"].includes(s));
+      return idx !== -1 ? segments[idx + 1] ?? segments[0] ?? "creator" : segments[0] ?? "creator";
+    }
+    // TikTok, Instagram, X, Facebook, Lemon8 — handle is always last or first segment
+    const raw = segments.find((s) => s.startsWith("@")) ?? segments[segments.length - 1] ?? "creator";
+    return raw.replace(/^@/, "");
+  };
+
+  const buildInfluencerFromSocialUrl = async (input: string) => {
     if (!input.trim()) {
       setUrlSearchError("Please enter a social profile URL.");
       return;
@@ -316,9 +335,27 @@ function DiscoverPageContent() {
       return;
     }
 
-    const segments = parsed.pathname.split("/").filter(Boolean);
-    const handle = segments[segments.length - 1] ?? "creator";
-    const cleanedHandle = handle.replace(/^@/, "").replace(/[^a-zA-Z0-9._-]/g, "");
+    const cleanedHandle = extractHandle(platform, parsed.pathname).replace(/[^a-zA-Z0-9._-]/g, "");
+    setIsUrlSearching(true);
+    setUrlSearchError("");
+    setUrlLookupStatus(null);
+
+    // ── DB lookup first ──────────────────────────────────────────────────────
+    try {
+      const result = await apiLookupInfluencerByUrl(platform, cleanedHandle);
+      if (result.found && result.influencer) {
+        setGeneratedInfluencer(result.influencer);
+        setGeneratedInfluencerMeta(result.influencer.meta ?? null);
+        setSelectedInfluencerId(result.influencer.id);
+        setUrlLookupStatus("found");
+        setIsUrlSearching(false);
+        return;
+      }
+    } catch {
+      // API unavailable — fall through to synthetic
+    }
+
+    // ── Synthetic fallback ───────────────────────────────────────────────────
     const displayName = cleanedHandle
       ? cleanedHandle
           .replace(/[._-]+/g, " ")
@@ -376,10 +413,12 @@ function DiscoverPageContent() {
     setGeneratedInfluencer(nextInfluencer);
     setGeneratedInfluencerMeta(nextMeta);
     setSelectedInfluencerId(nextInfluencer.id);
+    setUrlLookupStatus("not-found");
     setUrlSearchError("");
+    setIsUrlSearching(false);
   };
 
-  const handleUnifiedSearch = () => {
+  const handleUnifiedSearch = async () => {
     const query = unifiedSearchInput.trim();
     if (!query) {
       setUrlSearchError("Please enter a social URL or smart search query.");
@@ -389,10 +428,11 @@ function DiscoverPageContent() {
     const looksLikeUrl = /^(https?:\/\/|www\.)/i.test(query) || /(?:instagram|tiktok|youtube|youtu\.be|facebook|x\.com|twitter|lemon8)\./i.test(query);
     if (looksLikeUrl) {
       const normalizedUrl = /^https?:\/\//i.test(query) ? query : `https://${query}`;
-      buildInfluencerFromSocialUrl(normalizedUrl);
+      await buildInfluencerFromSocialUrl(normalizedUrl);
       return;
     }
 
+    setUrlLookupStatus(null);
     setSmartQuery(query);
     applySmartQuery(query);
     setUrlSearchError("");
@@ -404,7 +444,7 @@ function DiscoverPageContent() {
     const decoded = decodeURIComponent(urlFromQuery);
     setUnifiedSearchInput(decoded);
     const normalizedUrl = /^https?:\/\//i.test(decoded.trim()) ? decoded.trim() : `https://${decoded.trim()}`;
-    buildInfluencerFromSocialUrl(normalizedUrl);
+    void buildInfluencerFromSocialUrl(normalizedUrl);
   }, [urlFromQuery]);
 
   const filtered = useMemo(() => {
@@ -832,8 +872,14 @@ function DiscoverPageContent() {
                   className="h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm"
                 />
               </div>
-              <Button onClick={handleUnifiedSearch} className="h-12 rounded-none px-8 font-bold text-sm shadow-none">
-                Search
+              <Button
+                onClick={handleUnifiedSearch}
+                disabled={isUrlSearching}
+                className="h-12 rounded-none px-8 font-bold text-sm shadow-none"
+              >
+                {isUrlSearching
+                  ? <Loader2 className="h-4 w-4 animate-spin" />
+                  : "Search"}
               </Button>
             </div>
           </CardContent>
@@ -847,6 +893,20 @@ function DiscoverPageContent() {
                 {chip}
               </Badge>
             ))}
+          </div>
+        )}
+
+        {urlLookupStatus === "found" && (
+          <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Found in our network — showing real profile data
+          </div>
+        )}
+
+        {urlLookupStatus === "not-found" && (
+          <div className="flex items-center gap-2 text-sm font-semibold text-amber-600">
+            <AlertCircle className="h-4 w-4 shrink-0" />
+            Not registered — showing estimated data only
           </div>
         )}
 
