@@ -46,7 +46,7 @@ type InfluencerMeta = {
   responseRate: number;
 };
 
-const categories = ["All", "Beauty", "Fashion", "Fitness", "Food", "Travel", "Tech", "Lifestyle"];
+const categories = ["All", "Beauty", "Fashion", "Fitness", "Food", "Gaming", "Travel", "Tech", "Lifestyle"];
 const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", "LinkedIn", "Red Note (Xiaohongshu)"];
 const campaignIntents = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
@@ -92,13 +92,13 @@ function DiscoverPageContent() {
   const [country, setCountry] = useState("All");
   const [city, setCity] = useState("All");
   const [audienceThreshold, setAudienceThreshold] = useState(0);
-  const [category, setCategory] = useState("All");
+  const [selectedCategories, setSelectedCategories] = useState<string[]>([]);
   const [followerRange, setFollowerRange] = useState<FollowerRange>("All");
 
   const categoryFromUrl = searchParams.get("category");
   useEffect(() => {
     if (categoryFromUrl && categories.includes(categoryFromUrl)) {
-      setCategory(categoryFromUrl);
+      setSelectedCategories([categoryFromUrl]);
     }
   }, [categoryFromUrl]);
   const [minAverageViews, setMinAverageViews] = useState(0);
@@ -112,8 +112,11 @@ function DiscoverPageContent() {
   const [minQualityScore, setMinQualityScore] = useState(0);
   const [minPerformanceScore, setMinPerformanceScore] = useState(0);
   const [maxRatePerPost, setMaxRatePerPost] = useState(0);
+  const [minRatePerPost, setMinRatePerPost] = useState(0);
+  const [minFollowers, setMinFollowers] = useState(0);
   const [minResponseRate, setMinResponseRate] = useState(0);
   const [showAdvancedFilters, setShowAdvancedFilters] = useState(false);
+  const [availabilityStatus, setAvailabilityStatus] = useState("All");
   const [mainPlatformFilter, setMainPlatformFilter] = useState<string>("All");
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | null>(null);
   const [unifiedSearchInput, setUnifiedSearchInput] = useState("");
@@ -126,13 +129,23 @@ function DiscoverPageContent() {
       setLoading(true);
       try {
         const params: any = {
-          category,
+          categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
           platform: selectedPlatforms[0] || "All",
           followerRange,
           minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
           keyword,
           minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
           minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
+          minGrowthRate: minGrowthRate > 0 ? minGrowthRate : undefined,
+          minAverageViews: minAverageViews > 0 ? minAverageViews : undefined,
+          minResponseRate: minResponseRate > 0 ? minResponseRate : undefined,
+          maxRatePerPost: maxRatePerPost > 0 ? maxRatePerPost : undefined,
+          minRatePerPost: minRatePerPost > 0 ? minRatePerPost : undefined,
+          minFollowers: minFollowers > 0 ? minFollowers : undefined,
+          stylePresent: stylePresent !== "All" ? stylePresent : undefined,
+          audienceGender: audienceGender !== "All" ? audienceGender : undefined,
+          audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
+          availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
         };
         const data = await apiGetInfluencers(params);
         setInfluencers(data);
@@ -145,7 +158,11 @@ function DiscoverPageContent() {
 
     const debounce = setTimeout(fetchInfluencers, 500);
     return () => clearTimeout(debounce);
-  }, [category, selectedPlatforms, followerRange, minEngagementRate, keyword, minQualityScore, minPerformanceScore]);
+  }, [
+    selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
+    minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
+    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus,
+  ]);
 
   const updateAudienceThreshold = (value: number) => {
     const clamped = Math.max(0, Math.min(100, value));
@@ -160,7 +177,7 @@ function DiscoverPageContent() {
     setCountry("All");
     setCity("All");
     setAudienceThreshold(0);
-    setCategory("All");
+    setSelectedCategories([]);
     setFollowerRange("All");
     setMinAverageViews(0);
     setMinEngagementRate(0);
@@ -173,8 +190,11 @@ function DiscoverPageContent() {
     setMinQualityScore(0);
     setMinPerformanceScore(0);
     setMaxRatePerPost(0);
+    setMinRatePerPost(0);
+    setMinFollowers(0);
     setMinResponseRate(0);
     setMainPlatformFilter("All");
+    setAvailabilityStatus("All");
   };
   const applySmartQuery = (query?: string) => {
     const normalized = (query ?? smartQuery).toLowerCase();
@@ -189,7 +209,9 @@ function DiscoverPageContent() {
       (item) => item !== "All" && normalized.includes(item.toLowerCase())
     );
     if (detectedCategory) {
-      setCategory(detectedCategory);
+      setSelectedCategories((prev) =>
+        prev.includes(detectedCategory) ? prev : [...prev, detectedCategory]
+      );
     }
 
     if (normalized.includes("nano")) setFollowerRange("Nano");
@@ -397,7 +419,7 @@ function DiscoverPageContent() {
     selectedCampaignIntents.length ? `${selectedCampaignIntents.length} intents` : "",
     country !== "All" ? country : "",
     city !== "All" ? city : "",
-    category !== "All" ? category : "",
+    selectedCategories.length > 0 ? selectedCategories.join(", ") : "",
     followerRange !== "All" ? followerRange : "",
     stylePresent !== "All" ? stylePresent : "",
     minEngagementRate > 0 ? `ER >= ${minEngagementRate}%` : "",
@@ -470,6 +492,8 @@ function DiscoverPageContent() {
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
+
+                {/* Platform */}
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform</Label>
                   <div className="space-y-2">
@@ -491,37 +515,43 @@ function DiscoverPageContent() {
                   </div>
                 </div>
 
+                {/* Category */}
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
-                  <select
-                    value={category}
-                    onChange={(e) => setCategory(e.target.value)}
-                    className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-                  >
-                    {categories.map((item) => (
-                      <option key={item} value={item}>{item}</option>
-                    ))}
-                  </select>
-                </div>
-
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
                   <div className="space-y-2">
-                    {campaignIntents.map((intent) => (
-                      <div key={intent} className="flex items-center space-x-2">
+                    {categories.filter((c) => c !== "All").map((item) => (
+                      <div key={item} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
-                          id={`i-${intent}`}
-                          checked={selectedCampaignIntents.includes(intent)}
+                          id={`cat-${item}`}
+                          checked={selectedCategories.includes(item)}
                           onChange={(e) => {
-                            if (e.target.checked) setSelectedCampaignIntents(p => [...p, intent]);
-                            else setSelectedCampaignIntents(p => p.filter(v => v !== intent));
+                            if (e.target.checked) setSelectedCategories((p) => [...p, item]);
+                            else setSelectedCategories((p) => p.filter((v) => v !== item));
                           }}
                           className="h-4 w-4 rounded border-input bg-background"
                         />
-                        <Label htmlFor={`i-${intent}`} className="text-xs font-medium cursor-pointer">{intent}</Label>
+                        <Label htmlFor={`cat-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
                       </div>
                     ))}
+                  </div>
+                </div>
+
+                {/* Min Engagement Rate — primary filter, always visible */}
+                <div className="space-y-2">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Engagement Rate</Label>
+                  <div className="relative">
+                    <Input
+                      type="number"
+                      min={0}
+                      max={100}
+                      step={0.5}
+                      value={minEngagementRate || ""}
+                      onChange={(e) => setMinEngagementRate(Number(e.target.value))}
+                      placeholder="Any"
+                      className="h-8 text-xs pr-8"
+                    />
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                   </div>
                 </div>
 
@@ -536,40 +566,251 @@ function DiscoverPageContent() {
                 </Button>
 
                 {showAdvancedFilters && (
-                  <div className="pt-2 space-y-6">
-                    <div className="space-y-3">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Follower Range</Label>
-                        <Badge variant="secondary" className="text-[10px] h-4">{followerRange}</Badge>
-                      </div>
+                  <div className="space-y-6">
+
+                    {/* ── FOLLOWER SIZE ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Follower Size</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Range</Label>
                       <select
                         value={followerRange}
                         onChange={(e) => setFollowerRange(e.target.value as FollowerRange)}
                         className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
                       >
                         <option value="All">All Ranges</option>
-                        <option value="Nano">Nano (1K - 10K)</option>
-                        <option value="Micro">Micro (10K - 100K)</option>
-                        <option value="Mid">Mid (100K - 500K)</option>
-                        <option value="Macro">Macro (500K - 1M)</option>
+                        <option value="Nano">Nano (1K – 10K)</option>
+                        <option value="Micro">Micro (10K – 100K)</option>
+                        <option value="Mid">Mid (100K – 500K)</option>
+                        <option value="Macro">Macro (500K – 1M)</option>
                         <option value="Mega">Mega (1M+)</option>
                       </select>
                     </div>
 
-                    <div className="space-y-4">
-                      <div className="flex items-center justify-between">
-                        <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Quality Score</Label>
-                        <span className="text-xs font-bold text-primary">{minQualityScore}%</span>
-                      </div>
-                      <input
-                        type="range"
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Followers (custom)</Label>
+                      <Input
+                        type="number"
                         min={0}
-                        max={100}
-                        value={minQualityScore}
-                        onChange={(e) => updateQualityScore(Number(e.target.value))}
-                        className="w-full accent-primary h-1 bg-muted rounded-lg appearance-none cursor-pointer"
+                        step={1000}
+                        value={minFollowers || ""}
+                        onChange={(e) => setMinFollowers(Number(e.target.value))}
+                        placeholder="e.g. 50000"
+                        className="h-8 text-xs"
                       />
                     </div>
+
+                    {/* ── AUDIENCE ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Audience</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</Label>
+                      <select
+                        value={audienceGender}
+                        onChange={(e) => setAudienceGender(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                      >
+                        {audienceGenders.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Age Group</Label>
+                      <select
+                        value={audienceAgeGroup}
+                        onChange={(e) => setAudienceAgeGroup(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                      >
+                        {ageGroups.map((a) => (
+                          <option key={a} value={a}>{a}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    {/* ── PERFORMANCE ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Performance</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Growth Rate</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          step={0.5}
+                          value={minGrowthRate || ""}
+                          onChange={(e) => setMinGrowthRate(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Avg Views</Label>
+                      <Input
+                        type="number"
+                        min={0}
+                        step={1000}
+                        value={minAverageViews || ""}
+                        onChange={(e) => setMinAverageViews(Number(e.target.value))}
+                        placeholder="Any"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Content Quality Score</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={minQualityScore || ""}
+                          onChange={(e) => updateQualityScore(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Performance Score</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={minPerformanceScore || ""}
+                          onChange={(e) => updatePerformanceScore(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                      </div>
+                    </div>
+
+                    {/* ── CREATOR PROFILE ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Creator Profile</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Content Style</Label>
+                      <select
+                        value={stylePresent}
+                        onChange={(e) => setStylePresent(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                      >
+                        {stylePresentOptions.map((s) => (
+                          <option key={s} value={s}>{s}</option>
+                        ))}
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Availability</Label>
+                      <select
+                        value={availabilityStatus}
+                        onChange={(e) => setAvailabilityStatus(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                      >
+                        <option value="All">All</option>
+                        <option value="available">Available</option>
+                        <option value="busy">Busy</option>
+                        <option value="unavailable">Unavailable</option>
+                      </select>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Response Rate</Label>
+                      <div className="relative">
+                        <Input
+                          type="number"
+                          min={0}
+                          max={100}
+                          value={minResponseRate || ""}
+                          onChange={(e) => updateResponseRate(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pr-8"
+                        />
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
+                      <div className="space-y-2">
+                        {campaignIntents.map((intent) => (
+                          <div key={intent} className="flex items-center space-x-2">
+                            <input
+                              type="checkbox"
+                              id={`i-${intent}`}
+                              checked={selectedCampaignIntents.includes(intent)}
+                              onChange={(e) => {
+                                if (e.target.checked) setSelectedCampaignIntents(p => [...p, intent]);
+                                else setSelectedCampaignIntents(p => p.filter(v => v !== intent));
+                              }}
+                              className="h-4 w-4 rounded border-input bg-background"
+                            />
+                            <Label htmlFor={`i-${intent}`} className="text-xs font-medium cursor-pointer">{intent}</Label>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* ── BUDGET ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Budget</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Rate / Post</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={50}
+                          value={minRatePerPost || ""}
+                          onChange={(e) => setMinRatePerPost(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pl-6"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Max Rate / Post</Label>
+                      <div className="relative">
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <Input
+                          type="number"
+                          min={0}
+                          step={50}
+                          value={maxRatePerPost || ""}
+                          onChange={(e) => setMaxRatePerPost(Number(e.target.value))}
+                          placeholder="Any"
+                          className="h-8 text-xs pl-6"
+                        />
+                      </div>
+                    </div>
+
                   </div>
                 )}
               </CardContent>
