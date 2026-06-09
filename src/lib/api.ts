@@ -100,7 +100,7 @@ export async function apiGetProfile(token: string) {
 export async function apiLookupInfluencerByUrl(
   platform: string,
   handle: string,
-): Promise<{ found: boolean; influencer?: any }> {
+): Promise<{ found: boolean; source?: "db" | "api"; influencer?: any }> {
   const params = new URLSearchParams({ platform, handle });
   const res = await fetch(`${API_URL}/influencers/lookup?${params}`);
   if (!res.ok) throw new Error("Lookup failed");

@@ -125,7 +125,7 @@ function DiscoverPageContent() {
   const [unifiedSearchInput, setUnifiedSearchInput] = useState("");
   const [urlSearchError, setUrlSearchError] = useState("");
   const [isUrlSearching, setIsUrlSearching] = useState(false);
-  const [urlLookupStatus, setUrlLookupStatus] = useState<"found" | "not-found" | null>(null);
+  const [urlLookupStatus, setUrlLookupStatus] = useState<"found" | "live" | "not-found" | null>(null);
   const [generatedInfluencer, setGeneratedInfluencer] = useState<Influencer | null>(null);
   const [generatedInfluencerMeta, setGeneratedInfluencerMeta] = useState<InfluencerMeta | null>(null);
 
@@ -340,14 +340,14 @@ function DiscoverPageContent() {
     setUrlSearchError("");
     setUrlLookupStatus(null);
 
-    // ── DB lookup first ──────────────────────────────────────────────────────
+    // ── DB / live API lookup ─────────────────────────────────────────────────
     try {
       const result = await apiLookupInfluencerByUrl(platform, cleanedHandle);
       if (result.found && result.influencer) {
         setGeneratedInfluencer(result.influencer);
         setGeneratedInfluencerMeta(result.influencer.meta ?? null);
         setSelectedInfluencerId(result.influencer.id);
-        setUrlLookupStatus("found");
+        setUrlLookupStatus(result.source === "api" ? "live" : "found");
         setIsUrlSearching(false);
         return;
       }
@@ -900,6 +900,13 @@ function DiscoverPageContent() {
           <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Found in our network — showing real profile data
+          </div>
+        )}
+
+        {urlLookupStatus === "live" && (
+          <div className="flex items-center gap-2 text-sm font-semibold text-sky-600">
+            <CheckCircle2 className="h-4 w-4 shrink-0" />
+            Live data from YouTube — not yet registered on InfluApp
           </div>
         )}
 
