@@ -53,9 +53,7 @@ interface InfluencerCardProps {
 
 export function InfluencerCard({ influencer, isActive = false, onSelect }: InfluencerCardProps) {
   const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
-  const avatarUrl = influencer.avatarUrl ?? fallbackAvatar;
-  // Prefer video thumbnail for card hero (richer visual), fall back to channel avatar
-  const cardBg = influencer.latestVideo?.thumbnail ?? avatarUrl;
+  const cardBg = influencer.avatarUrl ?? fallbackAvatar;
   const main = getMainFollowerPlatform(influencer);
   const presentationTags = Array.from(
     new Set([influencer.category, ...influencer.stylePresent].filter(Boolean)),

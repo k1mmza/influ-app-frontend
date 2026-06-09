@@ -61,19 +61,25 @@ const getTone = (styles: string[]) => {
 };
 
 export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerDetailPanelProps) {
-  const topCountries = getTopCountries(meta.country);
-  const topCities = getTopCities(meta.city);
-  const engagementAuthenticity = Math.min(99, Math.round((meta.qualityScore + influencer.performanceScore) / 2));
+  const topCountries = meta.country ? getTopCountries(meta.country) : [];
+  const topCities = meta.city ? getTopCities(meta.city) : [];
+  const engagementAuthenticity = (meta.qualityScore != null && influencer.performanceScore != null)
+    ? Math.min(99, Math.round((meta.qualityScore + influencer.performanceScore) / 2))
+    : null;
   const consistencyScore = Math.min(100, Math.round((meta.growthRate * 6 + influencer.engagementRate * 5) / 2));
-  const estimatedCpm = Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000));
-  const estimatedCostPerEngagement = (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2);
+  const estimatedCpm = influencer.ratePerPost
+    ? Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000))
+    : null;
+  const estimatedCostPerEngagement = influencer.ratePerPost
+    ? (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2)
+    : null;
   const avatarUrl = influencer.avatarUrl ?? `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
-  const realVideo = influencer.latestVideo;
+  const realVideo = influencer.spotlightVideo;
 
   return (
     <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
@@ -83,10 +89,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-muted" />
             <div>
               <h2 className="text-xl font-bold tracking-tight font-serif">{influencer.name}</h2>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                <MapPin className="h-3 w-3" />
-                {meta.city}, {meta.country}
-              </div>
+              {(meta.city || meta.country) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                  <MapPin className="h-3 w-3" />
+                  {[meta.city, meta.country].filter(Boolean).join(", ")}
+                </div>
+              )}
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted">
@@ -107,7 +115,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quality</p>
-              <p className="text-lg font-bold text-emerald-600">{meta.qualityScore}%</p>
+              <p className="text-lg font-bold text-emerald-600">{meta.qualityScore != null ? `${meta.qualityScore}%` : "—"}</p>
             </div>
           </div>
 
@@ -195,24 +203,32 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             </h3>
             <Card className="border-none bg-muted/80 shadow-none">
               <CardContent className="p-5 space-y-4">
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Gender Mix</span>
-                  <span className="text-foreground">{meta.audienceGender}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Core Age Group</span>
-                  <span className="text-foreground">{meta.audienceAgeGroup}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Audience Authentic</span>
-                  <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
-                </div>
-                <div className="pt-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
-                  <div className="flex flex-wrap gap-2">
-                    {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
+                {meta.audienceGender && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Gender Mix</span>
+                    <span className="text-foreground">{meta.audienceGender}</span>
                   </div>
-                </div>
+                )}
+                {meta.audienceAgeGroup && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Core Age Group</span>
+                    <span className="text-foreground">{meta.audienceAgeGroup}</span>
+                  </div>
+                )}
+                {engagementAuthenticity != null && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Audience Authentic</span>
+                    <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
+                  </div>
+                )}
+                {topCountries.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
+                    <div className="flex flex-wrap gap-2">
+                      {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </section>
@@ -226,11 +242,11 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-2xl border bg-card">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Price per Post</p>
-                <p className="text-xl font-bold mt-1">${influencer.ratePerPost}</p>
+                <p className="text-xl font-bold mt-1">{influencer.ratePerPost ? `$${influencer.ratePerPost}` : "—"}</p>
               </div>
               <div className="p-4 rounded-2xl border bg-card">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estimated CPM</p>
-                <p className="text-xl font-bold mt-1">${estimatedCpm}</p>
+                <p className="text-xl font-bold mt-1">{estimatedCpm ? `$${estimatedCpm}` : "—"}</p>
               </div>
             </div>
           </section>
