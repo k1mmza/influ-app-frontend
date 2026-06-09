@@ -52,7 +52,10 @@ interface InfluencerCardProps {
 }
 
 export function InfluencerCard({ influencer, isActive = false, onSelect }: InfluencerCardProps) {
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const avatarUrl = influencer.avatarUrl ?? fallbackAvatar;
+  // Prefer video thumbnail for card hero (richer visual), fall back to channel avatar
+  const cardBg = influencer.latestVideo?.thumbnail ?? avatarUrl;
   const main = getMainFollowerPlatform(influencer);
   const presentationTags = Array.from(
     new Set([influencer.category, ...influencer.stylePresent].filter(Boolean)),
@@ -67,10 +70,10 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
       )}
     >
       <div className="relative aspect-[4/5] overflow-hidden">
-        <img 
-          src={avatarUrl} 
-          alt={`${influencer.name} profile`} 
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110" 
+        <img
+          src={cardBg}
+          alt={`${influencer.name} profile`}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
         

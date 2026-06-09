@@ -67,12 +67,13 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
   const consistencyScore = Math.min(100, Math.round((meta.growthRate * 6 + influencer.engagementRate * 5) / 2));
   const estimatedCpm = Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000));
   const estimatedCostPerEngagement = (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2);
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const avatarUrl = influencer.avatarUrl ?? `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
+  const realVideo = influencer.latestVideo;
 
   return (
     <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
@@ -118,17 +119,42 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               <h3 className="text-sm font-bold uppercase tracking-widest text-foreground font-serif">Content Spotlight</h3>
               <Badge variant="outline" className="font-bold text-[10px]">{topByViews.platform}</Badge>
             </div>
-            {showcaseEmbed.kind === "iframe" ? (
-              <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
-                <div className="relative aspect-video w-full">
-                  <iframe
-                    title={showcaseEmbed.title}
-                    src={showcaseEmbed.src}
-                    className="absolute inset-0 h-full w-full border-0"
-                    allowFullScreen
-                  />
-                </div>
-              </Card>
+            {realVideo ? (
+              <>
+                <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
+                  <div className="relative aspect-video w-full">
+                    <iframe
+                      title={realVideo.title}
+                      src={`https://www.youtube.com/embed/${realVideo.id}?rel=0`}
+                      className="absolute inset-0 h-full w-full border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                </Card>
+                <a
+                  href={`https://www.youtube.com/watch?v=${realVideo.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{realVideo.title}</span>
+                </a>
+              </>
+            ) : showcaseEmbed.kind === "iframe" ? (
+              <>
+                <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
+                  <div className="relative aspect-video w-full">
+                    <iframe
+                      title={showcaseEmbed.title}
+                      src={showcaseEmbed.src}
+                      className="absolute inset-0 h-full w-full border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                </Card>
+                <p className="text-[10px] text-center text-muted-foreground font-medium italic">Demo sample video shown for context.</p>
+              </>
             ) : (
               <Button variant="outline" asChild className="w-full h-24 rounded-2xl border-dashed">
                 <a href={showcaseEmbed.href} target="_blank" rel="noopener noreferrer">
@@ -137,7 +163,6 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 </a>
               </Button>
             )}
-            <p className="text-[10px] text-center text-muted-foreground font-medium italic">Demo sample video shown for context.</p>
           </section>
 
           {/* Performance Metrics */}

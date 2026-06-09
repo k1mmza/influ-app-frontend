@@ -15,6 +15,8 @@ export interface Influencer {
   performanceScore: number;
   ratePerPost: number;
   stylePresent: string[];
+  avatarUrl?: string | null;
+  latestVideo?: { id: string; title: string; thumbnail: string } | null;
 }
 
 export interface Campaign {
