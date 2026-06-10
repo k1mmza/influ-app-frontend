@@ -3,14 +3,14 @@
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
-import { Influencer } from "@/lib/types";
+import { Influencer, Campaign } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
-import * as api from "@/lib/api";
 import { apiLookupInfluencerByUrl } from "@/lib/api";
-import { useSearchParams } from "next/navigation";
-import { Suspense, useEffect, useMemo, useRef, useState } from "react";
+import { useCampaignStore } from "@/store/useCampaignStore";
+import { useRouter, useSearchParams } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -23,13 +23,12 @@ import {
   ChevronDown,
   ChevronUp,
   Globe,
-  Users,
-  Target,
-  Sparkles,
   Layers,
   Loader2,
   CheckCircle2,
   AlertCircle,
+  X as XIcon,
+  CheckCheck,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -82,10 +81,19 @@ function DiscoverPageFallback() {
 }
 
 function DiscoverPageContent() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const urlFromQuery = searchParams.get("url");
+  const searchFromQuery = searchParams.get("search");
   const processedUrlRef = useRef<string | null>(null);
+  const processedSearchRef = useRef<string | null>(null);
   const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
+
+  // Campaign picker modal state
+  const { campaigns } = useCampaignStore();
+  const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
+  const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
+  const [addConfirmed, setAddConfirmed] = useState(false);
   
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -104,6 +112,15 @@ function DiscoverPageContent() {
       setSelectedCategories([categoryFromUrl]);
     }
   }, [categoryFromUrl]);
+
+  // Handle ?search=X from landing page hero
+  useEffect(() => {
+    if (!searchFromQuery || processedSearchRef.current === searchFromQuery) return;
+    processedSearchRef.current = searchFromQuery;
+    setUnifiedSearchInput(searchFromQuery);
+    applySmartQuery(searchFromQuery);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [searchFromQuery]);
   const [minAverageViews, setMinAverageViews] = useState(0);
   const [minEngagementRate, setMinEngagementRate] = useState(0);
   const [minGrowthRate, setMinGrowthRate] = useState(0);
@@ -468,7 +485,7 @@ function DiscoverPageContent() {
 
   const discoverCards = useMemo(() => {
     if (!generatedInfluencer) return filtered;
-    return [generatedInfluencer, ...filtered];
+    return [generatedInfluencer, ...filtered.filter((inf) => inf.id !== generatedInfluencer.id)];
   }, [filtered, generatedInfluencer]);
 
   const selectedInfluencer = useMemo(
@@ -929,14 +946,28 @@ function DiscoverPageContent() {
           </div>
         ) : (
           <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {discoverCards.map((influencer) => (
-              <InfluencerCard
-                key={influencer.id}
-                influencer={influencer}
-                isActive={selectedInfluencerId === influencer.id}
-                onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-              />
-            ))}
+            {discoverCards.map((influencer) => {
+              const isGenerated = generatedInfluencer?.id === influencer.id;
+              return (
+                <div key={influencer.id} className="relative">
+                  {isGenerated && (
+                    <button
+                      onClick={() => { setGeneratedInfluencer(null); setGeneratedInfluencerMeta(null); setUrlLookupStatus(null); if (selectedInfluencerId === influencer.id) setSelectedInfluencerId(null); }}
+                      className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-muted border border-border shadow-sm hover:bg-destructive hover:text-white transition-colors cursor-pointer"
+                      title="Dismiss"
+                    >
+                      <XIcon className="h-3 w-3" />
+                    </button>
+                  )}
+                  <InfluencerCard
+                    influencer={influencer}
+                    isActive={selectedInfluencerId === influencer.id}
+                    onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+                    onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); }}
+                  />
+                </div>
+              );
+            })}
             
             {discoverCards.length === 0 && (
               <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
@@ -963,7 +994,88 @@ function DiscoverPageContent() {
           influencer={selectedInfluencer}
           meta={selectedInfluencerMeta}
           onClose={() => setSelectedInfluencerId(null)}
+          onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); }}
+          onMessage={() => router.push("/messages")}
         />
+      )}
+
+      {/* Campaign picker modal */}
+      {campaignPickerInfluencer && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setCampaignPickerInfluencer(null)}
+        >
+          <Card
+            className="w-full max-w-md shadow-2xl border-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-serif">Add to Campaign</CardTitle>
+                <button
+                  onClick={() => setCampaignPickerInfluencer(null)}
+                  className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <XIcon className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Adding <span className="font-semibold text-foreground">{campaignPickerInfluencer.name}</span> to a campaign
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 pb-4">
+              {campaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
+              ) : (
+                campaigns.map((campaign) => (
+                  <button
+                    key={campaign.id}
+                    onClick={() => setPickedCampaignId(campaign.id)}
+                    className={cn(
+                      "w-full rounded-xl border p-3 text-left transition-all cursor-pointer",
+                      pickedCampaignId === campaign.id
+                        ? "border-primary bg-primary/5"
+                        : "border-border hover:border-primary/40 hover:bg-muted/50"
+                    )}
+                  >
+                    <p className="text-sm font-semibold">{campaign.title}</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
+                    <div className="flex items-center gap-2 mt-1.5">
+                      <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
+                      <span className="text-[10px] text-muted-foreground">${campaign.budget.toLocaleString()} budget</span>
+                    </div>
+                  </button>
+                ))
+              )}
+              {addConfirmed && (
+                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 pt-1">
+                  <CheckCheck className="h-4 w-4" />
+                  {campaignPickerInfluencer.name} added to campaign!
+                </div>
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setCampaignPickerInfluencer(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl"
+                  disabled={!pickedCampaignId || addConfirmed}
+                  onClick={() => {
+                    if (!pickedCampaignId) return;
+                    setAddConfirmed(true);
+                    setTimeout(() => setCampaignPickerInfluencer(null), 1500);
+                  }}
+                >
+                  Confirm
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       )}
     </div>
   );

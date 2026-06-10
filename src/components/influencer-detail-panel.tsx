@@ -1,21 +1,18 @@
 import { getMainFollowerPlatform, getShowcaseDemoEmbed, getTopAvgViewsPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  X, 
-  MapPin, 
-  BarChart3, 
-  Users, 
-  TrendingUp, 
-  ShieldCheck, 
-  Video, 
+import {
+  X,
+  MapPin,
+  BarChart3,
+  Users,
   MessageCircle,
   PlusCircle,
   ExternalLink,
-  Target
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,12 +29,15 @@ interface InfluencerMeta {
   audienceAgeGroup: string;
   qualityScore: number;
   responseRate: number;
+  bio?: string | null;
 }
 
 interface InfluencerDetailPanelProps {
   influencer: Influencer;
   meta: InfluencerMeta;
   onClose: () => void;
+  onAddToCampaign?: (influencer: Influencer) => void;
+  onMessage?: (influencer: Influencer) => void;
 }
 
 const getTopCountries = (country: string) => {
@@ -60,7 +60,7 @@ const getTone = (styles: string[]) => {
   return "Balanced";
 };
 
-export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerDetailPanelProps) {
+export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampaign, onMessage }: InfluencerDetailPanelProps) {
   const topCountries = meta.country ? getTopCountries(meta.country) : [];
   const topCities = meta.city ? getTopCities(meta.city) : [];
   const engagementAuthenticity = (meta.qualityScore != null && influencer.performanceScore != null)
@@ -74,7 +74,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
     ? (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2)
     : null;
   const avatarUrl = influencer.avatarUrl ?? `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
-  const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
+  const allPlatforms = [...(influencer.platforms ?? []), ...(meta.extraPlatforms ?? [])];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
@@ -120,6 +120,17 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
           </div>
 
           <Separator />
+
+          {/* About — AI-generated bio */}
+          {meta.bio && (
+            <section className="space-y-2">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
+                <FileText className="h-4 w-4" />
+                About
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{meta.bio}</p>
+            </section>
+          )}
 
           {/* Media Showcase */}
           <section className="space-y-4">
@@ -254,11 +265,18 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
         <footer className="sticky bottom-0 border-t bg-background/80 p-6 backdrop-blur-md">
           <div className="flex gap-3">
-            <Button className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20">
+            <Button
+              className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20"
+              onClick={() => onAddToCampaign?.(influencer)}
+            >
               <PlusCircle className="mr-2 h-5 w-5" />
               Add to Campaign
             </Button>
-            <Button variant="outline" className="flex-1 rounded-xl h-12 text-base font-bold">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl h-12 text-base font-bold"
+              onClick={() => onMessage?.(influencer)}
+            >
               <MessageCircle className="mr-2 h-5 w-5" />
               Message
             </Button>

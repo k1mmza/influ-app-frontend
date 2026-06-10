@@ -1,5 +1,8 @@
+"use client";
+
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
+import { useShortlistStore } from "@/store/useShortlistStore";
 import type { IconType } from "react-icons";
 import { FaGlobe, FaLinkedinIn, FaMobileAlt } from "react-icons/fa";
 import {
@@ -10,6 +13,7 @@ import {
   SiXiaohongshu,
   SiYoutube,
 } from "react-icons/si";
+import { Heart, PlusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -49,15 +53,18 @@ interface InfluencerCardProps {
   influencer: Influencer;
   isActive?: boolean;
   onSelect?: (influencer: Influencer) => void;
+  onAddToCampaign?: (influencer: Influencer) => void;
 }
 
-export function InfluencerCard({ influencer, isActive = false, onSelect }: InfluencerCardProps) {
+export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign }: InfluencerCardProps) {
   const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
   const cardBg = influencer.avatarUrl ?? fallbackAvatar;
   const main = getMainFollowerPlatform(influencer);
   const presentationTags = Array.from(
-    new Set([influencer.category, ...influencer.stylePresent].filter(Boolean)),
+    new Set([influencer.category, ...(influencer.stylePresent ?? [])].filter(Boolean)),
   );
+  const { toggle, has } = useShortlistStore();
+  const saved = has(influencer.id);
 
   return (
     <Card
@@ -75,7 +82,19 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
         
-        <div className="absolute top-3 right-3">
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          <button
+            onClick={(e) => { e.stopPropagation(); toggle(influencer.id); }}
+            className={cn(
+              "flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors cursor-pointer",
+              saved
+                ? "bg-rose-500/90 text-white"
+                : "bg-card/80 text-muted-foreground hover:text-rose-500"
+            )}
+            aria-label={saved ? "Remove from shortlist" : "Save to shortlist"}
+          >
+            <Heart className={cn("h-4 w-4", saved && "fill-current")} />
+          </button>
           <Badge className="bg-card/90 text-primary font-bold backdrop-blur-sm border-none shadow-sm hover:bg-card">
             Score {influencer.performanceScore}
           </Badge>
@@ -123,10 +142,11 @@ export function InfluencerCard({ influencer, isActive = false, onSelect }: Influ
           </div>
         </div>
 
-        <Button 
+        <Button
           className="w-full rounded-xl font-bold text-xs h-10 shadow-sm"
-          onClick={(e) => { e.stopPropagation(); }}
+          onClick={(e) => { e.stopPropagation(); onAddToCampaign?.(influencer); }}
         >
+          <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
           Add to Campaign
         </Button>
       </CardContent>
