@@ -100,10 +100,16 @@ export async function apiGetProfile(token: string) {
 export async function apiLookupInfluencerByUrl(
   platform: string,
   handle: string,
-): Promise<{ found: boolean; source?: "db" | "api"; influencer?: any }> {
+): Promise<{ found: boolean; source?: "db" | "api"; loading?: boolean; influencer?: any }> {
   const params = new URLSearchParams({ platform, handle });
   const res = await fetch(`${API_URL}/influencers/lookup?${params}`);
   if (!res.ok) throw new Error("Lookup failed");
+  return res.json();
+}
+
+export async function apiFetchInfluencer(id: string): Promise<any | null> {
+  const res = await fetch(`${API_URL}/influencers/${id}`);
+  if (!res.ok) return null;
   return res.json();
 }
 

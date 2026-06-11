@@ -2,6 +2,7 @@ export type Role = "agency" | "brand" | "influencer";
 
 export interface Influencer {
   id: string;
+  handle?: string | null;
   name: string;
   platforms: string[];
   /** Total reach; should align with sum of followersByPlatform when both are set. */
@@ -17,6 +18,7 @@ export interface Influencer {
   stylePresent: string[];
   avatarUrl?: string | null;
   spotlightVideo?: { id: string; title: string; thumbnail: string } | null;
+  syncStatus?: string;
 }
 
 export interface Campaign {

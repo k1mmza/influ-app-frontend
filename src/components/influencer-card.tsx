@@ -79,6 +79,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
           src={cardBg}
           alt={`${influencer.name} profile`}
           className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
+          onError={(e) => { (e.target as HTMLImageElement).src = fallbackAvatar; }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
         

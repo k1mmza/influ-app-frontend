@@ -28,6 +28,7 @@ interface InfluencerMeta {
   audienceGender: string;
   audienceAgeGroup: string;
   qualityScore: number;
+  audienceQualityScore?: number | null;
   responseRate: number;
   bio?: string | null;
 }
@@ -73,20 +74,26 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
   const estimatedCostPerEngagement = influencer.ratePerPost
     ? (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2)
     : null;
-  const avatarUrl = influencer.avatarUrl ?? `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const avatarUrl = influencer.avatarUrl ?? fallbackAvatar;
   const allPlatforms = [...(influencer.platforms ?? []), ...(meta.extraPlatforms ?? [])];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
   const realVideo = influencer.spotlightVideo;
+  const spotlightPlatform = (influencer.platforms?.[0] ?? 'youtube').toLowerCase();
+  const spotlightExternalUrl =
+    spotlightPlatform === 'instagram' ? `https://www.instagram.com/p/${realVideo?.id}/`
+    : spotlightPlatform === 'tiktok' ? `https://www.tiktok.com/@${influencer.handle ?? influencer.name}/video/${realVideo?.id}`
+    : realVideo?.id ? `https://www.youtube.com/watch?v=${realVideo.id}` : '#';
 
   return (
     <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
       <div className="flex h-full flex-col">
         <header className="flex items-center justify-between border-b px-6 py-4">
           <div className="flex items-center gap-4">
-            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-muted" />
+            <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-muted" onError={(e) => { (e.target as HTMLImageElement).src = fallbackAvatar; }} />
             <div>
               <h2 className="text-xl font-bold tracking-tight font-serif">{influencer.name}</h2>
               {(meta.city || meta.country) && (
@@ -142,22 +149,40 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               <>
                 <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
                   <div className="relative aspect-video w-full">
-                    <iframe
-                      title={realVideo.title}
-                      src={`https://www.youtube.com/embed/${realVideo.id}?rel=0`}
-                      className="absolute inset-0 h-full w-full border-0"
-                      allowFullScreen
-                    />
+                    {spotlightPlatform === 'youtube' ? (
+                      <iframe
+                        title={realVideo.title}
+                        src={`https://www.youtube.com/embed/${realVideo.id}?rel=0`}
+                        className="absolute inset-0 h-full w-full border-0"
+                        allowFullScreen
+                      />
+                    ) : (
+                      <a href={spotlightExternalUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">
+                        {/* Fallback always visible; image overlays it when loaded */}
+                        <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-400 text-sm gap-2">
+                          <ExternalLink className="h-5 w-5 shrink-0" />
+                          <span>View on {spotlightPlatform.charAt(0).toUpperCase() + spotlightPlatform.slice(1)}</span>
+                        </div>
+                        {realVideo.thumbnail && (
+                          <img
+                            src={realVideo.thumbnail}
+                            alt={realVideo.title}
+                            className="absolute inset-0 h-full w-full object-cover"
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                          />
+                        )}
+                      </a>
+                    )}
                   </div>
                 </Card>
                 <a
-                  href={`https://www.youtube.com/watch?v=${realVideo.id}`}
+                  href={spotlightExternalUrl}
                   target="_blank"
                   rel="noopener noreferrer"
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ExternalLink className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{realVideo.title}</span>
+                  <span className="truncate">{realVideo.title || `View on ${spotlightPlatform}`}</span>
                 </a>
               </>
             ) : showcaseEmbed.kind === "iframe" ? (
@@ -204,6 +229,31 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                 </CardContent>
               </Card>
             </div>
+            {meta.audienceQualityScore != null && (() => {
+              const score = meta.audienceQualityScore;
+              const label = score >= 70 ? "Likely Authentic" : score >= 40 ? "Mixed Signals" : "Suspicious";
+              const color = score >= 70 ? "text-emerald-600" : score >= 40 ? "text-amber-500" : "text-rose-500";
+              const bar = score >= 70 ? "bg-emerald-500" : score >= 40 ? "bg-amber-400" : "bg-rose-500";
+              return (
+                <Card className="border-none bg-muted/80 shadow-none">
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Audience Authenticity</p>
+                      <span className={`text-sm font-bold ${color}`}>{score}/100 · {label}</span>
+                    </div>
+                    <div className="h-2 w-full rounded-full bg-muted">
+                      <div className={`h-2 rounded-full ${bar} transition-all`} style={{ width: `${score}%` }} />
+                    </div>
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-1 text-[10px] text-muted-foreground">
+                      <span>Comment-to-like ratio</span>
+                      <span>ER vs platform avg</span>
+                      <span>View-to-follower ratio</span>
+                      <span>Engagement consistency</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })()}
           </section>
 
           {/* Audience Snapshot */}
@@ -226,10 +276,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                     <span className="text-foreground">{meta.audienceAgeGroup}</span>
                   </div>
                 )}
-                {engagementAuthenticity != null && (
+                {meta.audienceQualityScore != null && (
                   <div className="flex items-center justify-between text-xs font-medium">
-                    <span className="text-muted-foreground">Audience Authentic</span>
-                    <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
+                    <span className="text-muted-foreground">Real vs Bot Score</span>
+                    <span className={`font-bold ${meta.audienceQualityScore >= 70 ? 'text-emerald-600' : meta.audienceQualityScore >= 40 ? 'text-amber-500' : 'text-rose-500'}`}>
+                      {meta.audienceQualityScore}/100
+                    </span>
                   </div>
                 )}
                 {topCountries.length > 0 && (

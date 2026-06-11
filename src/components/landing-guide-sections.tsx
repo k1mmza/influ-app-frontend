@@ -50,7 +50,7 @@ function GuideImage({ src, alt, className }: { src: string; alt: string; classNa
   return (
     <div
       className={cn(
-        "relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border-8 border-white bg-card shadow-2xl sm:aspect-[5/4] lg:aspect-auto lg:min-h-[440px]",
+        "relative aspect-[4/3] w-full overflow-hidden rounded-[2rem] border-4 border-white bg-card shadow-2xl ring-1 ring-black/5 sm:aspect-[5/4] lg:aspect-auto lg:min-h-[440px]",
         className
       )}
     >

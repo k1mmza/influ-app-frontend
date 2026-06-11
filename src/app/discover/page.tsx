@@ -5,7 +5,7 @@ import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer, Campaign } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
-import { apiLookupInfluencerByUrl } from "@/lib/api";
+import { apiLookupInfluencerByUrl, apiFetchInfluencer } from "@/lib/api";
 import { useCampaignStore } from "@/store/useCampaignStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -45,6 +45,7 @@ type InfluencerMeta = {
   audienceGender: string;
   audienceAgeGroup: string;
   qualityScore: number;
+  audienceQualityScore?: number | null;
   responseRate: number;
 };
 
@@ -146,11 +147,29 @@ function DiscoverPageContent() {
   const [generatedInfluencer, setGeneratedInfluencer] = useState<Influencer | null>(null);
   const [generatedInfluencerMeta, setGeneratedInfluencerMeta] = useState<InfluencerMeta | null>(null);
 
+  // Poll until async Apify fetch completes
+  useEffect(() => {
+    if (!generatedInfluencer?.id || generatedInfluencer.syncStatus !== 'SYNCING') return;
+    const id = generatedInfluencer.id;
+    const timer = setInterval(async () => {
+      const fresh = await apiFetchInfluencer(id);
+      if (!fresh) return;
+      if (fresh.syncStatus !== 'SYNCING') {
+        clearInterval(timer);
+        setGeneratedInfluencer(fresh);
+        setGeneratedInfluencerMeta(fresh.meta ?? null);
+        setUrlLookupStatus('live');
+      }
+    }, 3000);
+    return () => clearInterval(timer);
+  }, [generatedInfluencer?.id, generatedInfluencer?.syncStatus]);
+
   useEffect(() => {
     const fetchInfluencers = async () => {
       setLoading(true);
       try {
         const params: any = {
+          q: smartQuery || undefined,
           categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
           platform: selectedPlatforms[0] || "All",
           followerRange,
@@ -181,7 +200,7 @@ function DiscoverPageContent() {
     const debounce = setTimeout(fetchInfluencers, 500);
     return () => clearTimeout(debounce);
   }, [
-    selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
+    smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
     minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
     minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus,
   ]);
@@ -920,10 +939,18 @@ function DiscoverPageContent() {
           </div>
         )}
 
-        {urlLookupStatus === "live" && (
+        {urlLookupStatus === "live" && generatedInfluencer?.syncStatus === 'SYNCING' && (
+          <div className="flex items-center gap-2 text-sm font-semibold text-sky-600">
+            <Loader2 className="h-4 w-4 shrink-0 animate-spin" />
+            Fetching live data — this takes ~20 seconds…
+          </div>
+        )}
+        {urlLookupStatus === "live" && generatedInfluencer?.syncStatus !== 'SYNCING' && (
           <div className="flex items-center gap-2 text-sm font-semibold text-sky-600">
             <CheckCircle2 className="h-4 w-4 shrink-0" />
-            Live data from YouTube — not yet registered on InfluApp
+            Live data from {generatedInfluencer?.platforms?.[0]
+              ? generatedInfluencer.platforms[0].charAt(0).toUpperCase() + generatedInfluencer.platforms[0].slice(1)
+              : "platform"} — not yet registered on InfluApp
           </div>
         )}
 
@@ -958,6 +985,12 @@ function DiscoverPageContent() {
                     >
                       <XIcon className="h-3 w-3" />
                     </button>
+                  )}
+                  {isGenerated && influencer.syncStatus === 'SYNCING' && (
+                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm gap-2 pointer-events-none">
+                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                      <span className="text-xs font-medium text-muted-foreground">Fetching profile…</span>
+                    </div>
                   )}
                   <InfluencerCard
                     influencer={influencer}
