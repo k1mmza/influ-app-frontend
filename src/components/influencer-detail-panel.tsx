@@ -1,21 +1,18 @@
 import { getMainFollowerPlatform, getShowcaseDemoEmbed, getTopAvgViewsPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
-import { 
-  X, 
-  MapPin, 
-  BarChart3, 
-  Users, 
-  TrendingUp, 
-  ShieldCheck, 
-  Video, 
+import {
+  X,
+  MapPin,
+  BarChart3,
+  Users,
   MessageCircle,
   PlusCircle,
   ExternalLink,
-  Target
+  FileText
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -32,12 +29,15 @@ interface InfluencerMeta {
   audienceAgeGroup: string;
   qualityScore: number;
   responseRate: number;
+  bio?: string | null;
 }
 
 interface InfluencerDetailPanelProps {
   influencer: Influencer;
   meta: InfluencerMeta;
   onClose: () => void;
+  onAddToCampaign?: (influencer: Influencer) => void;
+  onMessage?: (influencer: Influencer) => void;
 }
 
 const getTopCountries = (country: string) => {
@@ -60,19 +60,26 @@ const getTone = (styles: string[]) => {
   return "Balanced";
 };
 
-export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerDetailPanelProps) {
-  const topCountries = getTopCountries(meta.country);
-  const topCities = getTopCities(meta.city);
-  const engagementAuthenticity = Math.min(99, Math.round((meta.qualityScore + influencer.performanceScore) / 2));
+export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampaign, onMessage }: InfluencerDetailPanelProps) {
+  const topCountries = meta.country ? getTopCountries(meta.country) : [];
+  const topCities = meta.city ? getTopCities(meta.city) : [];
+  const engagementAuthenticity = (meta.qualityScore != null && influencer.performanceScore != null)
+    ? Math.min(99, Math.round((meta.qualityScore + influencer.performanceScore) / 2))
+    : null;
   const consistencyScore = Math.min(100, Math.round((meta.growthRate * 6 + influencer.engagementRate * 5) / 2));
-  const estimatedCpm = Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000));
-  const estimatedCostPerEngagement = (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2);
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
-  const allPlatforms = [...influencer.platforms, ...meta.extraPlatforms];
+  const estimatedCpm = influencer.ratePerPost
+    ? Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000))
+    : null;
+  const estimatedCostPerEngagement = influencer.ratePerPost
+    ? (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2)
+    : null;
+  const avatarUrl = influencer.avatarUrl ?? `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
+  const allPlatforms = [...(influencer.platforms ?? []), ...(meta.extraPlatforms ?? [])];
   const mainFollowers = getMainFollowerPlatform(influencer);
   const topByViews = getTopAvgViewsPlatform(influencer);
   const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
   const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
+  const realVideo = influencer.spotlightVideo;
 
   return (
     <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
@@ -82,10 +89,12 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             <img src={avatarUrl} alt="" className="h-12 w-12 rounded-full border bg-muted" />
             <div>
               <h2 className="text-xl font-bold tracking-tight font-serif">{influencer.name}</h2>
-              <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
-                <MapPin className="h-3 w-3" />
-                {meta.city}, {meta.country}
-              </div>
+              {(meta.city || meta.country) && (
+                <div className="flex items-center gap-2 text-xs text-muted-foreground font-medium">
+                  <MapPin className="h-3 w-3" />
+                  {[meta.city, meta.country].filter(Boolean).join(", ")}
+                </div>
+              )}
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted">
@@ -106,11 +115,22 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quality</p>
-              <p className="text-lg font-bold text-emerald-600">{meta.qualityScore}%</p>
+              <p className="text-lg font-bold text-emerald-600">{meta.qualityScore != null ? `${meta.qualityScore}%` : "—"}</p>
             </div>
           </div>
 
           <Separator />
+
+          {/* About — AI-generated bio */}
+          {meta.bio && (
+            <section className="space-y-2">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
+                <FileText className="h-4 w-4" />
+                About
+              </h3>
+              <p className="text-sm text-muted-foreground leading-relaxed">{meta.bio}</p>
+            </section>
+          )}
 
           {/* Media Showcase */}
           <section className="space-y-4">
@@ -118,17 +138,42 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
               <h3 className="text-sm font-bold uppercase tracking-widest text-foreground font-serif">Content Spotlight</h3>
               <Badge variant="outline" className="font-bold text-[10px]">{topByViews.platform}</Badge>
             </div>
-            {showcaseEmbed.kind === "iframe" ? (
-              <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
-                <div className="relative aspect-video w-full">
-                  <iframe
-                    title={showcaseEmbed.title}
-                    src={showcaseEmbed.src}
-                    className="absolute inset-0 h-full w-full border-0"
-                    allowFullScreen
-                  />
-                </div>
-              </Card>
+            {realVideo ? (
+              <>
+                <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
+                  <div className="relative aspect-video w-full">
+                    <iframe
+                      title={realVideo.title}
+                      src={`https://www.youtube.com/embed/${realVideo.id}?rel=0`}
+                      className="absolute inset-0 h-full w-full border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                </Card>
+                <a
+                  href={`https://www.youtube.com/watch?v=${realVideo.id}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
+                >
+                  <ExternalLink className="h-3 w-3 shrink-0" />
+                  <span className="truncate">{realVideo.title}</span>
+                </a>
+              </>
+            ) : showcaseEmbed.kind === "iframe" ? (
+              <>
+                <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
+                  <div className="relative aspect-video w-full">
+                    <iframe
+                      title={showcaseEmbed.title}
+                      src={showcaseEmbed.src}
+                      className="absolute inset-0 h-full w-full border-0"
+                      allowFullScreen
+                    />
+                  </div>
+                </Card>
+                <p className="text-[10px] text-center text-muted-foreground font-medium italic">Demo sample video shown for context.</p>
+              </>
             ) : (
               <Button variant="outline" asChild className="w-full h-24 rounded-2xl border-dashed">
                 <a href={showcaseEmbed.href} target="_blank" rel="noopener noreferrer">
@@ -137,7 +182,6 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
                 </a>
               </Button>
             )}
-            <p className="text-[10px] text-center text-muted-foreground font-medium italic">Demo sample video shown for context.</p>
           </section>
 
           {/* Performance Metrics */}
@@ -170,24 +214,32 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             </h3>
             <Card className="border-none bg-muted/80 shadow-none">
               <CardContent className="p-5 space-y-4">
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Gender Mix</span>
-                  <span className="text-foreground">{meta.audienceGender}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Core Age Group</span>
-                  <span className="text-foreground">{meta.audienceAgeGroup}</span>
-                </div>
-                <div className="flex items-center justify-between text-xs font-medium">
-                  <span className="text-muted-foreground">Audience Authentic</span>
-                  <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
-                </div>
-                <div className="pt-2">
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
-                  <div className="flex flex-wrap gap-2">
-                    {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
+                {meta.audienceGender && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Gender Mix</span>
+                    <span className="text-foreground">{meta.audienceGender}</span>
                   </div>
-                </div>
+                )}
+                {meta.audienceAgeGroup && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Core Age Group</span>
+                    <span className="text-foreground">{meta.audienceAgeGroup}</span>
+                  </div>
+                )}
+                {engagementAuthenticity != null && (
+                  <div className="flex items-center justify-between text-xs font-medium">
+                    <span className="text-muted-foreground">Audience Authentic</span>
+                    <span className="text-emerald-600 font-bold">{engagementAuthenticity}%</span>
+                  </div>
+                )}
+                {topCountries.length > 0 && (
+                  <div className="pt-2">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
+                    <div className="flex flex-wrap gap-2">
+                      {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
+                    </div>
+                  </div>
+                )}
               </CardContent>
             </Card>
           </section>
@@ -201,11 +253,11 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 rounded-2xl border bg-card">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Price per Post</p>
-                <p className="text-xl font-bold mt-1">${influencer.ratePerPost}</p>
+                <p className="text-xl font-bold mt-1">{influencer.ratePerPost ? `$${influencer.ratePerPost}` : "—"}</p>
               </div>
               <div className="p-4 rounded-2xl border bg-card">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Estimated CPM</p>
-                <p className="text-xl font-bold mt-1">${estimatedCpm}</p>
+                <p className="text-xl font-bold mt-1">{estimatedCpm ? `$${estimatedCpm}` : "—"}</p>
               </div>
             </div>
           </section>
@@ -213,11 +265,18 @@ export function InfluencerDetailPanel({ influencer, meta, onClose }: InfluencerD
 
         <footer className="sticky bottom-0 border-t bg-background/80 p-6 backdrop-blur-md">
           <div className="flex gap-3">
-            <Button className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20">
+            <Button
+              className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20"
+              onClick={() => onAddToCampaign?.(influencer)}
+            >
               <PlusCircle className="mr-2 h-5 w-5" />
               Add to Campaign
             </Button>
-            <Button variant="outline" className="flex-1 rounded-xl h-12 text-base font-bold">
+            <Button
+              variant="outline"
+              className="flex-1 rounded-xl h-12 text-base font-bold"
+              onClick={() => onMessage?.(influencer)}
+            >
               <MessageCircle className="mr-2 h-5 w-5" />
               Message
             </Button>
