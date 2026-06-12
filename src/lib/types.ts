@@ -19,6 +19,7 @@ export interface Influencer {
   avatarUrl?: string | null;
   spotlightVideo?: { id: string; title: string; thumbnail: string } | null;
   syncStatus?: string;
+  lastDataPulledAt?: string | null;
   rateCardFileUrl?: string | null;
 }
 

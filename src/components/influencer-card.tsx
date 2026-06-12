@@ -13,7 +13,7 @@ import {
   SiXiaohongshu,
   SiYoutube,
 } from "react-icons/si";
-import { Heart, PlusCircle } from "lucide-react";
+import { Heart, PlusCircle, RefreshCw } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -150,6 +150,20 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
           <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
           Add to Campaign
         </Button>
+
+        {influencer.lastDataPulledAt && (
+          <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
+            <RefreshCw className="h-2.5 w-2.5 shrink-0" />
+            Data as of{" "}
+            {new Date(influencer.lastDataPulledAt).toLocaleDateString("en-GB", {
+              day: "numeric",
+              month: "short",
+              year: "numeric",
+              hour: "2-digit",
+              minute: "2-digit",
+            })}
+          </p>
+        )}
       </CardContent>
     </Card>
   );
