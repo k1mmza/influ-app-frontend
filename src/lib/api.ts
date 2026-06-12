@@ -237,24 +237,26 @@ export async function apiGetPublicCampaigns(token: string): Promise<any[]> {
   return res.json();
 }
 
-export async function apiConnectYouTube(token: string): Promise<{ authUrl: string }> {
-  const res = await fetch(`${API_URL}/auth/youtube/connect`, {
+export async function apiConnectPlatform(token: string, platform: string): Promise<{ authUrl: string }> {
+  const res = await fetch(`${API_URL}/auth/platform/connect`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ platform }),
   });
   if (!res.ok) {
     const error = await res.json();
-    throw new Error(error.message || "Failed to initiate YouTube connection");
+    throw new Error(error.message || `Failed to initiate ${platform} connection`);
   }
   return res.json();
 }
 
-export async function apiDisconnectYouTube(token: string): Promise<void> {
-  const res = await fetch(`${API_URL}/auth/youtube/connect`, {
+export async function apiDisconnectPlatform(token: string, platform: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/platform/connect`, {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ platform }),
   });
-  if (!res.ok) throw new Error("Failed to disconnect YouTube account");
+  if (!res.ok) throw new Error(`Failed to disconnect ${platform} account`);
 }
 
 export async function apiSendMessage(token: string, conversationId: string, content: string) {

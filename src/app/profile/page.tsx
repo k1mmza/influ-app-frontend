@@ -10,7 +10,7 @@ import {
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectYouTube, apiDisconnectYouTube } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform } from "@/lib/api";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -322,21 +322,22 @@ function InfluencerProfileView() {
   const [rateCardUploading, setRateCardUploading] = useState(false);
   const [rateCardError, setRateCardError] = useState<string | null>(null);
   const rateCardInputRef = useRef<HTMLInputElement>(null);
-  const [ytConnected, setYtConnected] = useState(false);
-  const [ytConnecting, setYtConnecting] = useState(false);
-  const [ytDisconnecting, setYtDisconnecting] = useState(false);
-  const [ytMessage, setYtMessage] = useState<string | null>(null);
+  const [connectedPlatforms, setConnectedPlatforms] = useState<Set<string>>(new Set());
+  const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
+  const [disconnectingPlatform, setDisconnectingPlatform] = useState<string | null>(null);
+  const [platformMessage, setPlatformMessage] = useState<{ text: string; error: boolean } | null>(null);
 
-  // Handle YouTube OAuth return params (read from URL on mount, no SSR issues)
+  // Handle OAuth return params (read from URL on mount)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
-    const status = params.get("youtube");
-    if (status === "connected") {
-      setYtConnected(true);
-      setYtMessage("YouTube account connected successfully.");
+    const status = params.get("platform_connect");
+    const platform = params.get("platform") ?? "";
+    if (status === "success") {
+      setConnectedPlatforms((prev) => new Set([...prev, platform]));
+      setPlatformMessage({ text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected.`, error: false });
     } else if (status === "error") {
       const reason = params.get("reason") ?? "unknown";
-      setYtMessage(`YouTube connection failed: ${reason}`);
+      setPlatformMessage({ text: `${platform} connection failed: ${reason}`, error: true });
     }
   }, []);
 
@@ -353,10 +354,11 @@ function InfluencerProfileView() {
           if (p.bio) updates.bio = p.bio;
           if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
           if (p.availabilityStatus) updates.availability = p.availabilityStatus;
-          // Check if a YouTube account with OAuth tokens is linked
           if (Array.isArray(data.platforms)) {
-            const yt = data.platforms.find((pl: any) => pl.platform === "youtube" && pl.hasTokens);
-            if (yt) setYtConnected(true);
+            const linked = data.platforms
+              .filter((pl: any) => pl.hasTokens)
+              .map((pl: any) => pl.platform as string);
+            if (linked.length) setConnectedPlatforms(new Set(linked));
           }
         }
         if (p?.rateCardFileUrl) setRateCardUrl(p.rateCardFileUrl);
@@ -500,78 +502,112 @@ function InfluencerProfileView() {
         </div>
       </div>
 
-      {/* YouTube OAuth connect */}
+      {/* Connected platforms */}
       <article className="rounded-2xl bg-card p-5 shadow-sm">
-        <div className="flex items-start gap-3">
-          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30">
-            <Youtube className="h-5 w-5 text-red-600" />
-          </div>
-          <div className="flex-1">
-            <div className="flex items-center gap-2">
-              <h2 className="text-base font-semibold text-foreground font-serif">YouTube account</h2>
-              {ytConnected && (
-                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
-                  Connected
-                </span>
-              )}
-            </div>
-            <p className="mt-0.5 text-xs text-muted-foreground">
-              Link your YouTube account so we can auto-refresh your stats — subscribers, watch time, and audience analytics — whenever your data is scheduled for a refresh.
-            </p>
+        <h2 className="text-base font-semibold text-foreground font-serif">Connected platforms</h2>
+        <p className="mt-0.5 text-xs text-muted-foreground">
+          Link your accounts so we can auto-refresh your stats whenever your data is scheduled for a sync.
+        </p>
 
-            {ytMessage && (
-              <p className={`mt-2 text-xs font-medium ${ytMessage.includes("failed") ? "text-destructive" : "text-emerald-600"}`}>
-                {ytMessage}
-              </p>
-            )}
+        {platformMessage && (
+          <p className={`mt-3 text-xs font-medium ${platformMessage.error ? "text-destructive" : "text-emerald-600"}`}>
+            {platformMessage.text}
+          </p>
+        )}
 
-            <div className="mt-3 flex flex-wrap gap-2">
-              {ytConnected ? (
-                <button
-                  type="button"
-                  disabled={ytDisconnecting}
-                  onClick={async () => {
-                    if (!token) return;
-                    setYtDisconnecting(true);
-                    try {
-                      await apiDisconnectYouTube(token);
-                      setYtConnected(false);
-                      setYtMessage("YouTube account disconnected.");
-                    } catch (err: any) {
-                      setYtMessage(`Disconnect failed: ${err.message}`);
-                    } finally {
-                      setYtDisconnecting(false);
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
-                >
-                  {ytDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlink className="h-4 w-4" />}
-                  Disconnect YouTube
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  disabled={ytConnecting}
-                  onClick={async () => {
-                    if (!token) return;
-                    setYtConnecting(true);
-                    setYtMessage(null);
-                    try {
-                      const { authUrl } = await apiConnectYouTube(token);
-                      window.location.href = authUrl;
-                    } catch (err: any) {
-                      setYtMessage(`Failed to start connection: ${err.message}`);
-                      setYtConnecting(false);
-                    }
-                  }}
-                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-60"
-                >
-                  {ytConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4" />}
-                  Connect YouTube
-                </button>
-              )}
-            </div>
-          </div>
+        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+          {([
+            {
+              key: "youtube",
+              label: "YouTube",
+              icon: <Youtube className="h-5 w-5 text-red-600" />,
+              bg: "bg-red-100 dark:bg-red-900/30",
+              connectBg: "bg-red-600 hover:bg-red-700",
+              description: "Subscribers, watch time, and audience analytics via youtube.readonly + yt-analytics.readonly",
+            },
+            {
+              key: "tiktok",
+              label: "TikTok",
+              icon: (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M19.59 6.69a4.83 4.83 0 01-3.77-4.25V2h-3.45v13.67a2.89 2.89 0 01-2.88 2.5 2.89 2.89 0 01-2.89-2.89 2.89 2.89 0 012.89-2.89c.28 0 .54.04.79.1V9.01a6.33 6.33 0 00-.79-.05 6.34 6.34 0 00-6.34 6.34 6.34 6.34 0 006.34 6.34 6.34 6.34 0 006.33-6.34V8.69a8.18 8.18 0 004.78 1.52V6.76a4.85 4.85 0 01-1.01-.07z"/>
+                </svg>
+              ),
+              bg: "bg-slate-100 dark:bg-slate-800",
+              connectBg: "bg-slate-900 hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200",
+              description: "Followers, avg views, and engagement rate via TikTok Login Kit",
+            },
+          ] as const).map(({ key, label, icon, bg, connectBg, description }) => {
+            const isConnected = connectedPlatforms.has(key);
+            const isConnecting = connectingPlatform === key;
+            const isDisconnecting = disconnectingPlatform === key;
+
+            return (
+              <div key={key} className="flex items-start gap-3 rounded-xl border border-border p-4">
+                <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg}`}>
+                  {icon}
+                </div>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm font-semibold text-foreground">{label}</span>
+                    {isConnected && (
+                      <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                        Connected
+                      </span>
+                    )}
+                  </div>
+                  <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{description}</p>
+                  <div className="mt-2">
+                    {isConnected ? (
+                      <button
+                        type="button"
+                        disabled={isDisconnecting}
+                        onClick={async () => {
+                          if (!token) return;
+                          setDisconnectingPlatform(key);
+                          setPlatformMessage(null);
+                          try {
+                            await apiDisconnectPlatform(token, key);
+                            setConnectedPlatforms((prev) => { const n = new Set(prev); n.delete(key); return n; });
+                            setPlatformMessage({ text: `${label} account disconnected.`, error: false });
+                          } catch (err: any) {
+                            setPlatformMessage({ text: `Disconnect failed: ${err.message}`, error: true });
+                          } finally {
+                            setDisconnectingPlatform(null);
+                          }
+                        }}
+                        className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted px-2.5 py-1.5 text-xs font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                      >
+                        {isDisconnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <Unlink className="h-3.5 w-3.5" />}
+                        Disconnect
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        disabled={isConnecting}
+                        onClick={async () => {
+                          if (!token) return;
+                          setConnectingPlatform(key);
+                          setPlatformMessage(null);
+                          try {
+                            const { authUrl } = await apiConnectPlatform(token, key);
+                            window.location.href = authUrl;
+                          } catch (err: any) {
+                            setPlatformMessage({ text: `Failed to start ${label} connection: ${err.message}`, error: true });
+                            setConnectingPlatform(null);
+                          }
+                        }}
+                        className={`inline-flex items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-semibold text-white transition-colors disabled:opacity-60 ${connectBg}`}
+                      >
+                        {isConnecting ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : icon}
+                        Connect {label}
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
         </div>
       </article>
 
