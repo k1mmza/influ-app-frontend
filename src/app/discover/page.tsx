@@ -424,11 +424,16 @@ function DiscoverPageContent() {
       followers,
       followersByPlatform: { [platform]: followers },
       avgViewsByPlatform: { [platform]: averageViews },
+      engagementByPlatform: { [platform]: engagementRate },
+      handleByPlatform: { [platform]: displayName },
+      avatarByPlatform: { [platform]: null },
+      syncedAtByPlatform: { [platform]: null },
+      spotlightByPlatform: { [platform]: null },
       engagementRate,
       category: inferredCategory,
       performanceScore,
       ratePerPost,
-      stylePresent: ["Storytelling", "Review"]
+      stylePresent: ["Storytelling", "Review"],
     };
 
     const nextMeta: InfluencerMeta = {

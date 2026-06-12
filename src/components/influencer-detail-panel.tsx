@@ -1,4 +1,5 @@
-import { getMainFollowerPlatform, getShowcaseDemoEmbed, getTopAvgViewsPlatform } from "@/lib/influencer-platforms";
+import { useState } from "react";
+import { getShowcaseDemoEmbed, getTopAvgViewsPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -12,8 +13,11 @@ import {
   MessageCircle,
   PlusCircle,
   ExternalLink,
-  FileText
+  FileText,
+  RefreshCw,
 } from "lucide-react";
+import { SiYoutube, SiTiktok, SiInstagram, SiFacebook, SiX as SiXIcon } from "react-icons/si";
+import { FaGlobe } from "react-icons/fa";
 import { cn } from "@/lib/utils";
 
 interface InfluencerMeta {
@@ -41,6 +45,25 @@ interface InfluencerDetailPanelProps {
   onMessage?: (influencer: Influencer) => void;
 }
 
+const PLATFORM_ORDER = ["youtube", "tiktok", "instagram"];
+
+function PlatformIcon({ platform, className }: { platform: string; className?: string }) {
+  const p = platform.toLowerCase();
+  if (p === "youtube") return <SiYoutube className={className} />;
+  if (p === "tiktok") return <SiTiktok className={className} />;
+  if (p === "instagram") return <SiInstagram className={className} />;
+  if (p === "facebook") return <SiFacebook className={className} />;
+  if (p === "x" || p === "twitter") return <SiXIcon className={className} />;
+  return <FaGlobe className={className} />;
+}
+
+const PLATFORM_ACTIVE_BG: Record<string, string> = {
+  youtube: "bg-[#FF0000]",
+  tiktok: "bg-slate-900 dark:bg-slate-100",
+  instagram: "bg-[#E4405F]",
+  facebook: "bg-[#0866FF]",
+};
+
 const getTopCountries = (country: string) => {
   const map: Record<string, string[]> = {
     Thailand: ["Thailand", "Vietnam", "Malaysia"],
@@ -62,31 +85,33 @@ const getTone = (styles: string[]) => {
 };
 
 export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampaign, onMessage }: InfluencerDetailPanelProps) {
+  const orderedPlatforms = [
+    ...PLATFORM_ORDER.filter((p) => influencer.platforms.includes(p)),
+    ...influencer.platforms.filter((p) => !PLATFORM_ORDER.includes(p)),
+  ];
+  const [activePlatform, setActivePlatform] = useState(orderedPlatforms[0] ?? "youtube");
+
+  // Active platform data
+  const activeFollowers = influencer.followersByPlatform?.[activePlatform] ?? influencer.followers;
+  const activeEngagement = influencer.engagementByPlatform?.[activePlatform] ?? influencer.engagementRate;
+  const activeAvgViews = influencer.avgViewsByPlatform?.[activePlatform] ?? meta.averageViews;
+  const activeSyncedAt = influencer.syncedAtByPlatform?.[activePlatform] ?? influencer.lastDataPulledAt;
+  const activeHandle = influencer.handleByPlatform?.[activePlatform] ?? influencer.handle;
+  const activeAvatar = influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl;
+  const realVideo = influencer.spotlightByPlatform?.[activePlatform] ?? influencer.spotlightVideo;
+
   const topCountries = meta.country ? getTopCountries(meta.country) : [];
-  const topCities = meta.city ? getTopCities(meta.city) : [];
-  const engagementAuthenticity = (meta.qualityScore != null && influencer.performanceScore != null)
-    ? Math.min(99, Math.round((meta.qualityScore + influencer.performanceScore) / 2))
-    : null;
-  const consistencyScore = Math.min(100, Math.round((meta.growthRate * 6 + influencer.engagementRate * 5) / 2));
   const estimatedCpm = influencer.ratePerPost
-    ? Math.max(1, Math.round((influencer.ratePerPost / Math.max(meta.averageViews, 1)) * 1000))
-    : null;
-  const estimatedCostPerEngagement = influencer.ratePerPost
-    ? (influencer.ratePerPost / Math.max(meta.averageViews * (influencer.engagementRate / 100), 1)).toFixed(2)
+    ? Math.max(1, Math.round((influencer.ratePerPost / Math.max(activeAvgViews, 1)) * 1000))
     : null;
   const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
-  const avatarUrl = influencer.avatarUrl ?? fallbackAvatar;
-  const allPlatforms = [...(influencer.platforms ?? []), ...(meta.extraPlatforms ?? [])];
-  const mainFollowers = getMainFollowerPlatform(influencer);
-  const topByViews = getTopAvgViewsPlatform(influencer);
-  const showcaseEmbed = getShowcaseDemoEmbed(topByViews.platform, influencer.id);
-  const headlineAvgViews = topByViews.avgViews > 0 ? topByViews.avgViews : meta.averageViews;
-  const realVideo = influencer.spotlightVideo;
-  const spotlightPlatform = (influencer.platforms?.[0] ?? 'youtube').toLowerCase();
+  const avatarUrl = activeAvatar ?? fallbackAvatar;
+  const showcaseEmbed = getShowcaseDemoEmbed(activePlatform, influencer.id);
   const spotlightExternalUrl =
-    spotlightPlatform === 'instagram' ? `https://www.instagram.com/p/${realVideo?.id}/`
-    : spotlightPlatform === 'tiktok' ? `https://www.tiktok.com/@${influencer.handle ?? influencer.name}/video/${realVideo?.id}`
-    : realVideo?.id ? `https://www.youtube.com/watch?v=${realVideo.id}` : '#';
+    activePlatform === "instagram" ? `https://www.instagram.com/p/${realVideo?.id}/`
+    : activePlatform === "tiktok" ? `https://www.tiktok.com/@${activeHandle ?? influencer.name}/video/${realVideo?.id}`
+    : realVideo?.id ? `https://www.youtube.com/watch?v=${realVideo.id}` : "#";
+  const multiPlatform = orderedPlatforms.length > 1;
 
   return (
     <aside className="fixed right-0 top-0 z-50 h-screen w-full max-w-xl border-l bg-background shadow-2xl animate-in slide-in-from-right duration-300">
@@ -109,22 +134,55 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
           </Button>
         </header>
 
+        {/* Platform switcher — only when 2+ platforms */}
+        {multiPlatform && (
+          <div className="flex items-center gap-2 border-b px-6 py-3" role="tablist">
+            {orderedPlatforms.map((platform) => {
+              const isActiveTab = platform === activePlatform;
+              const activeBg = PLATFORM_ACTIVE_BG[platform] ?? "bg-primary";
+              return (
+                <button
+                  key={platform}
+                  role="tab"
+                  aria-selected={isActiveTab}
+                  onClick={() => setActivePlatform(platform)}
+                  className={cn(
+                    "flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-all cursor-pointer",
+                    isActiveTab
+                      ? `${activeBg} text-white shadow-sm`
+                      : "bg-muted text-muted-foreground hover:bg-muted/80",
+                  )}
+                >
+                  <PlatformIcon platform={platform} className="h-3.5 w-3.5" />
+                  {platform.charAt(0).toUpperCase() + platform.slice(1)}
+                </button>
+              );
+            })}
+          </div>
+        )}
+
         <div className="flex-1 overflow-y-auto p-6 space-y-8">
           {/* Top Performance Stats */}
           <div className="grid grid-cols-3 gap-4">
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
-              <p className="text-lg font-bold">{influencer.followers.toLocaleString()}</p>
+              <p className="text-lg font-bold">{activeFollowers.toLocaleString()}</p>
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
-              <p className="text-lg font-bold text-primary">{influencer.engagementRate}%</p>
+              <p className="text-lg font-bold text-primary">{activeEngagement}%</p>
             </div>
             <div className="space-y-1">
               <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Quality</p>
               <p className="text-lg font-bold text-emerald-600">{meta.qualityScore != null ? `${meta.qualityScore}%` : "—"}</p>
             </div>
           </div>
+          {activeSyncedAt && (
+            <p className="flex items-center gap-1 text-[10px] text-muted-foreground -mt-2">
+              <RefreshCw className="h-2.5 w-2.5 shrink-0" />
+              Data as of {new Date(activeSyncedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric", hour: "2-digit", minute: "2-digit" })}
+            </p>
+          )}
 
           <Separator />
 
@@ -143,13 +201,13 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
           <section className="space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-sm font-bold uppercase tracking-widest text-foreground font-serif">Content Spotlight</h3>
-              <Badge variant="outline" className="font-bold text-[10px]">{topByViews.platform}</Badge>
+              <Badge variant="outline" className="font-bold text-[10px] capitalize">{activePlatform}</Badge>
             </div>
             {realVideo ? (
               <>
                 <Card className="overflow-hidden border-none bg-slate-950 shadow-lg">
                   <div className="relative aspect-video w-full">
-                    {spotlightPlatform === 'youtube' ? (
+                    {activePlatform === "youtube" ? (
                       <iframe
                         title={realVideo.title}
                         src={`https://www.youtube.com/embed/${realVideo.id}?rel=0`}
@@ -158,17 +216,16 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                       />
                     ) : (
                       <a href={spotlightExternalUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 block">
-                        {/* Fallback always visible; image overlays it when loaded */}
                         <div className="absolute inset-0 flex items-center justify-center bg-slate-800 text-slate-400 text-sm gap-2">
                           <ExternalLink className="h-5 w-5 shrink-0" />
-                          <span>View on {spotlightPlatform.charAt(0).toUpperCase() + spotlightPlatform.slice(1)}</span>
+                          <span>View on {activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)}</span>
                         </div>
                         {realVideo.thumbnail && (
                           <img
                             src={realVideo.thumbnail}
                             alt={realVideo.title}
                             className="absolute inset-0 h-full w-full object-cover"
-                            onError={(e) => { (e.target as HTMLImageElement).style.display = 'none'; }}
+                            onError={(e) => { (e.target as HTMLImageElement).style.display = "none"; }}
                           />
                         )}
                       </a>
@@ -182,7 +239,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                   className="flex items-center gap-1.5 text-xs font-medium text-muted-foreground hover:text-foreground transition-colors"
                 >
                   <ExternalLink className="h-3 w-3 shrink-0" />
-                  <span className="truncate">{realVideo.title || `View on ${spotlightPlatform}`}</span>
+                  <span className="truncate">{realVideo.title || `View on ${activePlatform}`}</span>
                 </a>
               </>
             ) : showcaseEmbed.kind === "iframe" ? (
@@ -203,7 +260,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               <Button variant="outline" asChild className="w-full h-24 rounded-2xl border-dashed">
                 <a href={showcaseEmbed.href} target="_blank" rel="noopener noreferrer">
                   <ExternalLink className="mr-2 h-4 w-4" />
-                  View Portfolio on {topByViews.platform}
+                  View Portfolio on {activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)}
                 </a>
               </Button>
             )}
@@ -219,7 +276,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               <Card className="border-none bg-muted/80 shadow-none">
                 <CardContent className="p-4 space-y-1">
                   <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Avg Views</p>
-                  <p className="text-base font-bold">{meta.averageViews.toLocaleString()}</p>
+                  <p className="text-base font-bold">{activeAvgViews.toLocaleString()}</p>
                 </CardContent>
               </Card>
               <Card className="border-none bg-muted/80 shadow-none">

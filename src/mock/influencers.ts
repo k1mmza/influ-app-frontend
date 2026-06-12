@@ -1,5 +1,20 @@
 import { Influencer } from "@/lib/types";
 
+function mockPlatformMaps(
+  followersByPlatform: Record<string, number>,
+  avgViewsByPlatform: Record<string, number>,
+  engagementRate: number,
+): Pick<Influencer, "engagementByPlatform" | "handleByPlatform" | "avatarByPlatform" | "syncedAtByPlatform" | "spotlightByPlatform"> {
+  const platforms = Object.keys(followersByPlatform);
+  return {
+    engagementByPlatform: Object.fromEntries(platforms.map((p) => [p, engagementRate])),
+    handleByPlatform: Object.fromEntries(platforms.map((p) => [p, ""])),
+    avatarByPlatform: Object.fromEntries(platforms.map((p) => [p, null])),
+    syncedAtByPlatform: Object.fromEntries(platforms.map((p) => [p, null])),
+    spotlightByPlatform: Object.fromEntries(platforms.map((p) => [p, null])),
+  };
+}
+
 export const influencers: Influencer[] = [
   {
     id: "inf-1",
@@ -12,7 +27,8 @@ export const influencers: Influencer[] = [
     category: "Beauty",
     performanceScore: 88,
     ratePerPost: 600,
-    stylePresent: ["Storytelling", "Short Story"]
+    stylePresent: ["Storytelling", "Short Story"],
+    ...mockPlatformMaps({ TikTok: 78000, Instagram: 42000 }, { TikTok: 95000, Instagram: 142000 }, 5.2),
   },
   {
     id: "inf-2",
@@ -25,7 +41,8 @@ export const influencers: Influencer[] = [
     category: "Fitness",
     performanceScore: 84,
     ratePerPost: 900,
-    stylePresent: ["Experiment", "Tutorial"]
+    stylePresent: ["Experiment", "Tutorial"],
+    ...mockPlatformMaps({ YouTube: 152000, Instagram: 88000 }, { YouTube: 165000, Instagram: 72000 }, 4.6),
   },
   {
     id: "inf-3",
@@ -38,7 +55,8 @@ export const influencers: Influencer[] = [
     category: "Fashion",
     performanceScore: 91,
     ratePerPost: 450,
-    stylePresent: ["Storytelling", "Review"]
+    stylePresent: ["Storytelling", "Review"],
+    ...mockPlatformMaps({ TikTok: 90000 }, { TikTok: 98000 }, 6.1),
   },
   {
     id: "inf-4",
@@ -51,7 +69,8 @@ export const influencers: Influencer[] = [
     category: "Travel",
     performanceScore: 87,
     ratePerPost: 1100,
-    stylePresent: ["Vlog", "Short Story"]
+    stylePresent: ["Vlog", "Short Story"],
+    ...mockPlatformMaps({ Instagram: 198000, YouTube: 112000 }, { Instagram: 155000, YouTube: 98000 }, 4.9),
   },
   {
     id: "inf-5",
@@ -64,7 +83,8 @@ export const influencers: Influencer[] = [
     category: "Tech",
     performanceScore: 82,
     ratePerPost: 1500,
-    stylePresent: ["Experiment", "Review"]
+    stylePresent: ["Experiment", "Review"],
+    ...mockPlatformMaps({ TikTok: 402000, YouTube: 268000 }, { TikTok: 210000, YouTube: 195000 }, 3.8),
   },
   {
     id: "inf-6",
@@ -77,6 +97,7 @@ export const influencers: Influencer[] = [
     category: "Food",
     performanceScore: 90,
     ratePerPost: 350,
-    stylePresent: ["Tutorial", "Storytelling"]
-  }
+    stylePresent: ["Tutorial", "Storytelling"],
+    ...mockPlatformMaps({ Instagram: 31000, TikTok: 23000 }, { Instagram: 62000, TikTok: 88000 }, 7.2),
+  },
 ];

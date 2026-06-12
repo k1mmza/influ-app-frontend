@@ -4,13 +4,16 @@ export interface Influencer {
   id: string;
   handle?: string | null;
   name: string;
+  /** Platforms sorted YouTube → TikTok → Instagram → others */
   platforms: string[];
-  /** Total reach; should align with sum of followersByPlatform when both are set. */
   followers: number;
-  /** Follower count per platform; largest entry is the creator's primary audience platform. */
   followersByPlatform: Record<string, number>;
-  /** Avg views per post/reel/video by platform; used to pick the top “views” platform for showcases. */
   avgViewsByPlatform: Record<string, number>;
+  engagementByPlatform: Record<string, number>;
+  handleByPlatform: Record<string, string>;
+  avatarByPlatform: Record<string, string | null>;
+  syncedAtByPlatform: Record<string, string | null>;
+  spotlightByPlatform: Record<string, { id: string; title: string; thumbnail: string } | null>;
   engagementRate: number;
   category: string;
   performanceScore: number;
