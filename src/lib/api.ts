@@ -157,6 +157,106 @@ export async function apiUpdateProfile(token: string, data: Record<string, any>)
   return res.json();
 }
 
+export interface SmartPlanInput {
+  campaignName?: string;
+  objective?: string;
+  contentAngle?: string;
+  productInfo?: string;
+  productLinkOrWebsite?: string;
+  ctaMessage?: string;
+  targetAudience?: string;
+  brandTone?: string;
+  budget?: string;
+  timeline?: string;
+  kpi?: string;
+  doDont?: string;
+  rawPrompt?: string;
+}
+
+export interface GeneratedBrief {
+  strategy: string;
+  concept: string;
+  briefBody: string;
+}
+
+export async function apiGenerateSmartPlan(
+  token: string,
+  data: SmartPlanInput,
+): Promise<GeneratedBrief> {
+  const res = await fetch(`${API_URL}/smart-plan/generate`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to generate campaign brief");
+  }
+  return res.json();
+}
+
+export async function apiUploadRateCard(token: string, file: File): Promise<{ rateCardFileUrl: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/profile/rate-card`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Upload failed");
+  }
+  return res.json();
+}
+
+export async function apiDeleteRateCard(token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/profile/rate-card`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to remove rate card");
+}
+
+export async function apiGetCampaigns(token: string): Promise<any[]> {
+  const res = await fetch(`${API_URL}/campaigns`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch campaigns");
+  return res.json();
+}
+
+export async function apiGetPublicCampaigns(token: string): Promise<any[]> {
+  const res = await fetch(`${API_URL}/campaigns/public`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to fetch public campaigns");
+  return res.json();
+}
+
+export async function apiConnectYouTube(token: string): Promise<{ authUrl: string }> {
+  const res = await fetch(`${API_URL}/auth/youtube/connect`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to initiate YouTube connection");
+  }
+  return res.json();
+}
+
+export async function apiDisconnectYouTube(token: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/youtube/connect`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error("Failed to disconnect YouTube account");
+}
+
 export async function apiSendMessage(token: string, conversationId: string, content: string) {
   const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
     method: "POST",

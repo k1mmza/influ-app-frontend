@@ -312,6 +312,18 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                 <p className="text-xl font-bold mt-1">{estimatedCpm ? `$${estimatedCpm}` : "—"}</p>
               </div>
             </div>
+            {influencer.rateCardFileUrl && (
+              <a
+                href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${influencer.rateCardFileUrl}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"
+              >
+                <FileText className="h-4 w-4 shrink-0" />
+                View Full Rate Card
+                <ExternalLink className="ml-auto h-3.5 w-3.5" />
+              </a>
+            )}
           </section>
         </div>
 

@@ -1,22 +1,22 @@
 "use client";
 
 import Link from "next/link";
-import { brandCampaigns } from "@/mock/brand-campaigns";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Rocket, 
-  Users, 
-  Wallet, 
-  TrendingUp, 
-  BarChart3, 
-  Search, 
-  MessageSquare, 
-  BarChart2, 
+import {
+  Rocket,
+  Users,
+  Wallet,
+  TrendingUp,
+  BarChart3,
+  Search,
+  MessageSquare,
+  BarChart2,
   Bell,
   ChevronRight,
-  Target
+  Target,
+  Sparkles,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -37,7 +37,7 @@ export function BrandDashboard({ data }: { data: any }) {
     totalReach: data?.stats?.totalReach ?? "0",
   };
 
-  const active = data?.activeCampaigns || brandCampaigns.filter((c) => c.status === "active");
+  const active: any[] = data?.activeCampaigns ?? [];
 
   return (
     <div className="space-y-8">
@@ -149,6 +149,33 @@ export function BrandDashboard({ data }: { data: any }) {
           </Card>
         ))}
       </div>
+
+      <Card className="border-none shadow-sm bg-gradient-to-br from-primary to-secondary">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-white">
+            <Sparkles className="h-5 w-5 text-white/80" />
+            Strategy Assistant
+          </CardTitle>
+          <CardDescription className="text-white/60">AI-driven campaign brief and planning</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <ul className="space-y-4">
+            {[
+              "Generate strategy, concept, and creative brief with AI",
+              "Turn campaign requirements into a ready-to-send creator brief",
+              "Refine plans in real-time with the AI prompt interface",
+            ].map((text) => (
+              <li key={text} className="flex items-start gap-3 text-sm text-white/80 font-medium">
+                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
+                {text}
+              </li>
+            ))}
+          </ul>
+          <Button asChild className="mt-8 w-full rounded-xl bg-white/15 text-white border border-white/20 hover:bg-white/25">
+            <Link href="/smart-plan">Generate New Strategy</Link>
+          </Button>
+        </CardContent>
+      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-none shadow-sm">

@@ -1,6 +1,6 @@
 "use client";
 
-import { Download, Heart, Upload, Loader2, CheckCircle2, Link2 } from "lucide-react";
+import { Download, Heart, Upload, Loader2, CheckCircle2, Link2, FileText, Trash2, ExternalLink, Youtube, Unlink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
 import {
@@ -10,7 +10,7 @@ import {
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectYouTube, apiDisconnectYouTube } from "@/lib/api";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -318,6 +318,27 @@ function InfluencerProfileView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
+  const [rateCardUrl, setRateCardUrl] = useState<string | null>(null);
+  const [rateCardUploading, setRateCardUploading] = useState(false);
+  const [rateCardError, setRateCardError] = useState<string | null>(null);
+  const rateCardInputRef = useRef<HTMLInputElement>(null);
+  const [ytConnected, setYtConnected] = useState(false);
+  const [ytConnecting, setYtConnecting] = useState(false);
+  const [ytDisconnecting, setYtDisconnecting] = useState(false);
+  const [ytMessage, setYtMessage] = useState<string | null>(null);
+
+  // Handle YouTube OAuth return params (read from URL on mount, no SSR issues)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const status = params.get("youtube");
+    if (status === "connected") {
+      setYtConnected(true);
+      setYtMessage("YouTube account connected successfully.");
+    } else if (status === "error") {
+      const reason = params.get("reason") ?? "unknown";
+      setYtMessage(`YouTube connection failed: ${reason}`);
+    }
+  }, []);
 
   // Load real profile data into the media kit store once
   useEffect(() => {
@@ -332,7 +353,13 @@ function InfluencerProfileView() {
           if (p.bio) updates.bio = p.bio;
           if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
           if (p.availabilityStatus) updates.availability = p.availabilityStatus;
+          // Check if a YouTube account with OAuth tokens is linked
+          if (Array.isArray(data.platforms)) {
+            const yt = data.platforms.find((pl: any) => pl.platform === "youtube" && pl.hasTokens);
+            if (yt) setYtConnected(true);
+          }
         }
+        if (p?.rateCardFileUrl) setRateCardUrl(p.rateCardFileUrl);
         if (Object.keys(updates).length > 0) setKit(updates as any);
         setProfileLoaded(true);
       })
@@ -472,6 +499,81 @@ function InfluencerProfileView() {
           </button>
         </div>
       </div>
+
+      {/* YouTube OAuth connect */}
+      <article className="rounded-2xl bg-card p-5 shadow-sm">
+        <div className="flex items-start gap-3">
+          <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-red-100 dark:bg-red-900/30">
+            <Youtube className="h-5 w-5 text-red-600" />
+          </div>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <h2 className="text-base font-semibold text-foreground font-serif">YouTube account</h2>
+              {ytConnected && (
+                <span className="rounded-full bg-emerald-100 px-2.5 py-0.5 text-[11px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
+                  Connected
+                </span>
+              )}
+            </div>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Link your YouTube account so we can auto-refresh your stats — subscribers, watch time, and audience analytics — whenever your data is scheduled for a refresh.
+            </p>
+
+            {ytMessage && (
+              <p className={`mt-2 text-xs font-medium ${ytMessage.includes("failed") ? "text-destructive" : "text-emerald-600"}`}>
+                {ytMessage}
+              </p>
+            )}
+
+            <div className="mt-3 flex flex-wrap gap-2">
+              {ytConnected ? (
+                <button
+                  type="button"
+                  disabled={ytDisconnecting}
+                  onClick={async () => {
+                    if (!token) return;
+                    setYtDisconnecting(true);
+                    try {
+                      await apiDisconnectYouTube(token);
+                      setYtConnected(false);
+                      setYtMessage("YouTube account disconnected.");
+                    } catch (err: any) {
+                      setYtMessage(`Disconnect failed: ${err.message}`);
+                    } finally {
+                      setYtDisconnecting(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl border border-border bg-muted px-3 py-2 text-sm font-semibold text-muted-foreground hover:bg-destructive/10 hover:text-destructive transition-colors"
+                >
+                  {ytDisconnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Unlink className="h-4 w-4" />}
+                  Disconnect YouTube
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  disabled={ytConnecting}
+                  onClick={async () => {
+                    if (!token) return;
+                    setYtConnecting(true);
+                    setYtMessage(null);
+                    try {
+                      const { authUrl } = await apiConnectYouTube(token);
+                      window.location.href = authUrl;
+                    } catch (err: any) {
+                      setYtMessage(`Failed to start connection: ${err.message}`);
+                      setYtConnecting(false);
+                    }
+                  }}
+                  className="inline-flex items-center gap-2 rounded-xl bg-red-600 px-3 py-2 text-sm font-semibold text-white hover:bg-red-700 transition-colors disabled:opacity-60"
+                >
+                  {ytConnecting ? <Loader2 className="h-4 w-4 animate-spin" /> : <Youtube className="h-4 w-4" />}
+                  Connect YouTube
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </article>
 
       {importMessage && (
         <p className="rounded-xl border border-primary/10 bg-primary/5 px-4 py-3 text-sm text-primary" role="status">
@@ -666,6 +768,82 @@ function InfluencerProfileView() {
                 <input type="number" min={0} value={kit.pricing[key]} onChange={(e) => setKit({ pricing: { ...kit.pricing, [key]: Number(e.target.value) } })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
               </label>
             ))}
+          </div>
+
+          <div className="mt-5 border-t border-border pt-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Rate Card Document</p>
+            <p className="text-xs text-muted-foreground mb-3">Upload a PDF or image file — agencies and brands will see it on your profile.</p>
+
+            {rateCardUrl ? (
+              <div className="flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3">
+                <div className="flex items-center gap-2 text-sm font-medium text-foreground">
+                  <FileText className="h-4 w-4 text-primary shrink-0" />
+                  <a
+                    href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${rateCardUrl}`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="hover:underline text-primary flex items-center gap-1"
+                  >
+                    View Rate Card <ExternalLink className="h-3 w-3" />
+                  </a>
+                </div>
+                <button
+                  type="button"
+                  onClick={async () => {
+                    if (!token) return;
+                    setRateCardError(null);
+                    try {
+                      await apiDeleteRateCard(token);
+                      setRateCardUrl(null);
+                    } catch (err: any) {
+                      setRateCardError(err.message);
+                    }
+                  }}
+                  className="ml-3 flex items-center gap-1 rounded-lg px-2 py-1 text-xs font-semibold text-destructive hover:bg-destructive/10 transition-colors"
+                >
+                  <Trash2 className="h-3.5 w-3.5" /> Remove
+                </button>
+              </div>
+            ) : (
+              <button
+                type="button"
+                disabled={rateCardUploading}
+                onClick={() => rateCardInputRef.current?.click()}
+                className="flex items-center gap-2 rounded-xl border-2 border-dashed border-border bg-muted/30 px-4 py-3 text-sm font-semibold text-muted-foreground hover:border-primary/40 hover:bg-primary/5 hover:text-primary transition-all disabled:opacity-50"
+              >
+                {rateCardUploading ? (
+                  <><Loader2 className="h-4 w-4 animate-spin" /> Uploading…</>
+                ) : (
+                  <><Upload className="h-4 w-4" /> Upload PDF or image (max 10 MB)</>
+                )}
+              </button>
+            )}
+
+            <input
+              ref={rateCardInputRef}
+              type="file"
+              accept="application/pdf,image/jpeg,image/png,image/webp,.pdf"
+              className="hidden"
+              onChange={async (e) => {
+                const file = e.target.files?.[0];
+                e.target.value = "";
+                if (!file || !token) return;
+                setRateCardUploading(true);
+                setRateCardError(null);
+                try {
+                  const result = await apiUploadRateCard(token, file);
+                  setRateCardUrl(result.rateCardFileUrl);
+                } catch (err: any) {
+                  setRateCardError(err.message || "Upload failed");
+                } finally {
+                  setRateCardUploading(false);
+                }
+              }}
+            />
+
+            {rateCardError && (
+              <p className="mt-2 text-xs text-destructive">{rateCardError}</p>
+            )}
           </div>
         </article>
 

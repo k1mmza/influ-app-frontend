@@ -3,6 +3,7 @@
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/store/useUserStore";
+import { apiGenerateSmartPlan } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,6 +23,7 @@ import {
   Lightbulb,
   PenLine,
   BookOpen,
+  Loader2,
 } from "lucide-react";
 
 type StepId = "requirement" | "brief";
@@ -138,57 +140,6 @@ const myCampaignSeed: Campaign[] = [
   },
 ];
 
-function toBriefTemplate(data: RequirementData) {
-  const campaignTitle = data.campaignName || "Selected Campaign";
-  return {
-    strategy: [
-      `Campaign: ${campaignTitle}`,
-      `Objective: ${data.objective || "-"}`,
-      `Target Audience: ${data.targetAudience || "-"}`,
-      `Budget: ${data.budget || "-"}`,
-      `Timeline: ${data.timeline || "-"}`,
-      `KPI: ${data.kpi || "-"}`,
-    ].join("\n"),
-    concept: [
-      `Main Concept: ${data.contentAngle || "-"}`,
-      `Product Focus: ${data.productInfo || "-"}`,
-      `Brand Tone: ${data.brandTone || "-"}`,
-    ].join("\n"),
-    briefBody: [
-      `Creative Brief – ${campaignTitle}`,
-      `Product Link: ${data.productLinkOrWebsite || "-"}`,
-      `CTA: ${data.ctaMessage || "-"}`,
-      `Do & Don't: ${data.doDont || "-"}`,
-    ].join("\n"),
-  };
-}
-
-function parseRequirementText(text: string): Partial<RequirementData> {
-  const clean = text.toLowerCase();
-  const extract = (keyword: string) => {
-    const index = clean.indexOf(keyword);
-    if (index < 0) return "";
-    const source = text.slice(index + keyword.length).trim();
-    const line = source.split("\n")[0];
-    return line.replace(/^[:\-]\s*/, "").trim();
-  };
-
-  return {
-    campaignName: extract("campaign name"),
-    objective: extract("objective"),
-    contentAngle: extract("content angle"),
-    productInfo: extract("product info"),
-    productLinkOrWebsite: extract("product link") || extract("official website") || extract("website"),
-    ctaMessage: extract("cta message") || extract("cta"),
-    targetAudience: extract("target audience"),
-    brandTone: extract("brand"),
-    budget: extract("budget"),
-    timeline: extract("timeline"),
-    kpi: extract("kpi"),
-    doDont: extract("do & dont"),
-  };
-}
-
 const emptyRequirement: RequirementData = {
   campaignName: "",
   objective: "",
@@ -205,7 +156,7 @@ const emptyRequirement: RequirementData = {
 };
 
 export default function SmartPlanPage() {
-  const { role } = useUserStore();
+  const { role, token } = useUserStore();
   const [promptInput, setPromptInput] = useState("");
   const [activeStep, setActiveStep] = useState<StepId>("requirement");
   const [activeBriefSub, setActiveBriefSub] = useState<BriefSubSection>("strategy");
@@ -220,6 +171,8 @@ export default function SmartPlanPage() {
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
   const [formDraft, setFormDraft] = useState<RequirementData>(emptyRequirement);
+  const [isGenerating, setIsGenerating] = useState(false);
+  const [generateError, setGenerateError] = useState<string | null>(null);
 
   const promptHint = useMemo(() => {
     return hasStarted
@@ -227,7 +180,17 @@ export default function SmartPlanPage() {
       : "Start with @Requirement and describe your campaign for AI planning.";
   }, [hasStarted]);
 
-  const applyPromptText = (input: string) => {
+  const applyGeneratedBrief = (brief: { strategy: string; concept: string; briefBody: string }) => {
+    setStrategyText(brief.strategy);
+    setConceptText(brief.concept);
+    setBriefText(brief.briefBody);
+    setHasStarted(true);
+    setIsPlannerVisible(true);
+    setActiveStep("brief");
+    setActiveBriefSub("strategy");
+  };
+
+  const applyPromptText = async (input: string): Promise<boolean> => {
     const trimmed = input.trim();
     if (!trimmed) return false;
 
@@ -236,51 +199,50 @@ export default function SmartPlanPage() {
     const resolved = section ? sectionAlias[section] : undefined;
     const payload = tagMatch ? trimmed.replace(/^@[a-zA-Z]+\s*/, "") : trimmed;
 
-    setHasStarted(true);
-    setIsPlannerVisible(true);
-
-    const briefSubs: BriefSubSection[] = ["strategy", "concept", "briefBody"];
-    if (resolved === "requirement") {
-      setActiveStep("requirement");
-    } else if (resolved === "brief" || (resolved && briefSubs.includes(resolved as BriefSubSection))) {
-      setActiveStep("brief");
-    }
-
-    if (!resolved || resolved === "requirement") {
-      const parsed = parseRequirementText(payload);
-      setRequirements((prev) => ({
-        campaignName: parsed.campaignName || prev.campaignName,
-        objective: parsed.objective || prev.objective,
-        contentAngle: parsed.contentAngle || prev.contentAngle,
-        productInfo: parsed.productInfo || prev.productInfo,
-        productLinkOrWebsite: parsed.productLinkOrWebsite || prev.productLinkOrWebsite,
-        ctaMessage: parsed.ctaMessage || prev.ctaMessage,
-        targetAudience: parsed.targetAudience || prev.targetAudience,
-        brandTone: parsed.brandTone || prev.brandTone,
-        budget: parsed.budget || prev.budget,
-        timeline: parsed.timeline || prev.timeline,
-        kpi: parsed.kpi || prev.kpi,
-        doDont: parsed.doDont || prev.doDont,
-      }));
-      if (!strategyText) setStrategyText("AI Suggestion: Build phased creator funnel and run awareness to conversion sequence.");
-      if (!conceptText) setConceptText("AI Suggestion: Hero concept around authentic lifestyle transformation with before/after storytelling.");
-      if (!briefText) setBriefText("AI Suggestion: Provide creator brief with content format, CTA, brand guardrails, and timeline.");
-    } else if (resolved === "strategy") {
+    // Direct text overrides — no AI call needed
+    if (resolved === "strategy") {
       setStrategyText(payload);
-    } else if (resolved === "concept") {
+      setHasStarted(true);
+      setIsPlannerVisible(true);
+      setActiveStep("brief");
+      setActiveBriefSub("strategy");
+      return true;
+    }
+    if (resolved === "concept") {
       setConceptText(payload);
-    } else if (resolved === "briefBody" || resolved === "brief") {
+      setHasStarted(true);
+      setIsPlannerVisible(true);
+      setActiveStep("brief");
+      setActiveBriefSub("concept");
+      return true;
+    }
+    if (resolved === "briefBody") {
       setBriefText(payload);
+      setHasStarted(true);
+      setIsPlannerVisible(true);
+      setActiveStep("brief");
+      setActiveBriefSub("briefBody");
+      return true;
     }
 
+    // @Requirement or freeform → call AI
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const brief = await apiGenerateSmartPlan(token!, { rawPrompt: trimmed });
+      applyGeneratedBrief(brief);
+    } catch (err: any) {
+      setGenerateError(err.message || "Generation failed. Please try again.");
+    } finally {
+      setIsGenerating(false);
+    }
     return true;
   };
 
-  const applyPrompt = (event: FormEvent<HTMLFormElement>) => {
+  const applyPrompt = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (applyPromptText(promptInput)) {
-      setPromptInput("");
-    }
+    const applied = await applyPromptText(promptInput);
+    if (applied) setPromptInput("");
   };
 
   const updateRequirement = (field: keyof RequirementData, value: string) => {
@@ -291,25 +253,30 @@ export default function SmartPlanPage() {
     if (!campaign) return;
     setSelectedCampaign(campaign);
     setRequirements(campaign.requirement);
-    const template = toBriefTemplate(campaign.requirement);
-    setStrategyText(template.strategy);
-    setConceptText(template.concept);
-    setBriefText(template.briefBody);
+    setStrategyText("");
+    setConceptText("");
+    setBriefText("");
   };
 
   const updateFormDraft = (field: keyof RequirementData, value: string) => {
     setFormDraft((prev) => ({ ...prev, [field]: value }));
   };
 
-  const finishFormFlow = () => {
+  const finishFormFlow = async () => {
     setRequirements(formDraft);
-    const template = toBriefTemplate(formDraft);
-    setStrategyText(template.strategy);
-    setConceptText(template.concept);
-    setBriefText(template.briefBody);
-    setHasStarted(true);
-    setIsPlannerVisible(true);
-    setActiveStep("requirement");
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const brief = await apiGenerateSmartPlan(token!, formDraft);
+      applyGeneratedBrief(brief);
+    } catch (err: any) {
+      setGenerateError(err.message || "Generation failed. Please try again.");
+      setHasStarted(true);
+      setIsPlannerVisible(true);
+      setActiveStep("requirement");
+    } finally {
+      setIsGenerating(false);
+    }
   };
 
   if (role !== "brand" && role !== "agency") {
@@ -416,6 +383,9 @@ export default function SmartPlanPage() {
                     onClick={() => {
                       applyCampaignRequirementToBrief(campaign);
                       setViewMode("detail");
+                      setIsPlannerVisible(true);
+                      setHasStarted(true);
+                      setActiveStep("requirement");
                     }}
                   >
                     View Details <ChevronRight className="h-4 w-4" />
@@ -466,7 +436,7 @@ export default function SmartPlanPage() {
                       </div>
                       <h3 className="font-bold font-serif text-foreground">AI Prompt</h3>
                       <p className="mt-2 text-sm leading-relaxed text-muted-foreground">
-                        Describe your campaign in natural language and let AI parse the details instantly.
+                        Describe your campaign in natural language and let AI generate the full brief.
                       </p>
                     </CardContent>
                   </Card>
@@ -485,7 +455,7 @@ export default function SmartPlanPage() {
                       AI Prompt Command
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      Use <code className="rounded bg-muted px-1 py-0.5 text-xs">@Requirement</code> to start.
+                      Use <code className="rounded bg-muted px-1 py-0.5 text-xs">@Requirement</code> to start, or just describe your campaign freely.
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setStartMode("none")} className="text-muted-foreground">
@@ -498,21 +468,30 @@ export default function SmartPlanPage() {
                   rows={9}
                   value={promptInput}
                   onChange={(e) => setPromptInput(e.target.value)}
+                  disabled={isGenerating}
                   placeholder={promptHint}
-                  className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+                  className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10 disabled:opacity-50"
                 />
+                {generateError && (
+                  <p className="text-sm text-destructive">{generateError}</p>
+                )}
                 <div className="flex items-center justify-between">
                   <Button variant="outline" size="sm" onClick={() => setViewMode("list")} className="rounded-xl">
                     My Campaigns
                   </Button>
                   <Button
-                    onClick={() => {
-                      if (applyPromptText(promptInput)) setPromptInput("");
-                      else setIsPlannerVisible(true);
+                    disabled={isGenerating || !promptInput.trim()}
+                    onClick={async () => {
+                      const applied = await applyPromptText(promptInput);
+                      if (applied) setPromptInput("");
                     }}
                     className="rounded-xl shadow-sm"
                   >
-                    Create Campaign
+                    {isGenerating ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
+                    ) : (
+                      "Create Campaign"
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -529,7 +508,7 @@ export default function SmartPlanPage() {
                       Campaign Requirements
                     </CardTitle>
                     <CardDescription className="mt-1">
-                      Fill what you know — you can edit any field after generating the plan.
+                      Fill what you know — AI will generate strategy, concept, and brief from these fields.
                     </CardDescription>
                   </div>
                   <Button variant="ghost" size="sm" onClick={() => setStartMode("none")} className="text-muted-foreground">
@@ -551,17 +530,24 @@ export default function SmartPlanPage() {
                         value={formDraft[field.key]}
                         onChange={(e) => updateFormDraft(field.key, e.target.value)}
                         placeholder={requirementInputPlaceholder(field.key, field.label)}
+                        disabled={isGenerating}
                       />
                     </label>
                   ))}
                 </div>
+                {generateError && (
+                  <p className="text-sm text-destructive">{generateError}</p>
+                )}
                 <div className="flex items-center justify-between border-t border-border pt-4">
                   <Button variant="outline" size="sm" onClick={() => setViewMode("list")} className="rounded-xl">
                     My Campaigns
                   </Button>
-                  <Button onClick={finishFormFlow} className="rounded-xl shadow-sm">
-                    <Zap className="mr-2 h-4 w-4" />
-                    Generate Smart Plan
+                  <Button onClick={finishFormFlow} disabled={isGenerating} className="rounded-xl shadow-sm">
+                    {isGenerating ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
+                    ) : (
+                      <><Zap className="mr-2 h-4 w-4" /> Generate Smart Plan</>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -810,13 +796,20 @@ export default function SmartPlanPage() {
                 rows={hasStarted ? 3 : 5}
                 value={promptInput}
                 onChange={(e) => setPromptInput(e.target.value)}
+                disabled={isGenerating}
                 placeholder={promptHint}
-                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:bg-background focus:ring-2 focus:ring-primary/10"
+                className="w-full resize-none rounded-xl border border-border bg-muted/50 px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:bg-background focus:ring-2 focus:ring-primary/10 disabled:opacity-50"
               />
+              {generateError && (
+                <p className="mt-2 text-sm text-destructive">{generateError}</p>
+              )}
               <div className="mt-3 flex justify-end">
-                <Button type="submit" className="rounded-xl shadow-sm">
-                  <Zap className="mr-2 h-4 w-4" />
-                  Run AI Prompt
+                <Button type="submit" disabled={isGenerating || !promptInput.trim()} className="rounded-xl shadow-sm">
+                  {isGenerating ? (
+                    <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
+                  ) : (
+                    <><Zap className="mr-2 h-4 w-4" /> Run AI Prompt</>
+                  )}
                 </Button>
               </div>
             </div>
