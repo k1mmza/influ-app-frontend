@@ -152,9 +152,13 @@ const briefCampaignSeed: BriefCampaign[] = [
 export function ProcessOfWorkPanel({
   variant,
   currentPhase,
+  onPhaseChange,
+  linkedCampaign,
 }: {
   variant: ProcessVariant;
   currentPhase?: WorkPhase;
+  onPhaseChange?: (phase: WorkPhase) => void;
+  linkedCampaign?: { id: string; name: string } | null;
 }) {
   const [active, setActive] = useState<WorkPhase | null>(null);
   const [drafts, setDrafts] = useState<DraftRow[]>(initialDrafts);
@@ -163,7 +167,9 @@ export function ProcessOfWorkPanel({
   const [workLink, setWorkLink] = useState("https://tiktok.com/@demo/video/000");
   const [brandComments, setBrandComments] = useState<Record<string, string[]>>({ "1": ["Strong open—tighten CTA at end."] });
   const [commentInput, setCommentInput] = useState("");
-  const [selectedBriefCampaignId, setSelectedBriefCampaignId] = useState<string>(briefCampaignSeed[0].id);
+  const [selectedBriefCampaignId, setSelectedBriefCampaignId] = useState<string>(
+    linkedCampaign?.id ?? briefCampaignSeed[0].id
+  );
 
   const close = useCallback(() => setActive(null), []);
 
@@ -202,9 +208,32 @@ export function ProcessOfWorkPanel({
     [variant]
   );
 
+  const allBriefCampaigns = useMemo(() => {
+    if (!linkedCampaign) return briefCampaignSeed;
+    const alreadyIncluded = briefCampaignSeed.some((c) => c.id === linkedCampaign.id);
+    if (alreadyIncluded) return briefCampaignSeed;
+    const realCampaign: BriefCampaign = {
+      id: linkedCampaign.id,
+      name: linkedCampaign.name,
+      objective: "-",
+      targetAudience: "-",
+      contentAngle: "-",
+      productInfo: "-",
+      productLink: "",
+      ctaMessage: "-",
+      brandTone: "-",
+      budget: "-",
+      timeline: "-",
+      kpi: "-",
+      keyMessages: "-",
+      doDont: "-",
+    };
+    return [realCampaign, ...briefCampaignSeed];
+  }, [linkedCampaign]);
+
   const selectedBriefCampaign = useMemo(
-    () => briefCampaignSeed.find((campaign) => campaign.id === selectedBriefCampaignId) ?? null,
-    [selectedBriefCampaignId]
+    () => allBriefCampaigns.find((campaign) => campaign.id === selectedBriefCampaignId) ?? null,
+    [allBriefCampaigns, selectedBriefCampaignId]
   );
 
   return (
@@ -216,7 +245,10 @@ export function ProcessOfWorkPanel({
             <li key={s.id} className="min-w-0 flex-1">
               <button
                 type="button"
-                onClick={() => setActive(s.id)}
+                onClick={() => {
+                  setActive(s.id);
+                  if (onPhaseChange) onPhaseChange(s.id);
+                }}
                 className={`flex w-full flex-col gap-0.5 rounded-xl border px-3 py-2 text-left text-sm transition ${
                   done
                     ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100"
@@ -264,7 +296,7 @@ export function ProcessOfWorkPanel({
                 className="min-w-[220px] flex-1 rounded-lg border border-primary/20 bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
               >
                 <option value="">No campaign selected</option>
-                {briefCampaignSeed.map((campaign) => (
+                {allBriefCampaigns.map((campaign) => (
                   <option key={campaign.id} value={campaign.id}>
                     {campaign.name}
                   </option>

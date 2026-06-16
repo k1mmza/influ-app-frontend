@@ -262,7 +262,7 @@ export async function apiDisconnectPlatform(token: string, platform: string): Pr
 export async function apiSendMessage(token: string, conversationId: string, content: string) {
   const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
     method: "POST",
-    headers: { 
+    headers: {
       "Content-Type": "application/json",
       "Authorization": `Bearer ${token}`
     },
@@ -273,4 +273,38 @@ export async function apiSendMessage(token: string, conversationId: string, cont
     throw new Error(error.message || "Failed to send message");
   }
   return res.json();
+}
+
+export async function apiStartConversation(token: string, influencerId: string, campaignId: string) {
+  const res = await fetch(`${API_URL}/conversations`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ influencerId, campaignId }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to start conversation");
+  }
+  return res.json();
+}
+
+export async function apiUpdateConversationPhase(token: string, conversationId: string, workPhase: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/phase`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
+    body: JSON.stringify({ workPhase }),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to update phase");
+  }
+  return res.json();
+}
+
+export async function apiMarkConversationRead(token: string, conversationId: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/read`, {
+    method: "PATCH",
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) return;
 }

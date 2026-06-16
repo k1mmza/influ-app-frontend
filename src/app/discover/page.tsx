@@ -5,7 +5,8 @@ import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer, Campaign } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
-import { apiLookupInfluencerByUrl, apiFetchInfluencer } from "@/lib/api";
+import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation } from "@/lib/api";
+import { useUserStore } from "@/store/useUserStore";
 import { useCampaignStore } from "@/store/useCampaignStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -92,9 +93,28 @@ function DiscoverPageContent() {
 
   // Campaign picker modal state
   const { campaigns } = useCampaignStore();
+  const { token, role } = useUserStore();
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
   const [addConfirmed, setAddConfirmed] = useState(false);
+
+  // Message / start conversation state
+  const [messagePickerInfluencer, setMessagePickerInfluencer] = useState<Influencer | null>(null);
+  const [messagePickedCampaignId, setMessagePickedCampaignId] = useState<string | null>(null);
+  const [startingConv, setStartingConv] = useState(false);
+
+  const handleStartConversation = async () => {
+    if (!token || !messagePickerInfluencer || !messagePickedCampaignId) return;
+    setStartingConv(true);
+    try {
+      const conv = await apiStartConversation(token, messagePickerInfluencer.id, messagePickedCampaignId);
+      router.push(`/messages?convId=${conv.id}`);
+    } catch (err) {
+      console.error("Failed to start conversation:", err);
+    } finally {
+      setStartingConv(false);
+    }
+  };
   
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
@@ -1033,7 +1053,7 @@ function DiscoverPageContent() {
           meta={selectedInfluencerMeta}
           onClose={() => setSelectedInfluencerId(null)}
           onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); }}
-          onMessage={() => router.push("/messages")}
+          onMessage={(inf) => { setMessagePickerInfluencer(inf); setMessagePickedCampaignId(null); }}
         />
       )}
 
@@ -1109,6 +1129,69 @@ function DiscoverPageContent() {
                   }}
                 >
                   Confirm
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      )}
+
+      {/* Message / start conversation picker modal */}
+      {messagePickerInfluencer && role !== "influencer" && (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setMessagePickerInfluencer(null)}
+        >
+          <Card
+            className="w-full max-w-md shadow-2xl border-none"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base font-serif">Message Influencer</CardTitle>
+                <button
+                  onClick={() => setMessagePickerInfluencer(null)}
+                  className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <XIcon className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Starting a conversation with <span className="font-semibold text-foreground">{messagePickerInfluencer.name}</span>. Select a campaign to link this conversation to.
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-3">
+              {campaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
+              ) : (
+                campaigns.map((campaign: Campaign) => (
+                  <button
+                    key={campaign.id}
+                    onClick={() => setMessagePickedCampaignId(campaign.id)}
+                    className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition-all cursor-pointer ${
+                      messagePickedCampaignId === campaign.id
+                        ? "border-primary bg-primary/5 font-semibold text-primary"
+                        : "border-border hover:border-primary/30 hover:bg-muted/50"
+                    }`}
+                  >
+                    {campaign.title}
+                  </button>
+                ))
+              )}
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl"
+                  onClick={() => setMessagePickerInfluencer(null)}
+                >
+                  Cancel
+                </Button>
+                <Button
+                  className="flex-1 rounded-xl"
+                  disabled={!messagePickedCampaignId || startingConv}
+                  onClick={handleStartConversation}
+                >
+                  {startingConv ? <Loader2 className="h-4 w-4 animate-spin" /> : "Start Conversation"}
                 </Button>
               </div>
             </CardContent>
