@@ -16,11 +16,11 @@ export default function CreateCampaignPage() {
   const [deliverables, setDeliverables] = useState("");
   const [visibility, setVisibility] = useState<"public" | "private">("public");
 
-  if (role !== "brand") {
+  if (role !== "brand" && role !== "agency") {
     return (
       <section className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground font-serif">Create campaign</h1>
-        <p className="text-muted-foreground">Only brand accounts can create campaigns.</p>
+        <p className="text-muted-foreground">Only brand and agency accounts can create campaigns.</p>
         <Link href="/campaigns" className="text-primary hover:underline">
           Back to campaigns
         </Link>
