@@ -8,6 +8,22 @@ import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 
+const pageAccentColors: Record<string, string> = {
+  "/dashboard":  "#334155",
+  "/campaigns":  "#b45309",
+  "/discover":   "#0284c7",
+  "/smart-plan": "#c2410c",
+  "/messages":   "#0f766e",
+  "/tracking":   "#166534",
+  "/profile":    "#92400e",
+};
+
+const roleAccentColors: Record<string, string> = {
+  brand:      "#1e3a8a",
+  agency:     "#059669",
+  influencer: "#dc2626",
+};
+
 const brandLinks = [
   { href: "/dashboard", label: "Dashboard" },
   { href: "/campaigns", label: "Campaign" },
@@ -115,25 +131,42 @@ export function Navigation() {
     );
   }
 
+  const roleColor = role ? (roleAccentColors[role] ?? "#334155") : "#334155";
+
   return (
     <nav className="flex flex-col gap-1 rounded-2xl border bg-card p-2 shadow-sm">
-      <Link href="/" className="mb-4 flex items-center px-3 py-2 transition hover:opacity-80">
-        <span className="text-base font-bold text-foreground font-serif">InfluApp</span>
-      </Link>
-      <div className="flex flex-col gap-1">
-        {(role === "influencer" ? influencerLinks : brandLinks).map((link) => (
-          <Button
-            key={link.href}
-            variant={isNavActive(pathname, link.href) ? "default" : "ghost"}
-            asChild
-            className={cn(
-              "justify-start rounded-xl px-4 py-2 text-sm font-medium transition",
-              !isNavActive(pathname, link.href) && "text-muted-foreground hover:text-foreground"
-            )}
+      <div className="mb-3 flex items-center justify-between px-3 pt-2">
+        <Link href="/" className="transition hover:opacity-80">
+          <span className="text-base font-bold text-foreground font-serif">InfluApp</span>
+        </Link>
+        {role && (
+          <span
+            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
+            style={{ backgroundColor: roleColor }}
           >
-            <Link href={link.href}>{link.label}</Link>
-          </Button>
-        ))}
+            {role}
+          </span>
+        )}
+      </div>
+      <div className="flex flex-col gap-1">
+        {(role === "influencer" ? influencerLinks : brandLinks).map((link) => {
+          const active = isNavActive(pathname, link.href);
+          const accentColor = pageAccentColors[link.href] ?? "#334155";
+          return (
+            <Button
+              key={link.href}
+              variant="ghost"
+              asChild
+              style={active ? { backgroundColor: accentColor, color: "white" } : undefined}
+              className={cn(
+                "justify-start rounded-xl px-4 py-2 text-sm font-medium transition",
+                !active && "text-muted-foreground hover:text-foreground"
+              )}
+            >
+              <Link href={link.href}>{link.label}</Link>
+            </Button>
+          );
+        })}
       </div>
       <div className="mt-4 flex items-center justify-between border-t border-border px-1 pt-4">
         <Button

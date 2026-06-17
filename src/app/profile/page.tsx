@@ -199,8 +199,11 @@ function BrandProfileView() {
 
   return (
     <section key={role} className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground font-serif">{heading}</h1>
-      <p className="text-muted-foreground">{subline}</p>
+      <div className="rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] p-7 text-white shadow-sm">
+        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">{role}</span>
+        <h1 className="mt-2 text-2xl font-bold font-serif">{heading}</h1>
+        <p className="mt-1 text-white/70 text-sm">{subline}</p>
+      </div>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
@@ -439,14 +442,12 @@ function InfluencerProfileView() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-serif">Media kit</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
-          </p>
-        </div>
-        <div className="flex flex-wrap items-center gap-2">
+      <div className="rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] p-7 text-white shadow-sm">
+        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Influencer</span>
+        <h1 className="mt-2 text-2xl font-bold font-serif">Media Kit & Profile</h1>
+        <p className="mt-1 text-white/70 text-sm">Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.</p>
+      </div>
+      <div className="flex flex-wrap items-center gap-2">
           <input ref={uploadRef} type="file" accept=".json,application/json,application/pdf,.pdf" className="hidden" onChange={onUploadFiles} />
           <button
             type="button"
@@ -464,7 +465,6 @@ function InfluencerProfileView() {
             <Download className="h-4 w-4" aria-hidden />
             Download JSON
           </button>
-        </div>
       </div>
 
       {/* Social URL import — future feature */}

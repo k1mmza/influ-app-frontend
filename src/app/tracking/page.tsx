@@ -77,9 +77,9 @@ function TrackingPageContent() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-primary to-secondary p-6 text-white shadow-sm">
+      <div className="rounded-2xl bg-gradient-to-r from-[#166534] to-[#052e16] p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold font-serif">Tracking</h1>
-        <p className="mt-1 text-sm text-primary/10">Realtime-style results for published work (demo data).</p>
+        <p className="mt-1 text-sm text-white/70">Realtime-style results for published work (demo data).</p>
       </div>
 
       <article className="overflow-hidden rounded-2xl bg-card shadow-sm">

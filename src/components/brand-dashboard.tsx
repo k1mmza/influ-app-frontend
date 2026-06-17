@@ -41,9 +41,12 @@ export function BrandDashboard({ data }: { data: any }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Brand Dashboard</h1>
-        <p className="text-muted-foreground">Monitor your campaign performance and collaborate with creators.</p>
+      <div className="rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#1e1b4b] p-7 text-white shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Brand</span>
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Brand Dashboard</h1>
+        <p className="mt-1 text-white/70 font-medium">Monitor your campaign performance and collaborate with creators.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
