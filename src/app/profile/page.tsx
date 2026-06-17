@@ -199,11 +199,8 @@ function BrandProfileView() {
 
   return (
     <section key={role} className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] p-7 text-white shadow-sm">
-        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">{role}</span>
-        <h1 className="mt-2 text-2xl font-bold font-serif">{heading}</h1>
-        <p className="mt-1 text-white/70 text-sm">{subline}</p>
-      </div>
+      <h1 className="text-2xl font-bold text-foreground font-serif">{heading}</h1>
+      <p className="text-muted-foreground">{subline}</p>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
@@ -442,12 +439,14 @@ function InfluencerProfileView() {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] p-7 text-white shadow-sm">
-        <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Influencer</span>
-        <h1 className="mt-2 text-2xl font-bold font-serif">Media Kit & Profile</h1>
-        <p className="mt-1 text-white/70 text-sm">Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.</p>
-      </div>
-      <div className="flex flex-wrap items-center gap-2">
+      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <h1 className="text-2xl font-bold text-foreground font-serif">Media kit</h1>
+          <p className="mt-1 text-sm text-muted-foreground">
+            Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
+          </p>
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
           <input ref={uploadRef} type="file" accept=".json,application/json,application/pdf,.pdf" className="hidden" onChange={onUploadFiles} />
           <button
             type="button"
@@ -465,6 +464,7 @@ function InfluencerProfileView() {
             <Download className="h-4 w-4" aria-hidden />
             Download JSON
           </button>
+        </div>
       </div>
 
       {/* Social URL import — future feature */}
@@ -535,7 +535,28 @@ function InfluencerProfileView() {
               ),
               bg: "bg-slate-100 dark:bg-slate-800",
               connectBg: "bg-slate-900 hover:bg-slate-700 dark:bg-slate-100 dark:text-slate-900 dark:hover:bg-slate-200",
-              description: "Followers, avg views, and engagement rate via TikTok Login Kit",
+              description: "Followers, avg views, and engagement rate via TikTok Login Kit v2 with PKCE",
+            },
+            {
+              key: "instagram",
+              label: "Instagram",
+              icon: (
+                <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="url(#ig-grad)" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <defs>
+                    <linearGradient id="ig-grad" x1="0%" y1="100%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#F58529" />
+                      <stop offset="50%" stopColor="#DD2A7B" />
+                      <stop offset="100%" stopColor="#8134AF" />
+                    </linearGradient>
+                  </defs>
+                  <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                  <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z" />
+                  <line x1="17.5" y1="6.5" x2="17.51" y2="6.5" />
+                </svg>
+              ),
+              bg: "bg-pink-50 dark:bg-pink-900/20",
+              connectBg: "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90",
+              description: "Profile data via Instagram Basic Display API. Upgrade to Graph API for follower counts.",
             },
           ] as const).map(({ key, label, icon, bg, connectBg, description }) => {
             const isConnected = connectedPlatforms.has(key);

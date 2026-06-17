@@ -97,6 +97,15 @@ export async function apiGetProfile(token: string) {
   return res.json();
 }
 
+export async function apiGetCompleteness(token: string): Promise<number> {
+  const res = await fetch(`${API_URL}/profile/completeness`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.profileCompleteness ?? 0;
+}
+
 export async function apiLookupInfluencerByUrl(
   platform: string,
   handle: string,

@@ -1,5 +1,16 @@
 export type Role = "agency" | "brand" | "influencer";
 
+export interface AudienceInsightData {
+  malePct: number | null;
+  femalePct: number | null;
+  ageDistribution: Record<string, number> | null;
+}
+
+export interface TopCountry {
+  country: string;
+  viewPct: number;
+}
+
 export interface Influencer {
   id: string;
   handle?: string | null;
@@ -14,6 +25,13 @@ export interface Influencer {
   avatarByPlatform: Record<string, string | null>;
   syncedAtByPlatform: Record<string, string | null>;
   spotlightByPlatform: Record<string, { id: string; title: string; thumbnail: string } | null>;
+  /** Per-platform YouTube Analytics fields */
+  watchTimeMinsByPlatform?: Record<string, number | null>;
+  avgViewDurationByPlatform?: Record<string, number | null>;
+  avgViewPctByPlatform?: Record<string, number | null>;
+  subscribersGainedByPlatform?: Record<string, number | null>;
+  topCountriesByPlatform?: Record<string, TopCountry[] | null>;
+  audienceInsightsByPlatform?: Record<string, AudienceInsightData | null>;
   engagementRate: number;
   category: string;
   performanceScore: number;

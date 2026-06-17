@@ -15,6 +15,7 @@ import {
   ExternalLink,
   FileText,
   RefreshCw,
+  TrendingUp,
 } from "lucide-react";
 import { SiYoutube, SiTiktok, SiInstagram, SiFacebook, SiX as SiXIcon } from "react-icons/si";
 import { FaGlobe } from "react-icons/fa";
@@ -35,6 +36,17 @@ interface InfluencerMeta {
   audienceQualityScore?: number | null;
   responseRate: number;
   bio?: string | null;
+  // YouTube Analytics fields (populated from PlatformAccount + AudienceInsight)
+  watchTimeMins?: number | null;
+  avgViewDuration?: number | null;
+  avgViewPct?: number | null;
+  subscribersGained?: number | null;
+  topCountries?: { country: string; viewPct: number }[] | null;
+  audienceInsights?: {
+    malePct: number | null;
+    femalePct: number | null;
+    ageDistribution: Record<string, number> | null;
+  } | null;
 }
 
 interface InfluencerDetailPanelProps {
@@ -46,6 +58,22 @@ interface InfluencerDetailPanelProps {
 }
 
 const PLATFORM_ORDER = ["youtube", "tiktok", "instagram"];
+
+/** Format seconds as "m:ss" */
+function formatDuration(seconds: number): string {
+  const m = Math.floor(seconds / 60);
+  const s = Math.floor(seconds % 60);
+  return `${m}:${s.toString().padStart(2, "0")}`;
+}
+
+/** Format watch time: show hours if >= 60 minutes, else minutes */
+function formatWatchTime(minutes: number): string {
+  if (minutes >= 60) {
+    const h = (minutes / 60).toFixed(1);
+    return `${h}h`;
+  }
+  return `${Math.round(minutes)}m`;
+}
 
 function PlatformIcon({ platform, className }: { platform: string; className?: string }) {
   const p = platform.toLowerCase();
@@ -99,6 +127,23 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
   const activeHandle = influencer.handleByPlatform?.[activePlatform] ?? influencer.handle;
   const activeAvatar = influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl;
   const realVideo = influencer.spotlightByPlatform?.[activePlatform] ?? influencer.spotlightVideo;
+
+  // Per-platform analytics (for YouTube Analytics section)
+  const activeWatchTimeMins = influencer.watchTimeMinsByPlatform?.[activePlatform] ?? meta.watchTimeMins ?? null;
+  const activeAvgViewDuration = influencer.avgViewDurationByPlatform?.[activePlatform] ?? meta.avgViewDuration ?? null;
+  const activeAvgViewPct = influencer.avgViewPctByPlatform?.[activePlatform] ?? meta.avgViewPct ?? null;
+  const activeSubscribersGained = influencer.subscribersGainedByPlatform?.[activePlatform] ?? meta.subscribersGained ?? null;
+  const activeTopCountries = influencer.topCountriesByPlatform?.[activePlatform] ?? meta.topCountries ?? null;
+  const activeAudienceInsights = influencer.audienceInsightsByPlatform?.[activePlatform] ?? meta.audienceInsights ?? null;
+
+  const hasYouTubeAnalytics =
+    activePlatform === "youtube" &&
+    (activeWatchTimeMins != null ||
+      activeAvgViewDuration != null ||
+      activeAvgViewPct != null ||
+      activeSubscribersGained != null ||
+      (activeTopCountries && activeTopCountries.length > 0) ||
+      activeAudienceInsights != null);
 
   const topCountries = meta.country ? getTopCountries(meta.country) : [];
   const estimatedCpm = influencer.ratePerPost
@@ -352,6 +397,137 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               </CardContent>
             </Card>
           </section>
+
+          {/* YouTube Analytics — only when activePlatform is YouTube and data exists */}
+          {hasYouTubeAnalytics && (
+            <section className="space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
+                <TrendingUp className="h-4 w-4" />
+                YouTube Analytics
+              </h3>
+              <Card className="border-none bg-muted/80 shadow-none">
+                <CardContent className="p-5 space-y-4">
+                  {/* Watch time + avg view duration row */}
+                  <div className="grid grid-cols-2 gap-4">
+                    {activeWatchTimeMins != null && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Watch Time</p>
+                        <p className="text-base font-bold">{formatWatchTime(activeWatchTimeMins)}</p>
+                        <p className="text-[10px] text-muted-foreground">last 90 days</p>
+                      </div>
+                    )}
+                    {activeAvgViewDuration != null && (
+                      <div className="space-y-1">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Avg View Duration</p>
+                        <p className="text-base font-bold">{formatDuration(activeAvgViewDuration)}</p>
+                        <p className="text-[10px] text-muted-foreground">per video</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Avg view percentage */}
+                  {activeAvgViewPct != null && (
+                    <div className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Avg View Percentage</p>
+                        <span className="text-sm font-bold">{activeAvgViewPct.toFixed(1)}%</span>
+                      </div>
+                      <div className="h-1.5 w-full rounded-full bg-muted">
+                        <div
+                          className="h-1.5 rounded-full bg-[#FF0000] transition-all"
+                          style={{ width: `${Math.min(100, activeAvgViewPct)}%` }}
+                        />
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Subscribers gained */}
+                  {activeSubscribersGained != null && (
+                    <div className="flex items-center justify-between text-xs font-medium">
+                      <span className="text-muted-foreground">Subscribers Gained</span>
+                      <span className="font-bold text-emerald-600">+{activeSubscribersGained.toLocaleString()}</span>
+                    </div>
+                  )}
+                </CardContent>
+              </Card>
+
+              {/* Gender split */}
+              {activeAudienceInsights && (activeAudienceInsights.malePct != null || activeAudienceInsights.femalePct != null) && (
+                <Card className="border-none bg-muted/80 shadow-none">
+                  <CardContent className="p-5 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Audience Gender</p>
+                    <div className="grid grid-cols-2 gap-3">
+                      {activeAudienceInsights.femalePct != null && (
+                        <div className="rounded-xl border bg-card p-3 text-center">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Female</p>
+                          <p className="text-lg font-bold text-pink-500">{activeAudienceInsights.femalePct.toFixed(1)}%</p>
+                        </div>
+                      )}
+                      {activeAudienceInsights.malePct != null && (
+                        <div className="rounded-xl border bg-card p-3 text-center">
+                          <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Male</p>
+                          <p className="text-lg font-bold text-blue-500">{activeAudienceInsights.malePct.toFixed(1)}%</p>
+                        </div>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Age distribution */}
+              {activeAudienceInsights?.ageDistribution &&
+                Object.keys(activeAudienceInsights.ageDistribution).length > 0 && (
+                <Card className="border-none bg-muted/80 shadow-none">
+                  <CardContent className="p-5 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Age Distribution</p>
+                    <div className="space-y-2">
+                      {Object.entries(activeAudienceInsights.ageDistribution)
+                        .sort(([, a], [, b]) => b - a)
+                        .map(([group, pct]) => (
+                          <div key={group} className="space-y-1">
+                            <div className="flex items-center justify-between text-xs">
+                              <span className="text-muted-foreground font-medium">{group.replace("age", "")}</span>
+                              <span className="font-bold">{pct.toFixed(1)}%</span>
+                            </div>
+                            <div className="h-1.5 w-full rounded-full bg-muted">
+                              <div
+                                className="h-1.5 rounded-full bg-primary transition-all"
+                                style={{ width: `${Math.min(100, pct)}%` }}
+                              />
+                            </div>
+                          </div>
+                        ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* Top countries */}
+              {activeTopCountries && activeTopCountries.length > 0 && (
+                <Card className="border-none bg-muted/80 shadow-none">
+                  <CardContent className="p-5 space-y-3">
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Top Countries</p>
+                    <div className="space-y-2">
+                      {activeTopCountries.map(({ country: countryName, viewPct }) => (
+                        <div key={countryName} className="space-y-1">
+                          <div className="flex items-center justify-between text-xs">
+                            <span className="text-muted-foreground font-medium">{countryName}</span>
+                            <span className="font-bold">{viewPct.toFixed(1)}%</span>
+                          </div>
+                          <div className="h-1.5 w-full rounded-full bg-muted">
+                            <div
+                              className="h-1.5 rounded-full bg-[#FF0000] transition-all"
+                              style={{ width: `${Math.min(100, viewPct)}%` }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+            </section>
+          )}
 
           {/* Rate Card */}
           <section className="space-y-4">
