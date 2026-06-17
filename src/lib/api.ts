@@ -207,6 +207,14 @@ export async function apiGenerateSmartPlan(
   return res.json();
 }
 
+export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {
+  await fetch(`${API_URL}/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ avatarUrl }),
+  });
+}
+
 export async function apiUploadAvatar(token: string, file: File): Promise<{ avatarUrl: string }> {
   const form = new FormData();
   form.append("file", file);

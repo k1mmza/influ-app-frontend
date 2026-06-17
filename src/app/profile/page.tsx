@@ -10,9 +10,10 @@ import {
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar, apiSetAvatarUrl } from "@/lib/api";
 import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 import { Camera } from "lucide-react";
+import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -105,40 +106,25 @@ function ProfileReviewsSection({ role }: { role: Role }) {
   );
 }
 
-// ─── Avatar upload button ─────────────────────────────────────────────────────
+// ─── Avatar trigger (opens the picker modal) ─────────────────────────────────
 
-function AvatarUpload({
+function AvatarTrigger({
   src,
   alt,
   imgClassName,
-  onUpload,
+  onClick,
 }: {
   src: string;
   alt: string;
   imgClassName: string;
-  onUpload: (file: File) => Promise<void>;
+  onClick: () => void;
 }) {
-  const inputRef = useRef<HTMLInputElement>(null);
-  const [uploading, setUploading] = useState(false);
-
-  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    e.target.value = "";
-    if (!file) return;
-    setUploading(true);
-    try { await onUpload(file); } finally { setUploading(false); }
-  };
-
   return (
-    <div className="relative inline-block shrink-0 group cursor-pointer" onClick={() => inputRef.current?.click()}>
+    <div className="relative inline-block shrink-0 group cursor-pointer" onClick={onClick}>
       <img src={src} alt={alt} className={imgClassName} />
-      <div className={`absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50 transition-opacity ${uploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
-        {uploading
-          ? <Loader2 className="h-5 w-5 animate-spin text-white" />
-          : <Camera className="h-5 w-5 text-white" />
-        }
+      <div className="absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50 opacity-0 transition-opacity group-hover:opacity-100">
+        <Camera className="h-5 w-5 text-white" />
       </div>
-      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleChange} />
     </div>
   );
 }
@@ -153,6 +139,7 @@ function BrandProfileView() {
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
 
   // User fields
   const [userName, setUserName] = useState(storeUserName ?? "");
@@ -224,7 +211,7 @@ function BrandProfileView() {
 
   const fallbackAvatar = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName || userName)}`;
   const displayAvatar = avatarUrl
-    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`
+    ? (avatarUrl.startsWith("http") ? avatarUrl : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`)
     : fallbackAvatar;
   const heading = role === "agency" ? "Agency profile" : "Brand profile";
   const subline =
@@ -251,21 +238,36 @@ function BrandProfileView() {
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex flex-col items-center text-center">
             <div className="relative inline-block">
-              <AvatarUpload
+              <AvatarTrigger
                 src={displayAvatar}
                 alt="Company"
                 imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
-                onUpload={async (file) => {
-                  if (!token) return;
-                  const { avatarUrl: url } = await apiUploadAvatar(token, file);
-                  setAvatarUrl(url);
-                }}
+                onClick={() => setShowAvatarPicker(true)}
               />
               <div className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md">
                 <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
                 <span>{useMemo(() => useReviewStore.getState().getAverageRatingReceived(profileRole, userName), [userName])?.toFixed(1) ?? "—"}</span>
               </div>
             </div>
+            {showAvatarPicker && token && (
+              <AvatarPickerModal
+                currentUrl={displayAvatar}
+                onClose={() => setShowAvatarPicker(false)}
+                onSelect={async (url) => {
+                  await apiSetAvatarUrl(token, url);
+                  setAvatarUrl(url);
+                  setShowAvatarPicker(false);
+                }}
+                onUpload={async (file) => {
+                  const { avatarUrl: url } = await apiUploadAvatar(token, file);
+                  setAvatarUrl(url);
+                }}
+                onRemove={async () => {
+                  await apiSetAvatarUrl(token, "");
+                  setAvatarUrl(null);
+                }}
+              />
+            )}
             <p className="mt-3 font-semibold text-foreground font-serif">{companyName || userName}</p>
             <p className="text-sm text-muted-foreground">{position || "—"}</p>
             <p className="mt-1 text-xs text-muted-foreground">{email}</p>
@@ -379,6 +381,7 @@ function InfluencerProfileView() {
   const rateCardInputRef = useRef<HTMLInputElement>(null);
   const [completenessScore, setCompletenessScore] = useState<number>(0);
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
+  const [showAvatarPicker, setShowAvatarPicker] = useState(false);
   const [platformAccounts, setPlatformAccounts] = useState<Array<{
     id: string; platform: string; handle: string; displayName: string | null;
     followers: number; avgViews: number; engagementRate: number; syncedAt: string | null; hasTokens: boolean;
@@ -456,7 +459,7 @@ function InfluencerProfileView() {
 
   const fallbackInfluencerAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(kit.displayName)}`;
   const displayInfluencerAvatar = avatarUrl
-    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`
+    ? (avatarUrl.startsWith("http") ? avatarUrl : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`)
     : fallbackInfluencerAvatar;
 
   const parseListInput = (s: string) =>
@@ -733,21 +736,36 @@ function InfluencerProfileView() {
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <AvatarUpload
+            <AvatarTrigger
               src={displayInfluencerAvatar}
               alt={`${kit.displayName} profile`}
               imgClassName="h-14 w-14 rounded-full border border-border object-cover"
-              onUpload={async (file) => {
-                if (!token) return;
-                const { avatarUrl: url } = await apiUploadAvatar(token, file);
-                setAvatarUrl(url);
-              }}
+              onClick={() => setShowAvatarPicker(true)}
             />
             <div>
               <h2 className="text-lg font-semibold text-foreground font-serif">{kit.displayName}</h2>
               <p className="text-sm text-muted-foreground">{kit.handle}</p>
             </div>
           </div>
+          {showAvatarPicker && token && (
+            <AvatarPickerModal
+              currentUrl={displayInfluencerAvatar}
+              onClose={() => setShowAvatarPicker(false)}
+              onSelect={async (url) => {
+                await apiSetAvatarUrl(token, url);
+                setAvatarUrl(url);
+                setShowAvatarPicker(false);
+              }}
+              onUpload={async (file) => {
+                const { avatarUrl: url } = await apiUploadAvatar(token, file);
+                setAvatarUrl(url);
+              }}
+              onRemove={async () => {
+                await apiSetAvatarUrl(token, "");
+                setAvatarUrl(null);
+              }}
+            />
+          )}
           <label className="mt-4 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Display name</span>
             <input value={kit.displayName} onChange={(e) => setKit({ displayName: e.target.value })} className={inputCls} />
