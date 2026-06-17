@@ -10,7 +10,8 @@ import {
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness } from "@/lib/api";
+import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -322,7 +323,11 @@ function InfluencerProfileView() {
   const [rateCardUploading, setRateCardUploading] = useState(false);
   const [rateCardError, setRateCardError] = useState<string | null>(null);
   const rateCardInputRef = useRef<HTMLInputElement>(null);
-  const [connectedPlatforms, setConnectedPlatforms] = useState<Set<string>>(new Set());
+  const [completenessScore, setCompletenessScore] = useState<number>(0);
+  const [platformAccounts, setPlatformAccounts] = useState<Array<{
+    id: string; platform: string; handle: string; displayName: string | null;
+    followers: number; avgViews: number; engagementRate: number; syncedAt: string | null; hasTokens: boolean;
+  }>>([]);
   const [connectingPlatform, setConnectingPlatform] = useState<string | null>(null);
   const [disconnectingPlatform, setDisconnectingPlatform] = useState<string | null>(null);
   const [platformMessage, setPlatformMessage] = useState<{ text: string; error: boolean } | null>(null);
@@ -333,8 +338,7 @@ function InfluencerProfileView() {
     const status = params.get("platform_connect");
     const platform = params.get("platform") ?? "";
     if (status === "success") {
-      setConnectedPlatforms((prev) => new Set([...prev, platform]));
-      setPlatformMessage({ text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected.`, error: false });
+      setPlatformMessage({ text: `${platform.charAt(0).toUpperCase() + platform.slice(1)} account connected successfully.`, error: false });
     } else if (status === "error") {
       const reason = params.get("reason") ?? "unknown";
       setPlatformMessage({ text: `${platform} connection failed: ${reason}`, error: true });
@@ -344,8 +348,9 @@ function InfluencerProfileView() {
   // Load real profile data into the media kit store once
   useEffect(() => {
     if (!token || profileLoaded) return;
-    apiGetProfile(token)
-      .then((data) => {
+    Promise.all([apiGetProfile(token), apiGetCompleteness(token)])
+      .then(([data, score]) => {
+        setCompletenessScore(score);
         const updates: Partial<typeof kit> = {};
         if (data.name) updates.displayName = data.name;
         if (storeEmail) updates.email = storeEmail;
@@ -354,11 +359,12 @@ function InfluencerProfileView() {
           if (p.bio) updates.bio = p.bio;
           if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
           if (p.availabilityStatus) updates.availability = p.availabilityStatus;
-          if (Array.isArray(data.platforms)) {
-            const linked = data.platforms
-              .filter((pl: any) => pl.hasTokens)
-              .map((pl: any) => pl.platform as string);
-            if (linked.length) setConnectedPlatforms(new Set(linked));
+          if (p.country) updates.location = p.country;
+          if (Array.isArray(data.platforms) && data.platforms.length > 0) {
+            setPlatformAccounts(data.platforms);
+            // auto-fill handle from primary connected platform
+            const primary = data.platforms.find((pl: any) => pl.hasTokens) ?? data.platforms[0];
+            if (primary?.handle) updates.handle = primary.handle;
           }
         }
         if (p?.rateCardFileUrl) setRateCardUrl(p.rateCardFileUrl);
@@ -375,9 +381,12 @@ function InfluencerProfileView() {
     try {
       await apiUpdateProfile(token, {
         name: kit.displayName,
-        bio: kit.bio,
-        categories: kit.categories,
-        availabilityStatus: kit.availability,
+        influencerProfile: {
+          bio: kit.bio,
+          categories: kit.categories,
+          availabilityStatus: kit.availability,
+          country: kit.location || undefined,
+        },
       });
       useUserStore.setState({ name: kit.displayName });
       setSaved(true);
@@ -439,31 +448,40 @@ function InfluencerProfileView() {
 
   return (
     <section className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-serif">Media kit</h1>
-          <p className="mt-1 text-sm text-muted-foreground">
-            Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
-          </p>
+      {/* Brown gradient header */}
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] px-6 py-8 text-white shadow-lg">
+        <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-8 opacity-10 select-none">
+          <span className="text-[120px] font-black font-serif leading-none">Profile</span>
         </div>
-        <div className="flex flex-wrap items-center gap-2">
-          <input ref={uploadRef} type="file" accept=".json,application/json,application/pdf,.pdf" className="hidden" onChange={onUploadFiles} />
-          <button
-            type="button"
-            onClick={() => uploadRef.current?.click()}
-            className="inline-flex items-center gap-2 rounded-xl border border-border bg-card px-3 py-2 text-sm font-semibold text-foreground shadow-sm hover:bg-muted"
-          >
-            <Upload className="h-4 w-4" aria-hidden />
-            Upload JSON / PDF
-          </button>
-          <button
-            type="button"
-            onClick={downloadMediaKitJson}
-            className="inline-flex items-center gap-2 rounded-xl bg-primary px-3 py-2 text-sm font-semibold text-white shadow-sm hover:opacity-95"
-          >
-            <Download className="h-4 w-4" aria-hidden />
-            Download JSON
-          </button>
+        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <span className="inline-block rounded-full bg-white/20 px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest">
+              Influencer
+            </span>
+            <h1 className="mt-2 text-2xl font-bold font-serif">Media Kit</h1>
+            <p className="mt-1 text-sm text-white/70">
+              Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
+            </p>
+          </div>
+          <div className="flex flex-wrap items-center gap-2 shrink-0">
+            <input ref={uploadRef} type="file" accept=".json,application/json,application/pdf,.pdf" className="hidden" onChange={onUploadFiles} />
+            <button
+              type="button"
+              onClick={() => uploadRef.current?.click()}
+              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20"
+            >
+              <Upload className="h-4 w-4" aria-hidden />
+              Upload JSON / PDF
+            </button>
+            <button
+              type="button"
+              onClick={downloadMediaKitJson}
+              className="inline-flex items-center gap-2 rounded-xl bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30"
+            >
+              <Download className="h-4 w-4" aria-hidden />
+              Download JSON
+            </button>
+          </div>
         </div>
       </div>
 
@@ -559,7 +577,7 @@ function InfluencerProfileView() {
               description: "Profile data via Instagram Basic Display API. Upgrade to Graph API for follower counts.",
             },
           ] as const).map(({ key, label, icon, bg, connectBg, description }) => {
-            const isConnected = connectedPlatforms.has(key);
+            const isConnected = platformAccounts.some((pa) => pa.platform === key);
             const isConnecting = connectingPlatform === key;
             const isDisconnecting = disconnectingPlatform === key;
 
@@ -589,7 +607,9 @@ function InfluencerProfileView() {
                           setPlatformMessage(null);
                           try {
                             await apiDisconnectPlatform(token, key);
-                            setConnectedPlatforms((prev) => { const n = new Set(prev); n.delete(key); return n; });
+                            setPlatformAccounts((prev) => prev.map((pa) =>
+                              pa.platform === key ? { ...pa, hasTokens: false } : pa
+                            ));
                             setPlatformMessage({ text: `${label} account disconnected.`, error: false });
                           } catch (err: any) {
                             setPlatformMessage({ text: `Disconnect failed: ${err.message}`, error: true });
@@ -671,7 +691,13 @@ function InfluencerProfileView() {
           </label>
           <label className="mt-3 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Handle</span>
-            <input value={kit.handle} onChange={(e) => setKit({ handle: e.target.value })} placeholder="@your.handle" className={inputCls} />
+            <input
+              value={kit.handle}
+              readOnly
+              placeholder="Auto-filled from connected platform"
+              title="Handle is pulled from your connected platform account"
+              className={`${inputCls} cursor-default opacity-60`}
+            />
           </label>
           <label className="mt-3 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bio / positioning</span>
@@ -686,15 +712,16 @@ function InfluencerProfileView() {
             <input type="email" value={kit.email} onChange={(e) => setKit({ email: e.target.value })} className={inputCls} />
           </label>
           <div className="mt-4 rounded-xl bg-muted p-3">
-            <label className="block text-sm">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Profile completeness %</span>
-              <input
-                type="number" min={0} max={100}
-                value={kit.profileCompleteness}
-                onChange={(e) => setKit({ profileCompleteness: Number(e.target.value) })}
-                className={inputCls}
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Profile completeness</span>
+              <span className="text-sm font-bold text-foreground">{completenessScore}%</span>
+            </div>
+            <div className="h-2 w-full rounded-full bg-border overflow-hidden">
+              <div
+                className="h-2 rounded-full bg-[#92400e] transition-all duration-500"
+                style={{ width: `${completenessScore}%` }}
               />
-            </label>
+            </div>
           </div>
 
           <div className="mt-4 flex items-center gap-3">
@@ -740,40 +767,59 @@ function InfluencerProfileView() {
           </article>
 
           <article className="rounded-2xl bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground font-serif">Platforms &amp; handles</h2>
-            <div className="mt-3 space-y-3">
-              {kit.socialAccounts.map((account, index) => (
-                <div key={`${account.platform}-${index}`} className="rounded-xl border border-border p-3 text-sm">
-                  <div className="grid gap-2 sm:grid-cols-2">
-                    {[
-                      { label: "Platform", field: "platform" as const, type: "text" },
-                      { label: "Handle", field: "username" as const, type: "text" },
-                      { label: "Followers", field: "followers" as const, type: "number" },
-                      { label: "Avg views", field: "avgViews" as const, type: "number" },
-                    ].map(({ label, field, type }) => (
-                      <label key={field} className="block">
-                        <span className="text-xs text-muted-foreground">{label}</span>
-                        <input
-                          type={type}
-                          value={account[field] as any}
-                          onChange={(e) => setSocialRow(index, { [field]: type === "number" ? Number(e.target.value) : e.target.value })}
-                          className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none"
-                        />
-                      </label>
-                    ))}
-                    <label className="block sm:col-span-2">
-                      <span className="text-xs text-muted-foreground">Engagement rate %</span>
-                      <input
-                        type="number" min={0} step={0.1}
-                        value={account.engagementRate}
-                        onChange={(e) => setSocialRow(index, { engagementRate: Number(e.target.value) })}
-                        className="mt-1 w-full rounded-lg border border-border bg-background px-2 py-1.5 text-sm outline-none"
-                      />
-                    </label>
-                  </div>
-                </div>
-              ))}
-            </div>
+            <h2 className="text-lg font-semibold text-foreground font-serif">Connected platform stats</h2>
+            <p className="mt-0.5 text-xs text-muted-foreground">Live data from your linked accounts. Connect platforms above to populate.</p>
+            {platformAccounts.length === 0 ? (
+              <p className="mt-4 text-sm text-muted-foreground">No connected accounts yet.</p>
+            ) : (
+              <div className="mt-4 space-y-3">
+                {platformAccounts.map((pa) => {
+                  const PlatformIcon =
+                    pa.platform === "youtube" ? SiYoutube
+                    : pa.platform === "tiktok" ? SiTiktok
+                    : pa.platform === "instagram" ? SiInstagram
+                    : null;
+                  const iconColor =
+                    pa.platform === "youtube" ? "text-red-600"
+                    : pa.platform === "tiktok" ? "text-foreground"
+                    : pa.platform === "instagram" ? "text-[#E4405F]"
+                    : "text-muted-foreground";
+                  return (
+                    <div key={pa.id} className="flex items-center gap-4 rounded-xl border border-border bg-muted/40 px-4 py-3">
+                      <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-background border border-border">
+                        {PlatformIcon && <PlatformIcon className={`h-5 w-5 ${iconColor}`} />}
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <div className="flex items-center gap-2">
+                          <p className="text-sm font-semibold capitalize text-foreground">{pa.platform}</p>
+                          <span className="truncate text-xs text-muted-foreground">@{pa.handle.replace(/^@/, "")}</span>
+                          {pa.hasTokens && (
+                            <span className="rounded-full bg-emerald-100 px-1.5 py-0.5 text-[9px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">Live</span>
+                          )}
+                        </div>
+                        <div className="mt-1.5 flex flex-wrap gap-3">
+                          {[
+                            { label: "Reach", value: pa.followers.toLocaleString() },
+                            { label: "Avg Views", value: pa.avgViews.toLocaleString() },
+                            { label: "Engage", value: `${pa.engagementRate}%` },
+                          ].map(({ label, value }) => (
+                            <div key={label}>
+                              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">{label}</p>
+                              <p className="text-xs font-bold text-foreground">{value}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                      {pa.syncedAt && (
+                        <p className="hidden shrink-0 text-[10px] text-muted-foreground sm:block">
+                          {new Date(pa.syncedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
           </article>
         </div>
       </div>
