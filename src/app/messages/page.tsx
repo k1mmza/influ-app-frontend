@@ -1,8 +1,8 @@
 "use client";
 
-import { useEffect, useState, useRef, useCallback } from "react";
+import { useEffect, useState, useRef, useCallback, Suspense } from "react";
 import { useSearchParams } from "next/navigation";
-import { Suspense } from "react";
+import { io, Socket } from "socket.io-client";
 import { ProcessOfWorkPanel, WorkStatusDot, WorkStatusIndicator, type WorkPhase } from "@/components/messages/process-of-work-panel";
 import { useUserStore } from "@/store/useUserStore";
 import {
@@ -11,8 +11,12 @@ import {
   apiSendMessage,
   apiUpdateConversationPhase,
   apiMarkConversationRead,
+  apiGetConversation,
+  apiUploadConversationFile,
 } from "@/lib/api";
 import { Loader2, Send } from "lucide-react";
+
+const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
 function MessagesView({ role }: { role: string }) {
   const { token, name: currentUserName } = useUserStore();
@@ -26,7 +30,55 @@ function MessagesView({ role }: { role: string }) {
   const [loadingConv, setLoadingConv] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [attachments, setAttachments] = useState<{ contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null }>({ contractUrl: null, briefFileUrl: null, paymentProofUrl: null });
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const socketRef = useRef<Socket | null>(null);
+  const activeConvIdRef = useRef<string | null>(null);
+
+  // Connect socket once on mount
+  useEffect(() => {
+    const socket = io(API_URL, { transports: ["websocket"] });
+    socketRef.current = socket;
+    return () => {
+      socket.disconnect();
+    };
+  }, []);
+
+  // Join/leave conversation room and listen for new messages
+  useEffect(() => {
+    const socket = socketRef.current;
+    if (!socket || !activeConvId) return;
+
+    // Leave previous room
+    if (activeConvIdRef.current && activeConvIdRef.current !== activeConvId) {
+      socket.emit("leave-conversation", activeConvIdRef.current);
+    }
+    activeConvIdRef.current = activeConvId;
+    socket.emit("join-conversation", activeConvId);
+
+    const handleNewMessage = (msg: any) => {
+      // Only append if still in same conversation
+      if (activeConvIdRef.current !== msg.conversationId) return;
+      setMessages((prev) => {
+        // Deduplicate by id
+        if (prev.some((m) => m.id === msg.id)) return prev;
+        return [...prev, msg];
+      });
+      // Update conversation list preview
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === msg.conversationId
+            ? { ...c, lastMessage: msg.content, lastMessageAt: msg.sentAt }
+            : c
+        )
+      );
+    };
+
+    socket.on("new-message", handleNewMessage);
+    return () => {
+      socket.off("new-message", handleNewMessage);
+    };
+  }, [activeConvId]);
 
   useEffect(() => {
     async function fetchConversations() {
@@ -35,7 +87,6 @@ function MessagesView({ role }: { role: string }) {
         setLoadingConv(true);
         const data = await apiGetConversations(token);
         setConversations(data);
-        // Pre-select from URL param, else first conversation
         const initialId = convIdFromUrl ?? (data.length > 0 ? data[0].id : null);
         setActiveConvId(initialId);
       } catch (err) {
@@ -50,9 +101,7 @@ function MessagesView({ role }: { role: string }) {
   const selectConversation = useCallback(
     async (id: string) => {
       setActiveConvId(id);
-      // Mark as read when opening
       if (token) apiMarkConversationRead(token, id).catch(() => {});
-      // Clear unread badge optimistically
       setConversations((prev) =>
         prev.map((c) => (c.id === id ? { ...c, unreadCount: 0 } : c))
       );
@@ -65,8 +114,18 @@ function MessagesView({ role }: { role: string }) {
       if (!token || !activeConvId) return;
       try {
         setLoadingMessages(true);
-        const data = await apiGetMessages(token, activeConvId);
-        setMessages(data);
+        const [msgs, conv] = await Promise.all([
+          apiGetMessages(token, activeConvId),
+          apiGetConversation(token, activeConvId),
+        ]);
+        setMessages(msgs);
+        if (conv) {
+          setAttachments({
+            contractUrl: conv.contractUrl ?? null,
+            briefFileUrl: conv.briefFileUrl ?? null,
+            paymentProofUrl: conv.paymentProofUrl ?? null,
+          });
+        }
       } catch (err) {
         console.error("Failed to fetch messages:", err);
       } finally {
@@ -85,23 +144,29 @@ function MessagesView({ role }: { role: string }) {
   const handleSendMessage = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!token || !activeConvId || !newMessage.trim()) return;
-
+    const content = newMessage;
+    setNewMessage("");
     try {
-      const sent = await apiSendMessage(token, activeConvId, newMessage);
-      setMessages((prev) => [
-        ...prev,
-        { ...sent, sender: { name: currentUserName } },
-      ]);
-      setNewMessage("");
-      setConversations((prev) =>
-        prev.map((c) =>
-          c.id === activeConvId
-            ? { ...c, lastMessage: newMessage, lastMessageAt: new Date().toISOString() }
-            : c
-        )
-      );
+      // REST sends + backend emits via socket — don't add optimistically
+      await apiSendMessage(token, activeConvId, content);
     } catch (err) {
       console.error("Failed to send message:", err);
+      setNewMessage(content); // restore on failure
+    }
+  };
+
+  const handleFileUpload = async (type: "contract" | "brief" | "payment", file: File) => {
+    if (!token || !activeConvId) return;
+    try {
+      const result = await apiUploadConversationFile(token, activeConvId, type, file);
+      setAttachments((prev) => ({
+        ...prev,
+        contractUrl: type === "contract" ? result.url : prev.contractUrl,
+        briefFileUrl: type === "brief" ? result.url : prev.briefFileUrl,
+        paymentProofUrl: type === "payment" ? result.url : prev.paymentProofUrl,
+      }));
+    } catch (err) {
+      console.error("Upload failed:", err);
     }
   };
 
@@ -216,6 +281,8 @@ function MessagesView({ role }: { role: string }) {
                     variant={role === "influencer" ? "influencer" : "brand"}
                     currentPhase={activeConv.workPhase as WorkPhase}
                     onPhaseChange={handlePhaseChange}
+                    onFileUpload={handleFileUpload}
+                    attachments={attachments}
                     linkedCampaign={
                       activeConv.campaignId
                         ? { id: activeConv.campaignId, name: activeConv.campaignName ?? "" }

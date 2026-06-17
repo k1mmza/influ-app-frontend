@@ -308,3 +308,32 @@ export async function apiMarkConversationRead(token: string, conversationId: str
   });
   if (!res.ok) return;
 }
+
+export async function apiGetConversation(token: string, conversationId: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function apiUploadConversationFile(
+  token: string,
+  conversationId: string,
+  type: "contract" | "brief" | "payment",
+  file: File,
+) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("type", type);
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/upload`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Upload failed");
+  }
+  return res.json() as Promise<{ url: string; type: string }>;
+}

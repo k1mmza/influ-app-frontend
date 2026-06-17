@@ -153,11 +153,15 @@ export function ProcessOfWorkPanel({
   variant,
   currentPhase,
   onPhaseChange,
+  onFileUpload,
+  attachments,
   linkedCampaign,
 }: {
   variant: ProcessVariant;
   currentPhase?: WorkPhase;
   onPhaseChange?: (phase: WorkPhase) => void;
+  onFileUpload?: (type: "contract" | "brief" | "payment", file: File) => void;
+  attachments?: { contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null };
   linkedCampaign?: { id: string; name: string } | null;
 }) {
   const [active, setActive] = useState<WorkPhase | null>(null);
@@ -266,12 +270,30 @@ export function ProcessOfWorkPanel({
       <Modal open={active === "contact"} title="Agreement/Contract" onClose={close}>
         <p className="text-sm text-muted-foreground">
           {variant === "influencer"
-            ? "Upload a photo or scan of your signed agreement for online signing. You can download the template below."
-            : "Upload contact or agreement documents to share with the creator. They can download copies for their records."}
+            ? "Upload a photo or scan of your signed agreement. You can download the template below."
+            : "Upload the contract to share with the creator. They can download a copy for their records."}
         </p>
-        <label className="mt-4 block text-xs font-semibold text-foreground">Upload image</label>
-        <input type="file" accept="image/*" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
-        <div className="mt-4 flex flex-wrap gap-2">
+        {attachments?.contractUrl ? (
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <span className="text-xs font-semibold text-emerald-700">Uploaded</span>
+            <a href={attachments.contractUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline truncate">
+              View contract
+            </a>
+          </div>
+        ) : null}
+        <label className="mt-4 block text-xs font-semibold text-foreground">
+          {attachments?.contractUrl ? "Replace file" : "Upload image / PDF"}
+        </label>
+        <input
+          type="file"
+          accept="image/*,.pdf"
+          className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
+          onChange={(e) => {
+            const file = e.target.files?.[0];
+            if (file && onFileUpload) onFileUpload("contract", file);
+          }}
+        />
+        <div className="mt-4">
           <button
             type="button"
             className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white"
@@ -382,13 +404,35 @@ export function ProcessOfWorkPanel({
           </div>
         </div>
         {variant === "brand" ? (
-          <>
+          <div className="mt-4 rounded-xl border border-border bg-card p-4">
+            <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+              {attachments?.briefFileUrl ? "Replace brief file" : "Upload brief (PDF / doc)"}
+            </label>
+            {attachments?.briefFileUrl ? (
+              <a href={attachments.briefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+                View uploaded brief
+              </a>
+            ) : null}
+            <input
+              type="file"
+              accept=".pdf,.doc,.docx"
+              className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onFileUpload) onFileUpload("brief", file);
+              }}
+            />
+          </div>
+        ) : (
+          attachments?.briefFileUrl ? (
             <div className="mt-4 rounded-xl border border-border bg-card p-4">
-              <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">Upload brief (PDF / doc)</label>
-              <input type="file" className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief file</p>
+              <a href={attachments.briefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+                Download brief
+              </a>
             </div>
-          </>
-        ) : null}
+          ) : null
+        )}
         <button
           type="button"
           className="mt-4 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted"
@@ -535,10 +579,28 @@ export function ProcessOfWorkPanel({
             Download sample receipt
           </button>
         </div>
+        {attachments?.paymentProofUrl ? (
+          <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
+            <span className="text-xs font-semibold text-emerald-700">Proof uploaded</span>
+            <a href={attachments.paymentProofUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline">
+              View receipt
+            </a>
+          </div>
+        ) : null}
         {variant === "brand" ? (
           <>
-            <label className="mt-4 block text-xs font-semibold text-foreground">Upload payment proof (image / PDF)</label>
-            <input type="file" accept="image/*,.pdf" className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90" />
+            <label className="mt-4 block text-xs font-semibold text-foreground">
+              {attachments?.paymentProofUrl ? "Replace payment proof" : "Upload payment proof (image / PDF)"}
+            </label>
+            <input
+              type="file"
+              accept="image/*,.pdf"
+              className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file && onFileUpload) onFileUpload("payment", file);
+              }}
+            />
           </>
         ) : null}
       </Modal>
