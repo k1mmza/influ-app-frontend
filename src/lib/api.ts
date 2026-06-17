@@ -207,6 +207,21 @@ export async function apiGenerateSmartPlan(
   return res.json();
 }
 
+export async function apiUploadAvatar(token: string, file: File): Promise<{ avatarUrl: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/profile/avatar`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Avatar upload failed");
+  }
+  return res.json();
+}
+
 export async function apiUploadRateCard(token: string, file: File): Promise<{ rateCardFileUrl: string }> {
   const form = new FormData();
   form.append("file", file);

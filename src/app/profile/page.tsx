@@ -10,8 +10,9 @@ import {
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar } from "@/lib/api";
 import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
+import { Camera } from "lucide-react";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -104,6 +105,44 @@ function ProfileReviewsSection({ role }: { role: Role }) {
   );
 }
 
+// ─── Avatar upload button ─────────────────────────────────────────────────────
+
+function AvatarUpload({
+  src,
+  alt,
+  imgClassName,
+  onUpload,
+}: {
+  src: string;
+  alt: string;
+  imgClassName: string;
+  onUpload: (file: File) => Promise<void>;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+
+  const handleChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    setUploading(true);
+    try { await onUpload(file); } finally { setUploading(false); }
+  };
+
+  return (
+    <div className="relative inline-block shrink-0 group cursor-pointer" onClick={() => inputRef.current?.click()}>
+      <img src={src} alt={alt} className={imgClassName} />
+      <div className={`absolute inset-0 flex items-center justify-center rounded-[inherit] bg-black/50 transition-opacity ${uploading ? "opacity-100" : "opacity-0 group-hover:opacity-100"}`}>
+        {uploading
+          ? <Loader2 className="h-5 w-5 animate-spin text-white" />
+          : <Camera className="h-5 w-5 text-white" />
+        }
+      </div>
+      <input ref={inputRef} type="file" accept="image/jpeg,image/png,image/webp,image/gif" className="hidden" onChange={handleChange} />
+    </div>
+  );
+}
+
 // ─── Brand / Agency profile ───────────────────────────────────────────────────
 
 function BrandProfileView() {
@@ -113,6 +152,7 @@ function BrandProfileView() {
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
 
   // User fields
   const [userName, setUserName] = useState(storeUserName ?? "");
@@ -134,6 +174,7 @@ function BrandProfileView() {
     apiGetProfile(token)
       .then((data) => {
         if (data.name) setUserName(data.name);
+        if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
         const p = data.profile;
         if (p) {
           setCompanyName(p.companyName ?? "");
@@ -181,7 +222,10 @@ function BrandProfileView() {
     }
   };
 
-  const avatarUrl = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName || userName)}`;
+  const fallbackAvatar = `https://api.dicebear.com/9.x/shapes/svg?seed=${encodeURIComponent(companyName || userName)}`;
+  const displayAvatar = avatarUrl
+    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`
+    : fallbackAvatar;
   const heading = role === "agency" ? "Agency profile" : "Brand profile";
   const subline =
     role === "agency"
@@ -206,12 +250,22 @@ function BrandProfileView() {
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex flex-col items-center text-center">
-            <ProfileRatingAvatar
-              src={avatarUrl}
-              alt="Company"
-              imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
-              role={profileRole}
-            />
+            <div className="relative inline-block">
+              <AvatarUpload
+                src={displayAvatar}
+                alt="Company"
+                imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
+                onUpload={async (file) => {
+                  if (!token) return;
+                  const { avatarUrl: url } = await apiUploadAvatar(token, file);
+                  setAvatarUrl(url);
+                }}
+              />
+              <div className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md">
+                <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
+                <span>{useMemo(() => useReviewStore.getState().getAverageRatingReceived(profileRole, userName), [userName])?.toFixed(1) ?? "—"}</span>
+              </div>
+            </div>
             <p className="mt-3 font-semibold text-foreground font-serif">{companyName || userName}</p>
             <p className="text-sm text-muted-foreground">{position || "—"}</p>
             <p className="mt-1 text-xs text-muted-foreground">{email}</p>
@@ -324,6 +378,7 @@ function InfluencerProfileView() {
   const [rateCardError, setRateCardError] = useState<string | null>(null);
   const rateCardInputRef = useRef<HTMLInputElement>(null);
   const [completenessScore, setCompletenessScore] = useState<number>(0);
+  const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [platformAccounts, setPlatformAccounts] = useState<Array<{
     id: string; platform: string; handle: string; displayName: string | null;
     followers: number; avgViews: number; engagementRate: number; syncedAt: string | null; hasTokens: boolean;
@@ -351,6 +406,7 @@ function InfluencerProfileView() {
     Promise.all([apiGetProfile(token), apiGetCompleteness(token)])
       .then(([data, score]) => {
         setCompletenessScore(score);
+        if (data.avatarUrl) setAvatarUrl(data.avatarUrl);
         const updates: Partial<typeof kit> = {};
         if (data.name) updates.displayName = data.name;
         if (storeEmail) updates.email = storeEmail;
@@ -398,7 +454,10 @@ function InfluencerProfileView() {
     }
   };
 
-  const avatarUrl = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(kit.displayName)}`;
+  const fallbackInfluencerAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(kit.displayName)}`;
+  const displayInfluencerAvatar = avatarUrl
+    ? `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${avatarUrl}`
+    : fallbackInfluencerAvatar;
 
   const parseListInput = (s: string) =>
     s.split(/[,，\n]/g).map((x) => x.trim()).filter(Boolean);
@@ -674,11 +733,15 @@ function InfluencerProfileView() {
       <div className="grid gap-4 lg:grid-cols-[300px_1fr]">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <div className="flex items-center gap-3">
-            <ProfileRatingAvatar
-              src={avatarUrl}
+            <AvatarUpload
+              src={displayInfluencerAvatar}
               alt={`${kit.displayName} profile`}
               imgClassName="h-14 w-14 rounded-full border border-border object-cover"
-              role="influencer"
+              onUpload={async (file) => {
+                if (!token) return;
+                const { avatarUrl: url } = await apiUploadAvatar(token, file);
+                setAvatarUrl(url);
+              }}
             />
             <div>
               <h2 className="text-lg font-semibold text-foreground font-serif">{kit.displayName}</h2>
