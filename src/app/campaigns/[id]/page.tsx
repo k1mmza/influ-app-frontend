@@ -266,10 +266,10 @@ export default function CampaignDetailPage() {
       keyMessage: campaign.keyMessage ?? "",
       deliverables: campaign.deliverables ?? "",
       doAndDont: campaign.doAndDont ?? "",
-      applyDeadline: campaign.applyDeadline ?? "",
-      submissionDate: campaign.submissionDate ?? "",
-      reviewDate: campaign.reviewDate ?? "",
-      paymentDate: campaign.paymentDate ?? "",
+      applyDeadline: campaign.applyDeadline ? campaign.applyDeadline.substring(0, 10) : "",
+      submissionDate: campaign.submissionDate ? campaign.submissionDate.substring(0, 10) : "",
+      reviewDate: campaign.reviewDate ? campaign.reviewDate.substring(0, 10) : "",
+      paymentDate: campaign.paymentDate ? campaign.paymentDate.substring(0, 10) : "",
       minFollowers: requirement.minFollowers != null ? String(requirement.minFollowers) : "",
       minEngagementRate: requirement.minEngagementRate != null ? String(requirement.minEngagementRate) : "",
       minAvgViews: requirement.minAvgViews != null ? String(requirement.minAvgViews) : "",
@@ -444,16 +444,18 @@ export default function CampaignDetailPage() {
               </>
             ) : (
               <>
-                <p>Objective: {campaign.objective ?? "TBD"}</p>
-                <p>Budget: {formatMoney(campaign.budget)}</p>
-                <p>Payment: {campaign.paymentType ?? "TBD"}</p>
+                <div><p className="font-semibold text-foreground">Objective</p><p className="mt-1">{campaign.objective ?? "TBD"}</p></div>
+                <div><p className="font-semibold text-foreground">Budget</p><p className="mt-1">{formatMoney(campaign.budget)}</p></div>
+                <div><p className="font-semibold text-foreground">Payment</p><p className="mt-1">{campaign.paymentType ?? "TBD"}</p></div>
               </>
             )}
             <div>
-              <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
+              <p className="font-semibold text-foreground">Apply deadline</p>
+              <p className="mt-1">{formatDate(campaign.applyDeadline)}</p>
             </div>
             <div>
-              <p>Applications: {applications.length || campaign.applications?.length || 0}</p>
+              <p className="font-semibold text-foreground">Applications</p>
+              <p className="mt-1">{applications.length || campaign.applications?.length || 0}</p>
             </div>
           </div>
 
@@ -515,30 +517,33 @@ export default function CampaignDetailPage() {
             {isEditing && editFormData ? (
               <>
                 <div>
-                  <label className="block font-semibold text-foreground mb-1">Key message</label>
+                  <Label htmlFor="editKeyMessage" className="font-semibold text-foreground mb-1">Key message</Label>
                   <textarea
+                    id="editKeyMessage"
                     value={editFormData.keyMessage || ""}
                     onChange={(e) => setEditFormData({ ...editFormData, keyMessage: e.target.value })}
                     placeholder="Enter key message"
-                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-foreground mb-1">Deliverables</label>
+                  <Label htmlFor="editDeliverables" className="font-semibold text-foreground mb-1">Deliverables</Label>
                   <textarea
+                    id="editDeliverables"
                     value={editFormData.deliverables || ""}
                     onChange={(e) => setEditFormData({ ...editFormData, deliverables: e.target.value })}
                     placeholder="Enter deliverables"
-                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
                 <div>
-                  <label className="block font-semibold text-foreground mb-1">Do and don't</label>
+                  <Label htmlFor="editDoAndDont" className="font-semibold text-foreground mb-1">Do and don't</Label>
                   <textarea
+                    id="editDoAndDont"
                     value={editFormData.doAndDont || ""}
                     onChange={(e) => setEditFormData({ ...editFormData, doAndDont: e.target.value })}
                     placeholder="Enter guidance"
-                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                    className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
                   />
                 </div>
               </>
@@ -614,10 +619,10 @@ export default function CampaignDetailPage() {
               </>
             ) : (
               <>
-                <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
-                <p>Submission date: {formatDate(campaign.submissionDate)}</p>
-                <p>Review date: {formatDate(campaign.reviewDate)}</p>
-                <p>Payment date: {formatDate(campaign.paymentDate)}</p>
+                <div><p className="font-semibold text-foreground">Apply deadline</p><p className="mt-1">{formatDate(campaign.applyDeadline)}</p></div>
+                <div><p className="font-semibold text-foreground">Submission date</p><p className="mt-1">{formatDate(campaign.submissionDate)}</p></div>
+                <div><p className="font-semibold text-foreground">Review date</p><p className="mt-1">{formatDate(campaign.reviewDate)}</p></div>
+                <div><p className="font-semibold text-foreground">Payment date</p><p className="mt-1">{formatDate(campaign.paymentDate)}</p></div>
               </>
             )}
           </CardContent>
@@ -629,9 +634,9 @@ export default function CampaignDetailPage() {
           <CardHeader>
             <CardTitle className="text-lg">Creator requirements</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-4 text-sm text-muted-foreground md:grid-cols-2">
+          <CardContent className="text-sm text-muted-foreground">
             {isEditing && editFormData ? (
-              <div className="rounded-xl border border-border p-4 space-y-4">
+              <div className="grid gap-4 md:grid-cols-2 rounded-xl border border-border p-4">
                 <div>
                   <Label htmlFor="editMinFollowers">Min followers</Label>
                   <Input
@@ -698,7 +703,7 @@ export default function CampaignDetailPage() {
                     placeholder="Fashion, Lifestyle"
                   />
                 </div>
-                <div>
+                <div className="md:col-span-2">
                   <Label htmlFor="editContentType">Content type</Label>
                   <Input
                     id="editContentType"
@@ -710,17 +715,19 @@ export default function CampaignDetailPage() {
                 </div>
               </div>
             ) : (
-              (campaign.requirements ?? []).map((requirement, index) => (
-                <div key={requirement.id ?? index} className="rounded-xl border border-border p-4">
-                  <p>Min followers: {requirement.minFollowers?.toLocaleString() ?? "Any"}</p>
-                  <p>Min engagement: {requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any"}</p>
-                  <p>Min avg views: {requirement.minAvgViews?.toLocaleString() ?? "Any"}</p>
-                  <p>Platforms: {Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "Any"}</p>
-                  <p>Locations: {Array.isArray(requirement.locations) ? requirement.locations.join(", ") : "Any"}</p>
-                  <p>Categories: {Array.isArray(requirement.categories) ? requirement.categories.join(", ") : "Any"}</p>
-                  <p>Content type: {requirement.contentType || "Any"}</p>
-                </div>
-              ))
+              <div className="grid gap-4 md:grid-cols-2">
+                {(campaign.requirements ?? []).map((requirement, index) => (
+                  <div key={requirement.id ?? index} className="rounded-xl border border-border p-4 space-y-1">
+                    <p><span className="font-semibold text-foreground">Min followers:</span> {requirement.minFollowers?.toLocaleString() ?? "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Min engagement:</span> {requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Min avg views:</span> {requirement.minAvgViews?.toLocaleString() ?? "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Platforms:</span> {Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Locations:</span> {Array.isArray(requirement.locations) ? requirement.locations.join(", ") : "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Categories:</span> {Array.isArray(requirement.categories) ? requirement.categories.join(", ") : "Any"}</p>
+                    <p><span className="font-semibold text-foreground">Content type:</span> {requirement.contentType || "Any"}</p>
+                  </div>
+                ))}
+              </div>
             )}
           </CardContent>
         </Card>
