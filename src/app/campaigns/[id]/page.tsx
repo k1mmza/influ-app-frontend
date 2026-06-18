@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
-import { Calendar, Check, Download, Loader2, Send, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, Loader2, Send, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiGetCampaign,
@@ -25,6 +25,8 @@ import { exportRowsToExcel } from "@/lib/excel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { cn } from "@/lib/utils";
 
 function formatDate(value?: string) {
@@ -43,6 +45,21 @@ function statusClass(status?: string) {
   return "bg-muted text-muted-foreground";
 }
 
+const objectives = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
+
+function numberOrUndefined(value: string) {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && value.trim() !== "" ? parsed : undefined;
+}
+
+function listOrUndefined(value: string) {
+  const items = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items : undefined;
+}
+
 function getInfluencerName(application: CampaignApplicationResponse) {
   return application.influencer?.user?.name || application.influencer?.user?.email || "Unnamed creator";
 }
@@ -56,6 +73,8 @@ export default function CampaignDetailPage() {
   const [busyAction, setBusyAction] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
+  const [isEditing, setIsEditing] = useState(false);
+  const [editFormData, setEditFormData] = useState<any>(null);
   const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
   const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
 
@@ -235,6 +254,81 @@ export default function CampaignDetailPage() {
     setMessage("Influencer list exported to Excel.");
   };
 
+  const startEdit = () => {
+    if (!campaign) return;
+    const requirement = campaign.requirements?.[0] ?? {};
+    setEditFormData({
+      name: campaign.name,
+      objective: campaign.objective,
+      budget: campaign.budget != null ? String(campaign.budget) : "",
+      visibility: campaign.visibility ?? "PUBLIC",
+      paymentType: campaign.paymentType ?? "",
+      keyMessage: campaign.keyMessage ?? "",
+      deliverables: campaign.deliverables ?? "",
+      doAndDont: campaign.doAndDont ?? "",
+      applyDeadline: campaign.applyDeadline ?? "",
+      submissionDate: campaign.submissionDate ?? "",
+      reviewDate: campaign.reviewDate ?? "",
+      paymentDate: campaign.paymentDate ?? "",
+      minFollowers: requirement.minFollowers != null ? String(requirement.minFollowers) : "",
+      minEngagementRate: requirement.minEngagementRate != null ? String(requirement.minEngagementRate) : "",
+      minAvgViews: requirement.minAvgViews != null ? String(requirement.minAvgViews) : "",
+      platforms: Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "",
+      locations: Array.isArray(requirement.locations) ? requirement.locations.join(", ") : "",
+      categories: Array.isArray(requirement.categories) ? requirement.categories.join(", ") : "",
+      contentType: requirement.contentType ?? "",
+    });
+    setIsEditing(true);
+  };
+
+  const cancelEdit = () => {
+    setIsEditing(false);
+    setEditFormData(null);
+  };
+
+  const saveChanges = async () => {
+    if (!token || !campaign || !editFormData) return;
+    setBusyAction("save");
+    setError(null);
+    setMessage("");
+    try {
+      const requirement = {
+        minFollowers: numberOrUndefined(editFormData.minFollowers || ""),
+        minEngagementRate: numberOrUndefined(editFormData.minEngagementRate || ""),
+        minAvgViews: numberOrUndefined(editFormData.minAvgViews || ""),
+        platforms: listOrUndefined(editFormData.platforms || ""),
+        locations: listOrUndefined(editFormData.locations || ""),
+        categories: listOrUndefined(editFormData.categories || ""),
+        contentType: editFormData.contentType?.trim() || undefined,
+      };
+      const hasRequirement = Object.values(requirement).some((value) => value != null && !(Array.isArray(value) && value.length === 0));
+      const updatedFields: any = {
+        name: editFormData.name?.trim() || undefined,
+        objective: editFormData.objective || undefined,
+        budget: numberOrUndefined(editFormData.budget || ""),
+        visibility: editFormData.visibility || undefined,
+        paymentType: editFormData.paymentType?.trim() || undefined,
+        keyMessage: editFormData.keyMessage?.trim() || undefined,
+        deliverables: editFormData.deliverables?.trim() || undefined,
+        doAndDont: editFormData.doAndDont?.trim() || undefined,
+        applyDeadline: editFormData.applyDeadline || undefined,
+        submissionDate: editFormData.submissionDate || undefined,
+        reviewDate: editFormData.reviewDate || undefined,
+        paymentDate: editFormData.paymentDate || undefined,
+        requirements: hasRequirement ? [requirement] : undefined,
+      };
+      const updated = await apiUpdateCampaign(token, campaign.id, updatedFields);
+      setCampaign(updated);
+      setIsEditing(false);
+      setEditFormData(null);
+      setMessage("Campaign updated successfully.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to update campaign");
+    } finally {
+      setBusyAction(null);
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex h-[50vh] items-center justify-center">
@@ -260,12 +354,42 @@ export default function CampaignDetailPage() {
       <Card className="border-none shadow-sm">
         <CardContent className="p-6">
           <div className="flex flex-wrap items-start justify-between gap-3">
-            <div>
-              <h1 className="text-2xl font-bold text-foreground font-serif">
-                {canManageCampaign ? "Campaign management" : campaign.name}
-              </h1>
-              {canManageCampaign ? <p className="mt-1 text-sm text-muted-foreground">{campaign.name}</p> : null}
-            </div>
+            {isEditing && editFormData ? (
+              <div className="flex-1 min-w-0 space-y-3">
+                <div>
+                  <Label htmlFor="editName">Name</Label>
+                  <Input
+                    id="editName"
+                    value={editFormData.name || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                    placeholder="Campaign name"
+                    className="mt-1 w-full rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editObjective">Objective</Label>
+                  <select
+                    id="editObjective"
+                    value={editFormData.objective || objectives[0]}
+                    onChange={(e) => setEditFormData({ ...editFormData, objective: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    {objectives.map((item) => (
+                      <option key={item} value={item}>
+                        {item}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <h1 className="text-2xl font-bold text-foreground font-serif">
+                  {canManageCampaign ? "Campaign management" : campaign.name}
+                </h1>
+                {canManageCampaign ? <p className="mt-1 text-sm text-muted-foreground">{campaign.name}</p> : null}
+              </div>
+            )}
             <div className="flex flex-wrap gap-2">
               <Badge className={cn("border-none uppercase", statusClass(campaign.status))}>{campaign.status}</Badge>
               {campaign.visibility ? (
@@ -277,39 +401,107 @@ export default function CampaignDetailPage() {
           </div>
 
           <div className="mt-5 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
-            <p>Brand: {campaign.clientBrand?.brandName ?? "Brand"}</p>
-            <p>Objective: {campaign.objective ?? "TBD"}</p>
-            <p>Budget: {formatMoney(campaign.budget)}</p>
-            <p>Payment: {campaign.paymentType ?? "TBD"}</p>
-            <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
-            <p>Applications: {applications.length || campaign.applications?.length || 0}</p>
+            <div>
+              <p className="font-semibold text-foreground">Brand</p>
+              <p className="mt-1">{campaign.clientBrand?.brandName ?? "Brand"}</p>
+            </div>
+            {isEditing && editFormData ? (
+              <>
+                <div>
+                  <Label htmlFor="editBudget">Budget</Label>
+                  <Input
+                    id="editBudget"
+                    type="number"
+                    min={0}
+                    value={editFormData.budget || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="Budget in THB"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editVisibility">Visibility</Label>
+                  <select
+                    id="editVisibility"
+                    value={editFormData.visibility || "PUBLIC"}
+                    onChange={(e) => setEditFormData({ ...editFormData, visibility: e.target.value })}
+                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                  >
+                    <option value="PUBLIC">Public marketplace</option>
+                    <option value="PRIVATE">Private invite only</option>
+                  </select>
+                </div>
+                <div>
+                  <Label htmlFor="editPaymentType">Payment type</Label>
+                  <Input
+                    id="editPaymentType"
+                    value={editFormData.paymentType || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, paymentType: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="Per post, package, affiliate"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <p>Objective: {campaign.objective ?? "TBD"}</p>
+                <p>Budget: {formatMoney(campaign.budget)}</p>
+                <p>Payment: {campaign.paymentType ?? "TBD"}</p>
+              </>
+            )}
+            <div>
+              <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
+            </div>
+            <div>
+              <p>Applications: {applications.length || campaign.applications?.length || 0}</p>
+            </div>
           </div>
 
           {message ? <p className="mt-4 text-sm font-medium text-emerald-700">{message}</p> : null}
           {error ? <p className="mt-4 text-sm font-medium text-destructive">{error}</p> : null}
 
           <div className="mt-5 flex flex-wrap gap-2">
-            {canManageCampaign && campaign.status === "DRAFT" ? (
-              <Button onClick={() => updateCampaignStatus("ACTIVE")} disabled={busyAction != null} className="rounded-xl">
-                {busyAction === "ACTIVE" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Publish
-              </Button>
-            ) : null}
-            {canManageCampaign && campaign.status === "ACTIVE" ? (
-              <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
-                {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                Mark complete
-              </Button>
-            ) : null}
-            {!canManageCampaign && role === "influencer" ? (
-              <Button onClick={applyToCampaign} disabled={busyAction != null} className="rounded-xl">
-                {busyAction === "apply" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                Apply now
-              </Button>
-            ) : null}
-            <Button variant="outline" asChild className="rounded-xl">
-              <Link href="/campaigns">Back to campaigns</Link>
-            </Button>
+            {isEditing ? (
+              <>
+                <Button onClick={saveChanges} disabled={busyAction != null} className="rounded-xl">
+                  {busyAction === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                  Save Changes
+                </Button>
+                <Button onClick={cancelEdit} variant="outline" disabled={busyAction != null} className="rounded-xl">
+                  Cancel
+                </Button>
+              </>
+            ) : (
+              <>
+                {canManageCampaign && campaign.status === "DRAFT" ? (
+                  <>
+                    <Button onClick={startEdit} variant="outline" className="rounded-xl">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
+                    <Button onClick={() => updateCampaignStatus("ACTIVE")} disabled={busyAction != null} className="rounded-xl">
+                      {busyAction === "ACTIVE" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                      Publish
+                    </Button>
+                  </>
+                ) : null}
+                {canManageCampaign && campaign.status === "ACTIVE" ? (
+                  <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
+                    {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                    Mark complete
+                  </Button>
+                ) : null}
+                {!canManageCampaign && role === "influencer" ? (
+                  <Button onClick={applyToCampaign} disabled={busyAction != null} className="rounded-xl">
+                    {busyAction === "apply" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Apply now
+                  </Button>
+                ) : null}
+                <Button variant="outline" asChild className="rounded-xl">
+                  <Link href="/campaigns">Back to campaigns</Link>
+                </Button>
+              </>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -320,18 +512,52 @@ export default function CampaignDetailPage() {
             <CardTitle className="text-lg">Campaign brief</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
-            <div>
-              <p className="font-semibold text-foreground">Key message</p>
-              <p className="mt-1 whitespace-pre-wrap">{campaign.keyMessage || "No key message yet."}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">Deliverables</p>
-              <p className="mt-1 whitespace-pre-wrap">{campaign.deliverables || "No deliverables yet."}</p>
-            </div>
-            <div>
-              <p className="font-semibold text-foreground">Do and don't</p>
-              <p className="mt-1 whitespace-pre-wrap">{campaign.doAndDont || "No guidance yet."}</p>
-            </div>
+            {isEditing && editFormData ? (
+              <>
+                <div>
+                  <label className="block font-semibold text-foreground mb-1">Key message</label>
+                  <textarea
+                    value={editFormData.keyMessage || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, keyMessage: e.target.value })}
+                    placeholder="Enter key message"
+                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-foreground mb-1">Deliverables</label>
+                  <textarea
+                    value={editFormData.deliverables || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, deliverables: e.target.value })}
+                    placeholder="Enter deliverables"
+                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+                <div>
+                  <label className="block font-semibold text-foreground mb-1">Do and don't</label>
+                  <textarea
+                    value={editFormData.doAndDont || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, doAndDont: e.target.value })}
+                    placeholder="Enter guidance"
+                    className="w-full min-h-[100px] p-2 rounded border border-border bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-2 focus:ring-primary"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <div>
+                  <p className="font-semibold text-foreground">Key message</p>
+                  <p className="mt-1 whitespace-pre-wrap">{campaign.keyMessage || "No key message yet."}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Deliverables</p>
+                  <p className="mt-1 whitespace-pre-wrap">{campaign.deliverables || "No deliverables yet."}</p>
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">Do and don't</p>
+                  <p className="mt-1 whitespace-pre-wrap">{campaign.doAndDont || "No guidance yet."}</p>
+                </div>
+              </>
+            )}
           </CardContent>
         </Card>
 
@@ -342,30 +568,160 @@ export default function CampaignDetailPage() {
               Timeline
             </CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-2 text-sm text-muted-foreground">
-            <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
-            <p>Submission date: {formatDate(campaign.submissionDate)}</p>
-            <p>Review date: {formatDate(campaign.reviewDate)}</p>
-            <p>Payment date: {formatDate(campaign.paymentDate)}</p>
+          <CardContent className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-2">
+            {isEditing && editFormData ? (
+              <>
+                <div>
+                  <Label htmlFor="editApplyDeadline">Apply deadline</Label>
+                  <Input
+                    id="editApplyDeadline"
+                    type="date"
+                    value={editFormData.applyDeadline || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, applyDeadline: e.target.value })}
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editSubmissionDate">Submission date</Label>
+                  <Input
+                    id="editSubmissionDate"
+                    type="date"
+                    value={editFormData.submissionDate || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, submissionDate: e.target.value })}
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editReviewDate">Review date</Label>
+                  <Input
+                    id="editReviewDate"
+                    type="date"
+                    value={editFormData.reviewDate || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, reviewDate: e.target.value })}
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editPaymentDate">Payment date</Label>
+                  <Input
+                    id="editPaymentDate"
+                    type="date"
+                    value={editFormData.paymentDate || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
+                    className="mt-1 rounded-xl"
+                  />
+                </div>
+              </>
+            ) : (
+              <>
+                <p>Apply deadline: {formatDate(campaign.applyDeadline)}</p>
+                <p>Submission date: {formatDate(campaign.submissionDate)}</p>
+                <p>Review date: {formatDate(campaign.reviewDate)}</p>
+                <p>Payment date: {formatDate(campaign.paymentDate)}</p>
+              </>
+            )}
           </CardContent>
         </Card>
       </div>
 
-      {campaign.requirements?.length ? (
+      {(isEditing || campaign.requirements?.length) ? (
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Creator requirements</CardTitle>
           </CardHeader>
-          <CardContent className="grid gap-3 text-sm text-muted-foreground md:grid-cols-2">
-            {campaign.requirements.map((requirement, index) => (
-              <div key={requirement.id ?? index} className="rounded-xl border border-border p-4">
-                <p>Min followers: {requirement.minFollowers?.toLocaleString() ?? "Any"}</p>
-                <p>Min engagement: {requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any"}</p>
-                <p>Min avg views: {requirement.minAvgViews?.toLocaleString() ?? "Any"}</p>
-                <p>Platforms: {Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "Any"}</p>
-                <p>Content type: {requirement.contentType || "Any"}</p>
+          <CardContent className="grid gap-4 text-sm text-muted-foreground md:grid-cols-2">
+            {isEditing && editFormData ? (
+              <div className="rounded-xl border border-border p-4 space-y-4">
+                <div>
+                  <Label htmlFor="editMinFollowers">Min followers</Label>
+                  <Input
+                    id="editMinFollowers"
+                    type="number"
+                    min={0}
+                    value={editFormData.minFollowers || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, minFollowers: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="e.g. 10000"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editMinEngagementRate">Min engagement %</Label>
+                  <Input
+                    id="editMinEngagementRate"
+                    type="number"
+                    min={0}
+                    value={editFormData.minEngagementRate || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, minEngagementRate: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="e.g. 5"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editMinAvgViews">Min avg views</Label>
+                  <Input
+                    id="editMinAvgViews"
+                    type="number"
+                    min={0}
+                    value={editFormData.minAvgViews || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, minAvgViews: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="e.g. 15000"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editPlatforms">Platforms</Label>
+                  <Input
+                    id="editPlatforms"
+                    value={editFormData.platforms || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, platforms: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="TikTok, Instagram, YouTube"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editLocations">Locations</Label>
+                  <Input
+                    id="editLocations"
+                    value={editFormData.locations || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, locations: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="Bangkok, Thailand"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editCategories">Categories</Label>
+                  <Input
+                    id="editCategories"
+                    value={editFormData.categories || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, categories: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="Fashion, Lifestyle"
+                  />
+                </div>
+                <div>
+                  <Label htmlFor="editContentType">Content type</Label>
+                  <Input
+                    id="editContentType"
+                    value={editFormData.contentType || ""}
+                    onChange={(e) => setEditFormData({ ...editFormData, contentType: e.target.value })}
+                    className="mt-1 rounded-xl"
+                    placeholder="Reels, Story, Short"
+                  />
+                </div>
               </div>
-            ))}
+            ) : (
+              (campaign.requirements ?? []).map((requirement, index) => (
+                <div key={requirement.id ?? index} className="rounded-xl border border-border p-4">
+                  <p>Min followers: {requirement.minFollowers?.toLocaleString() ?? "Any"}</p>
+                  <p>Min engagement: {requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any"}</p>
+                  <p>Min avg views: {requirement.minAvgViews?.toLocaleString() ?? "Any"}</p>
+                  <p>Platforms: {Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "Any"}</p>
+                  <p>Locations: {Array.isArray(requirement.locations) ? requirement.locations.join(", ") : "Any"}</p>
+                  <p>Categories: {Array.isArray(requirement.categories) ? requirement.categories.join(", ") : "Any"}</p>
+                  <p>Content type: {requirement.contentType || "Any"}</p>
+                </div>
+              ))
+            )}
           </CardContent>
         </Card>
       ) : null}
