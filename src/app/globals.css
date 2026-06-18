@@ -102,6 +102,21 @@
   }
 }
 
+/* ── Page accent colours ─────────────────────────────────────────── */
+:root {
+  --page-dashboard:  #334155; /* slate-700   */
+  --page-campaigns:  #b45309; /* amber-700   */
+  --page-messages:   #0f766e; /* teal-700    */
+  --page-profile:    #92400e; /* amber-800   */
+  --page-discover:   #0284c7; /* sky-600     */
+  --page-smart-plan: #c2410c; /* orange-700  */
+  --page-tracking:   #166534; /* green-800   */
+
+  --role-brand:      #1e3a8a; /* blue-900    */
+  --role-agency:     #059669; /* emerald-600 */
+  --role-influencer: #dc2626; /* red-600     */
+}
+
 @layer base {
   * {
     @apply border-border;

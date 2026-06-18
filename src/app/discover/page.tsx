@@ -494,7 +494,7 @@ function DiscoverPageContent() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-primary to-secondary text-white overflow-hidden">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-[#0284c7] to-[#075985] text-white overflow-hidden">
         <CardContent className="p-8 relative">
           <div className="absolute top-0 right-0 p-8 opacity-10">
             <Globe className="h-32 w-32" />

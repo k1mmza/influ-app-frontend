@@ -106,6 +106,15 @@ export async function apiGetProfile(token: string) {
   return res.json();
 }
 
+export async function apiGetCompleteness(token: string): Promise<number> {
+  const res = await fetch(`${API_URL}/profile/completeness`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return 0;
+  const data = await res.json();
+  return data.profileCompleteness ?? 0;
+}
+
 export async function apiLookupInfluencerByUrl(
   platform: string,
   handle: string,
@@ -203,6 +212,29 @@ export async function apiGenerateSmartPlan(
   if (!res.ok) {
     const error = await res.json();
     throw new Error(error.message || "Failed to generate campaign brief");
+  }
+  return res.json();
+}
+
+export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {
+  await fetch(`${API_URL}/profile`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ avatarUrl }),
+  });
+}
+
+export async function apiUploadAvatar(token: string, file: File): Promise<{ avatarUrl: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/profile/avatar`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Avatar upload failed");
   }
   return res.json();
 }
@@ -455,4 +487,33 @@ export async function apiMarkConversationRead(token: string, conversationId: str
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) return;
+}
+
+export async function apiGetConversation(token: string, conversationId: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
+export async function apiUploadConversationFile(
+  token: string,
+  conversationId: string,
+  type: "contract" | "brief" | "payment",
+  file: File,
+) {
+  const form = new FormData();
+  form.append("file", file);
+  form.append("type", type);
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/upload`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Upload failed");
+  }
+  return res.json() as Promise<{ url: string; type: string }>;
 }

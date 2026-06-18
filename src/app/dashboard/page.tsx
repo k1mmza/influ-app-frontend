@@ -38,9 +38,12 @@ function InfluencerDashboard({ data }: { data: any }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Influencer Dashboard</h1>
-        <p className="text-muted-foreground">Quick overview of your active campaigns, messages, and earnings.</p>
+      <div className="rounded-2xl bg-gradient-to-r from-[#dc2626] to-[#7f1d1d] p-7 text-white shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Influencer</span>
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Influencer Dashboard</h1>
+        <p className="mt-1 text-white/70 font-medium">Quick overview of your active campaigns, messages, and earnings.</p>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -181,9 +184,12 @@ function AgencyDashboard({ data }: { data: any }) {
 
   return (
     <div className="space-y-8">
-      <div className="flex flex-col gap-2">
-        <h1 className="text-3xl font-extrabold tracking-tight text-foreground font-serif">Agency Dashboard</h1>
-        <p className="text-muted-foreground">High-level view of your portfolio and active campaign metrics.</p>
+      <div className="rounded-2xl bg-gradient-to-r from-[#059669] to-[#064e3b] p-7 text-white shadow-sm">
+        <div className="flex items-center gap-2 mb-1">
+          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Agency</span>
+        </div>
+        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Agency Dashboard</h1>
+        <p className="mt-1 text-white/70 font-medium">High-level view of your portfolio and active campaign metrics.</p>
       </div>
       
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
@@ -205,7 +211,7 @@ function AgencyDashboard({ data }: { data: any }) {
         ))}
       </div>
 
-      <Card className="border-none shadow-sm bg-gradient-to-br from-primary to-secondary">
+      <Card className="border-none shadow-sm bg-gradient-to-br from-[#059669] to-[#064e3b]">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-white">
             <Sparkles className="h-5 w-5 text-white/80" />

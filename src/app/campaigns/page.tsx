@@ -74,12 +74,12 @@ function BrandCampaignsView() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-primary to-secondary text-white">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-[#b45309] to-[#78350f] text-white">
         <CardContent className="p-8">
           <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
             <div className="space-y-1">
               <h1 className="text-3xl font-extrabold tracking-tight font-serif">Campaigns</h1>
-              <p className="text-primary-foreground/80 font-medium">
+              <p className="text-white/80 font-medium">
                 Manage your active collaborations and marketplace listings.
               </p>
               <div className="pt-2">
@@ -310,10 +310,10 @@ function InfluencerDiscoverCampaignsView() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-primary to-secondary text-white">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-[#b45309] to-[#78350f] text-white">
         <CardContent className="p-8">
           <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Campaigns</h1>
-          <p className="mt-2 text-primary-foreground/80 font-medium">
+          <p className="mt-2 text-white/80 font-medium">
             Find the best-fit collaborations with clear budget visibility.
           </p>
           <div className="pt-4">
