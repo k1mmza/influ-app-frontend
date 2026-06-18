@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useRef, useCallback, Suspense } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { io, Socket } from "socket.io-client";
 import { ProcessOfWorkPanel, WorkStatusDot, WorkStatusIndicator, type WorkPhase } from "@/components/messages/process-of-work-panel";
@@ -9,7 +10,7 @@ import {
   apiGetConversations,
   apiGetMessages,
   apiSendMessage,
-  apiUpdateConversationPhase,
+  apiMarkPhaseReady,
   apiMarkConversationRead,
   apiGetConversation,
   apiUploadConversationFile,
@@ -30,6 +31,7 @@ function MessagesView({ role }: { role: string }) {
   const [loadingConv, setLoadingConv] = useState(true);
   const [loadingMessages, setLoadingMessages] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
+  const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const [attachments, setAttachments] = useState<{ contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null }>({ contractUrl: null, briefFileUrl: null, paymentProofUrl: null });
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
@@ -74,9 +76,21 @@ function MessagesView({ role }: { role: string }) {
       );
     };
 
+    const handlePhaseUpdate = (payload: { workPhase: string; brandPhaseReady: boolean; influencerPhaseReady: boolean }) => {
+      setConversations((prev) =>
+        prev.map((c) =>
+          c.id === activeConvId
+            ? { ...c, workPhase: payload.workPhase, brandPhaseReady: payload.brandPhaseReady, influencerPhaseReady: payload.influencerPhaseReady }
+            : c
+        )
+      );
+    };
+
     socket.on("new-message", handleNewMessage);
+    socket.on("phase-update", handlePhaseUpdate);
     return () => {
       socket.off("new-message", handleNewMessage);
+      socket.off("phase-update", handlePhaseUpdate);
     };
   }, [activeConvId]);
 
@@ -170,26 +184,34 @@ function MessagesView({ role }: { role: string }) {
     }
   };
 
-  const handlePhaseChange = async (phase: WorkPhase) => {
+  const handleFinishPhase = async () => {
     if (!token || !activeConvId) return;
     try {
-      await apiUpdateConversationPhase(token, activeConvId, phase);
+      const result = await apiMarkPhaseReady(token, activeConvId);
       setConversations((prev) =>
-        prev.map((c) => (c.id === activeConvId ? { ...c, workPhase: phase } : c))
+        prev.map((c) =>
+          c.id === activeConvId
+            ? { ...c, workPhase: result.workPhase, brandPhaseReady: result.brandPhaseReady, influencerPhaseReady: result.influencerPhaseReady }
+            : c
+        )
       );
     } catch (err) {
-      console.error("Failed to update phase:", err);
+      console.error("Failed to confirm phase:", err);
     }
   };
 
+  // Unique campaigns derived from conversations — no extra API call needed
+  const campaignOptions = Array.from(
+    new Map(
+      conversations
+        .filter((c) => c.campaignId)
+        .map((c) => [c.campaignId, { id: c.campaignId, name: c.campaignName ?? c.campaignId }])
+    ).values()
+  );
+
   const filteredConversations = conversations.filter((c) => {
-    if (!searchQuery.trim()) return true;
-    const q = searchQuery.toLowerCase();
-    return (
-      c.partnerName?.toLowerCase().includes(q) ||
-      c.campaignName?.toLowerCase().includes(q) ||
-      c.lastMessage?.toLowerCase().includes(q)
-    );
+    if (selectedCampaignId && c.campaignId !== selectedCampaignId) return false;
+    return true;
   });
 
   if (loadingConv) {
@@ -211,12 +233,16 @@ function MessagesView({ role }: { role: string }) {
         {/* Conversation list */}
         <aside className="rounded-2xl bg-card p-4 shadow-sm h-[600px] flex flex-col">
           <h2 className="text-lg font-semibold text-foreground font-serif">Conversations</h2>
-          <input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={`Search ${role === "influencer" ? "brand" : "influencer"}`}
-            className="mt-3 w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
-          />
+          <select
+            value={selectedCampaignId}
+            onChange={(e) => { setSelectedCampaignId(e.target.value); setActiveConvId(null); }}
+            className="mt-3 w-full rounded-xl border border-border bg-card px-3 py-2 text-sm text-foreground outline-none focus:ring-1 focus:ring-primary cursor-pointer"
+          >
+            <option value="">— All campaigns —</option>
+            {campaignOptions.map((c) => (
+              <option key={c.id} value={c.id}>{c.name}</option>
+            ))}
+          </select>
 
           <div className="mt-4 space-y-2 overflow-y-auto flex-1">
             {filteredConversations.map((conv) => (
@@ -232,7 +258,17 @@ function MessagesView({ role }: { role: string }) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <p className="text-sm font-semibold text-foreground truncate">{conv.partnerName}</p>
-                    <p className="text-xs text-muted-foreground truncate">{conv.campaignName}</p>
+                    {conv.campaignId ? (
+                      <Link
+                        href={`/campaigns/${conv.campaignId}`}
+                        onClick={(e) => e.stopPropagation()}
+                        className="text-xs text-muted-foreground truncate hover:underline hover:text-foreground transition-colors"
+                      >
+                        {conv.campaignName}
+                      </Link>
+                    ) : (
+                      <p className="text-xs text-muted-foreground truncate">{conv.campaignName}</p>
+                    )}
                   </div>
                   <div className="flex flex-col items-end shrink-0 gap-1">
                     <span className="text-[10px] text-muted-foreground">
@@ -275,12 +311,22 @@ function MessagesView({ role }: { role: string }) {
                       className="hidden sm:inline-flex"
                     />
                   </div>
+                  {activeConv.campaignId ? (
+                    <Link
+                      href={`/campaigns/${activeConv.campaignId}`}
+                      className="shrink-0 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                    >
+                      View Campaign →
+                    </Link>
+                  ) : null}
                 </div>
                 <div className="mt-4">
                   <ProcessOfWorkPanel
                     variant={role === "influencer" ? "influencer" : "brand"}
                     currentPhase={activeConv.workPhase as WorkPhase}
-                    onPhaseChange={handlePhaseChange}
+                    brandPhaseReady={activeConv.brandPhaseReady ?? false}
+                    influencerPhaseReady={activeConv.influencerPhaseReady ?? false}
+                    onFinishPhase={handleFinishPhase}
                     onFileUpload={handleFileUpload}
                     attachments={attachments}
                     linkedCampaign={

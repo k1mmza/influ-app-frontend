@@ -152,14 +152,18 @@ const briefCampaignSeed: BriefCampaign[] = [
 export function ProcessOfWorkPanel({
   variant,
   currentPhase,
-  onPhaseChange,
+  brandPhaseReady = false,
+  influencerPhaseReady = false,
+  onFinishPhase,
   onFileUpload,
   attachments,
   linkedCampaign,
 }: {
   variant: ProcessVariant;
   currentPhase?: WorkPhase;
-  onPhaseChange?: (phase: WorkPhase) => void;
+  brandPhaseReady?: boolean;
+  influencerPhaseReady?: boolean;
+  onFinishPhase?: () => void;
   onFileUpload?: (type: "contract" | "brief" | "payment", file: File) => void;
   attachments?: { contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null };
   linkedCampaign?: { id: string; name: string } | null;
@@ -203,7 +207,7 @@ export function ProcessOfWorkPanel({
   const steps = useMemo(
     () =>
       [
-        { id: "contact" as const, label: "Agreement/Contract", hint: variant === "influencer" ? "Sign & download" : "Send & download" },
+        { id: "contact" as const, label: "Agreement", hint: variant === "influencer" ? "Sign & download" : "Send & upload" },
         { id: "brief" as const, label: "Brief", hint: variant === "influencer" ? "View & download" : "Upload & download" },
         { id: "draft" as const, label: "Draft", hint: "Manage versions" },
         { id: "work" as const, label: "Published content", hint: variant === "influencer" ? "Submit live link" : "View influencer link" },
@@ -245,27 +249,64 @@ export function ProcessOfWorkPanel({
       <ul className="flex flex-wrap gap-2">
         {steps.map((s) => {
           const done = currentPhase ? isPhaseDone(s.id, currentPhase) : false;
+          const isActive = s.id === currentPhase;
           return (
             <li key={s.id} className="min-w-0 flex-1">
               <button
                 type="button"
-                onClick={() => {
-                  setActive(s.id);
-                  if (onPhaseChange) onPhaseChange(s.id);
-                }}
+                onClick={() => setActive(s.id)}
                 className={`flex w-full flex-col gap-0.5 rounded-xl border px-3 py-2 text-left text-sm transition ${
                   done
                     ? "border-emerald-200 bg-emerald-50 hover:border-emerald-300 hover:bg-emerald-100"
+                    : isActive
+                    ? "border-primary/40 bg-primary/5 hover:bg-primary/10"
                     : "border-border bg-muted/80 hover:border-primary/20 hover:bg-card"
                 }`}
               >
-                <span className={`text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : "text-foreground"}`}>{s.label}</span>
-                <span className={`text-[10px] leading-tight ${done ? "text-emerald-700" : "text-muted-foreground"}`}>{done ? "Done" : s.hint}</span>
+                <span className={`truncate text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : isActive ? "text-primary" : "text-foreground"}`}>{s.label}</span>
+                <span className={`truncate text-[10px] leading-tight ${done ? "text-emerald-700" : isActive ? "text-primary/70" : "text-muted-foreground"}`}>{done ? "✓ Done" : isActive ? "Active" : s.hint}</span>
               </button>
             </li>
           );
         })}
       </ul>
+
+      {/* Phase confirmation — both parties must confirm to advance */}
+      {currentPhase && currentPhase !== "payment" && (
+        <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/60 px-4 py-3">
+          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+            <span className={`flex items-center gap-1 font-medium ${brandPhaseReady ? "text-emerald-600" : "text-muted-foreground"}`}>
+              <span className={`h-2 w-2 rounded-full ${brandPhaseReady ? "bg-emerald-500" : "bg-border"}`} />
+              Brand
+            </span>
+            <span className={`flex items-center gap-1 font-medium ${influencerPhaseReady ? "text-emerald-600" : "text-muted-foreground"}`}>
+              <span className={`h-2 w-2 rounded-full ${influencerPhaseReady ? "bg-emerald-500" : "bg-border"}`} />
+              Influencer
+            </span>
+            <span className="text-muted-foreground">
+              {brandPhaseReady && influencerPhaseReady
+                ? "✓ Advancing…"
+                : "Both must confirm to advance"}
+            </span>
+          </div>
+          {(() => {
+            const myReady = variant === "brand" ? brandPhaseReady : influencerPhaseReady;
+            return myReady ? (
+              <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+                You confirmed ✓
+              </span>
+            ) : (
+              <button
+                type="button"
+                onClick={onFinishPhase}
+                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
+              >
+                Finish {workPhaseLabel(currentPhase)} →
+              </button>
+            );
+          })()}
+        </div>
+      )}
 
       <Modal open={active === "contact"} title="Agreement/Contract" onClose={close}>
         <p className="text-sm text-muted-foreground">

@@ -2,10 +2,11 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useParams } from "next/navigation";
-import { Calendar, Check, Download, Edit, Loader2, Send, X } from "lucide-react";
+import { useParams, useRouter } from "next/navigation";
+import { Calendar, Check, Download, Edit, Loader2, MessageSquare, Send, Trash2, X } from "lucide-react";
 import {
   apiApplyToCampaign,
+  apiDeleteCampaign,
   apiGetCampaign,
   apiGetCampaignApplications,
   apiGetPublicCampaigns,
@@ -66,6 +67,7 @@ function getInfluencerName(application: CampaignApplicationResponse) {
 
 export default function CampaignDetailPage() {
   const { id } = useParams<{ id: string }>();
+  const router = useRouter();
   const { role, token, name: accountDisplayName } = useUserStore();
   const [campaign, setCampaign] = useState<CampaignResponse | null>(null);
   const [applications, setApplications] = useState<CampaignApplicationResponse[]>([]);
@@ -150,6 +152,20 @@ export default function CampaignDetailPage() {
     };
   }, [id, role, token]);
 
+  const handleDeleteCampaign = async () => {
+    if (!token || !campaign) return;
+    if (!confirm(`Delete "${campaign.name}"? This cannot be undone.`)) return;
+    setBusyAction("delete");
+    setError(null);
+    try {
+      await apiDeleteCampaign(token, campaign.id);
+      router.push("/campaigns");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to delete campaign");
+      setBusyAction(null);
+    }
+  };
+
   const refreshApplications = async () => {
     if (!token) return;
     const fresh = await apiGetCampaignApplications(token, id);
@@ -203,8 +219,20 @@ export default function CampaignDetailPage() {
     setError(null);
     setMessage("");
     try {
-      await apiUpdateCampaignApplicationStatus(token, campaign.id, applicationId, status);
-      await refreshApplications();
+      const result = await apiUpdateCampaignApplicationStatus(token, campaign.id, applicationId, status);
+      // On ACCEPTED, backend returns conversationId — update state immediately so Message button appears
+      // without requiring a full page reload
+      if (status === "ACCEPTED" && result.conversationId) {
+        setApplications((prev) =>
+          prev.map((app) =>
+            app.id === applicationId
+              ? { ...app, status: "ACCEPTED", conversationId: result.conversationId }
+              : app,
+          ),
+        );
+      } else {
+        await refreshApplications();
+      }
       setMessage(status === "ACCEPTED" ? "Application accepted." : "Application rejected.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to update application");
@@ -485,12 +513,28 @@ export default function CampaignDetailPage() {
                       {busyAction === "ACTIVE" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
                       Publish
                     </Button>
+                    <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
+                      {busyAction === "delete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                      Delete
+                    </Button>
                   </>
                 ) : null}
                 {canManageCampaign && campaign.status === "ACTIVE" ? (
-                  <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
-                    {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                    Mark complete
+                  <>
+                    <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
+                      {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                      Mark complete
+                    </Button>
+                    <Button onClick={() => updateCampaignStatus("CANCELLED")} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
+                      {busyAction === "CANCELLED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+                      Cancel campaign
+                    </Button>
+                  </>
+                ) : null}
+                {canManageCampaign && campaign.status === "CANCELLED" ? (
+                  <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
+                    {busyAction === "delete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                    Delete
                   </Button>
                 ) : null}
                 {!canManageCampaign && role === "influencer" ? (
@@ -776,6 +820,17 @@ export default function CampaignDetailPage() {
                           <X className="mr-2 h-3 w-3" />
                           Reject
                         </Button>
+                        {application.status === "ACCEPTED" && application.conversationId ? (
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="rounded-xl"
+                            onClick={() => router.push(`/messages?convId=${application.conversationId}`)}
+                          >
+                            <MessageSquare className="mr-2 h-3 w-3" />
+                            Message
+                          </Button>
+                        ) : null}
                       </div>
                     </div>
                   );

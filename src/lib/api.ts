@@ -279,7 +279,7 @@ export async function apiGetPublicCampaigns(token: string): Promise<any[]> {
 }
 
 export type CampaignVisibility = "PUBLIC" | "PRIVATE";
-export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
+export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED" | "CANCELLED";
 
 export interface CampaignRequirementInput {
   minFollowers?: number;
@@ -329,6 +329,7 @@ export interface CampaignApplicationResponse {
   id: string;
   status: "PENDING" | "ACCEPTED" | "REJECTED" | string;
   appliedAt?: string;
+  conversationId?: string | null;
   influencer?: {
     id: string;
     bio?: string | null;
@@ -466,6 +467,18 @@ export async function apiStartConversation(token: string, influencerId: string, 
     throw new Error(error.message || "Failed to start conversation");
   }
   return res.json();
+}
+
+export async function apiMarkPhaseReady(token: string, conversationId: string) {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/phase-ready`, {
+    method: "POST",
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to confirm phase");
+  }
+  return res.json() as Promise<{ workPhase: string; brandPhaseReady: boolean; influencerPhaseReady: boolean }>;
 }
 
 export async function apiUpdateConversationPhase(token: string, conversationId: string, workPhase: string) {

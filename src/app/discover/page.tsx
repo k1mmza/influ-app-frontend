@@ -1100,19 +1100,18 @@ function DiscoverPageContent() {
               {campaigns.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
               ) : (
-                campaigns.map((campaign) => (
-                  <button
-                    key={campaign.id}
-                    onClick={() => setMessagePickedCampaignId(campaign.id)}
-                    className={`w-full text-left rounded-xl border px-4 py-3 text-sm transition-all cursor-pointer ${
-                      messagePickedCampaignId === campaign.id
-                        ? "border-primary bg-primary/5 font-semibold text-primary"
-                        : "border-border hover:border-primary/30 hover:bg-muted/50"
-                    }`}
-                  >
-                    {campaign.name}
-                  </button>
-                ))
+                <select
+                  value={messagePickedCampaignId ?? ""}
+                  onChange={(e) => setMessagePickedCampaignId(e.target.value || null)}
+                  className="w-full rounded-xl border border-border bg-card px-4 py-2.5 text-sm text-foreground shadow-sm outline-none transition focus:border-primary focus:ring-2 focus:ring-primary/20 cursor-pointer"
+                >
+                  <option value="">— Select a campaign —</option>
+                  {campaigns.map((campaign) => (
+                    <option key={campaign.id} value={campaign.id}>
+                      {campaign.name}
+                    </option>
+                  ))}
+                </select>
               )}
               <div className="flex gap-2 pt-2">
                 <Button
