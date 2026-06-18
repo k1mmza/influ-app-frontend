@@ -635,23 +635,29 @@ function InfluencerProfileView() {
                 </svg>
               ),
               bg: "bg-pink-50 dark:bg-pink-900/20",
-              connectBg: "bg-gradient-to-r from-[#F58529] via-[#DD2A7B] to-[#8134AF] hover:opacity-90",
-              description: "Profile data via Instagram Basic Display API. Upgrade to Graph API for follower counts.",
+              connectBg: "",
+              description: "Instagram Basic Display API was deprecated by Meta in Dec 2024. Graph API integration coming soon.",
+              comingSoon: true,
             },
-          ] as const).map(({ key, label, icon, bg, connectBg, description }) => {
-            const isConnected = platformAccounts.some((pa) => pa.platform === key);
+          ] as const).map(({ key, label, icon, bg, connectBg, description, ...rest }) => {
+            const comingSoon = "comingSoon" in rest && rest.comingSoon;
+            const isConnected = !comingSoon && platformAccounts.some((pa) => pa.platform === key);
             const isConnecting = connectingPlatform === key;
             const isDisconnecting = disconnectingPlatform === key;
 
             return (
-              <div key={key} className="flex items-start gap-3 rounded-xl border border-border p-4">
+              <div key={key} className={`flex items-start gap-3 rounded-xl border p-4 ${comingSoon ? "border-dashed border-border opacity-70" : "border-border"}`}>
                 <div className={`flex h-9 w-9 shrink-0 items-center justify-center rounded-xl ${bg}`}>
                   {icon}
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center gap-2">
                     <span className="text-sm font-semibold text-foreground">{label}</span>
-                    {isConnected && (
+                    {comingSoon ? (
+                      <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        Coming soon
+                      </span>
+                    ) : isConnected && (
                       <span className="rounded-full bg-emerald-100 px-2 py-0.5 text-[10px] font-bold text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400">
                         Connected
                       </span>
@@ -659,7 +665,7 @@ function InfluencerProfileView() {
                   </div>
                   <p className="mt-0.5 text-[11px] text-muted-foreground leading-snug">{description}</p>
                   <div className="mt-2">
-                    {isConnected ? (
+                    {comingSoon ? null : isConnected ? (
                       <button
                         type="button"
                         disabled={isDisconnecting}

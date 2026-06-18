@@ -62,6 +62,8 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
   const activeFollowers = influencer.followersByPlatform?.[activePlatform] ?? influencer.followers;
   const activeEngagement = influencer.engagementByPlatform?.[activePlatform] ?? influencer.engagementRate;
+  const activeAvgViews = influencer.avgViewsByPlatform?.[activePlatform] ?? null;
+  const activeHandle = influencer.handleByPlatform?.[activePlatform] ?? null;
   const activeSyncedAt = influencer.syncedAtByPlatform?.[activePlatform] ?? influencer.lastDataPulledAt;
   const activeAvatar = influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl;
 
@@ -110,6 +112,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
         <div className="absolute bottom-0 left-0 right-0 p-4">
           <h3 className="truncate text-lg font-bold text-white tracking-tight font-serif">{influencer.name}</h3>
+          {activeHandle && (
+            <p className="truncate text-[11px] font-medium text-white/60">@{activeHandle.replace(/^@/, "")}</p>
+          )}
           <div className="mt-2 flex flex-wrap gap-1">
             {presentationTags.slice(0, 2).map((tag) => (
               <span key={tag} className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
@@ -157,7 +162,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         )}
 
         {/* Stats for active platform */}
-        <div className="grid grid-cols-2 gap-2">
+        <div className={cn("grid gap-2", activeAvgViews ? "grid-cols-3" : "grid-cols-2")}>
           <div className="rounded-xl bg-muted/80 p-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
             <p className="text-sm font-bold text-foreground">{activeFollowers.toLocaleString()}</p>
@@ -166,6 +171,12 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engage</p>
             <p className="text-sm font-bold text-foreground">{activeEngagement}%</p>
           </div>
+          {activeAvgViews && (
+            <div className="rounded-xl bg-muted/80 p-2.5">
+              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Avg Views</p>
+              <p className="text-sm font-bold text-foreground">{activeAvgViews.toLocaleString()}</p>
+            </div>
+          )}
         </div>
 
         <Button

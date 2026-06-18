@@ -136,16 +136,24 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
   const activeTopCountries = influencer.topCountriesByPlatform?.[activePlatform] ?? meta.topCountries ?? null;
   const activeAudienceInsights = influencer.audienceInsightsByPlatform?.[activePlatform] ?? meta.audienceInsights ?? null;
 
-  const hasYouTubeAnalytics =
+  const hasYouTubeOnlyMetrics =
     activePlatform === "youtube" &&
     (activeWatchTimeMins != null ||
       activeAvgViewDuration != null ||
       activeAvgViewPct != null ||
-      activeSubscribersGained != null ||
-      (activeTopCountries && activeTopCountries.length > 0) ||
-      activeAudienceInsights != null);
+      activeSubscribersGained != null);
 
-  const topCountries = meta.country ? getTopCountries(meta.country) : [];
+  const hasPlatformInsights =
+    activeAudienceInsights != null ||
+    (activeTopCountries && activeTopCountries.length > 0);
+
+  // Real country names from analytics data take priority over the hardcoded guess
+  const topLocationNames: string[] =
+    activeTopCountries && activeTopCountries.length > 0
+      ? activeTopCountries.map((c) => c.country)
+      : meta.country
+      ? getTopCountries(meta.country)
+      : [];
   const estimatedCpm = influencer.ratePerPost
     ? Math.max(1, Math.round((influencer.ratePerPost / Math.max(activeAvgViews, 1)) * 1000))
     : null;
@@ -386,11 +394,11 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                     </span>
                   </div>
                 )}
-                {topCountries.length > 0 && (
+                {topLocationNames.length > 0 && (
                   <div className="pt-2">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-3">Top Locations</p>
                     <div className="flex flex-wrap gap-2">
-                      {topCountries.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
+                      {topLocationNames.map(c => <Badge key={c} variant="secondary" className="bg-card text-foreground">{c}</Badge>)}
                     </div>
                   </div>
                 )}
@@ -398,8 +406,8 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
             </Card>
           </section>
 
-          {/* YouTube Analytics — only when activePlatform is YouTube and data exists */}
-          {hasYouTubeAnalytics && (
+          {/* YouTube-only metrics — watch time, view duration, view %, subs gained */}
+          {hasYouTubeOnlyMetrics && (
             <section className="space-y-4">
               <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
                 <TrendingUp className="h-4 w-4" />
@@ -407,7 +415,6 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               </h3>
               <Card className="border-none bg-muted/80 shadow-none">
                 <CardContent className="p-5 space-y-4">
-                  {/* Watch time + avg view duration row */}
                   <div className="grid grid-cols-2 gap-4">
                     {activeWatchTimeMins != null && (
                       <div className="space-y-1">
@@ -424,8 +431,6 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                       </div>
                     )}
                   </div>
-
-                  {/* Avg view percentage */}
                   {activeAvgViewPct != null && (
                     <div className="space-y-2">
                       <div className="flex items-center justify-between">
@@ -433,15 +438,10 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                         <span className="text-sm font-bold">{activeAvgViewPct.toFixed(1)}%</span>
                       </div>
                       <div className="h-1.5 w-full rounded-full bg-muted">
-                        <div
-                          className="h-1.5 rounded-full bg-[#FF0000] transition-all"
-                          style={{ width: `${Math.min(100, activeAvgViewPct)}%` }}
-                        />
+                        <div className="h-1.5 rounded-full bg-[#FF0000] transition-all" style={{ width: `${Math.min(100, activeAvgViewPct)}%` }} />
                       </div>
                     </div>
                   )}
-
-                  {/* Subscribers gained */}
                   {activeSubscribersGained != null && (
                     <div className="flex items-center justify-between text-xs font-medium">
                       <span className="text-muted-foreground">Subscribers Gained</span>
@@ -450,6 +450,16 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                   )}
                 </CardContent>
               </Card>
+            </section>
+          )}
+
+          {/* Audience Insights — gender, age, top countries — shown for any platform that has data */}
+          {hasPlatformInsights && (
+            <section className="space-y-4">
+              <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
+                <TrendingUp className="h-4 w-4" />
+                {activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)} Audience Insights
+              </h3>
 
               {/* Gender split */}
               {activeAudienceInsights && (activeAudienceInsights.malePct != null || activeAudienceInsights.femalePct != null) && (
@@ -475,8 +485,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
               )}
 
               {/* Age distribution */}
-              {activeAudienceInsights?.ageDistribution &&
-                Object.keys(activeAudienceInsights.ageDistribution).length > 0 && (
+              {activeAudienceInsights?.ageDistribution && Object.keys(activeAudienceInsights.ageDistribution).length > 0 && (
                 <Card className="border-none bg-muted/80 shadow-none">
                   <CardContent className="p-5 space-y-3">
                     <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Age Distribution</p>
@@ -490,10 +499,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                               <span className="font-bold">{pct.toFixed(1)}%</span>
                             </div>
                             <div className="h-1.5 w-full rounded-full bg-muted">
-                              <div
-                                className="h-1.5 rounded-full bg-primary transition-all"
-                                style={{ width: `${Math.min(100, pct)}%` }}
-                              />
+                              <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, pct)}%` }} />
                             </div>
                           </div>
                         ))}
@@ -502,7 +508,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                 </Card>
               )}
 
-              {/* Top countries */}
+              {/* Top countries with real percentages */}
               {activeTopCountries && activeTopCountries.length > 0 && (
                 <Card className="border-none bg-muted/80 shadow-none">
                   <CardContent className="p-5 space-y-3">
@@ -515,10 +521,7 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                             <span className="font-bold">{viewPct.toFixed(1)}%</span>
                           </div>
                           <div className="h-1.5 w-full rounded-full bg-muted">
-                            <div
-                              className="h-1.5 rounded-full bg-[#FF0000] transition-all"
-                              style={{ width: `${Math.min(100, viewPct)}%` }}
-                            />
+                            <div className="h-1.5 rounded-full bg-primary transition-all" style={{ width: `${Math.min(100, viewPct)}%` }} />
                           </div>
                         </div>
                       ))}
