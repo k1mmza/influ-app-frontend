@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetCampaigns, apiGetPublicCampaigns } from "@/lib/api";
+import { apiApplyToCampaign, apiGetCampaigns, apiGetPublicCampaigns } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -248,6 +248,8 @@ function InfluencerDiscoverCampaignsView() {
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [notice, setNotice] = useState<string | null>(null);
+  const [applyingId, setApplyingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [platform, setPlatform] = useState("All");
   const [goal, setGoal] = useState("All");
@@ -278,6 +280,24 @@ function InfluencerDiscoverCampaignsView() {
     setSearch("");
     setPlatform("All");
     setGoal("All");
+  };
+
+  const applyToCampaign = async (campaignId: string) => {
+    if (!token) {
+      setError("Please log in again before applying.");
+      return;
+    }
+    setApplyingId(campaignId);
+    setError(null);
+    setNotice(null);
+    try {
+      await apiApplyToCampaign(token, campaignId);
+      setNotice("Application submitted.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to apply to campaign");
+    } finally {
+      setApplyingId(null);
+    }
   };
 
   if (loading) {
@@ -351,6 +371,12 @@ function InfluencerDiscoverCampaignsView() {
         </Card>
       )}
 
+      {notice && (
+        <Card className="border-emerald-200 bg-emerald-50">
+          <CardContent className="p-4 text-sm font-medium text-emerald-700">{notice}</CardContent>
+        </Card>
+      )}
+
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((c) => {
           const deadline = c.applyDeadline
@@ -398,7 +424,14 @@ function InfluencerDiscoverCampaignsView() {
                 </div>
 
                 <div className="mt-6 flex gap-2">
-                  <Button className="flex-1 rounded-xl font-bold text-xs h-10 shadow-sm">Apply Now</Button>
+                  <Button
+                    className="flex-1 rounded-xl font-bold text-xs h-10 shadow-sm"
+                    disabled={applyingId != null}
+                    onClick={() => applyToCampaign(c.id)}
+                  >
+                    {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                    Apply Now
+                  </Button>
                   <Button variant="outline" asChild className="flex-1 rounded-xl font-bold text-xs h-10">
                     <Link href={`/campaigns/${c.id}`}>Details</Link>
                   </Button>

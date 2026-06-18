@@ -2,6 +2,15 @@ import { Role } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+async function readApiError(res: Response, fallback: string) {
+  try {
+    const error = await res.json();
+    return Array.isArray(error.message) ? error.message.join(", ") : error.message || fallback;
+  } catch {
+    return fallback;
+  }
+}
+
 export async function apiRegister(name: string, email: string, password: string) {
   const res = await fetch(`${API_URL}/auth/register`, {
     method: "POST",
@@ -225,7 +234,7 @@ export async function apiGetCampaigns(token: string): Promise<any[]> {
   const res = await fetch(`${API_URL}/campaigns`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Failed to fetch campaigns");
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch campaigns"));
   return res.json();
 }
 
@@ -233,7 +242,146 @@ export async function apiGetPublicCampaigns(token: string): Promise<any[]> {
   const res = await fetch(`${API_URL}/campaigns/public`, {
     headers: { Authorization: `Bearer ${token}` },
   });
-  if (!res.ok) throw new Error("Failed to fetch public campaigns");
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch public campaigns"));
+  return res.json();
+}
+
+export type CampaignVisibility = "PUBLIC" | "PRIVATE";
+export type CampaignStatus = "DRAFT" | "ACTIVE" | "COMPLETED";
+
+export interface CampaignRequirementInput {
+  minFollowers?: number;
+  minEngagementRate?: number;
+  minAvgViews?: number;
+  platforms?: string[];
+  locations?: string[];
+  categories?: string[];
+  followerTier?: string;
+  contentType?: string;
+}
+
+export interface CampaignInput {
+  name: string;
+  objective?: string;
+  budget?: number;
+  visibility?: CampaignVisibility;
+  paymentType?: string;
+  keyMessage?: string;
+  doAndDont?: string;
+  deliverables?: string;
+  applyDeadline?: string;
+  submissionDate?: string;
+  reviewDate?: string;
+  paymentDate?: string;
+  clientBrandId?: string;
+  requirements?: CampaignRequirementInput[];
+}
+
+export interface CampaignResponse extends CampaignInput {
+  id: string;
+  status: CampaignStatus;
+  budgetSpent?: number;
+  createdAt?: string;
+  updatedAt?: string;
+  clientBrand?: {
+    id: string;
+    brandName: string;
+    brandEmail?: string | null;
+    brandWebsite?: string | null;
+  };
+  applications?: CampaignApplicationResponse[];
+  requirements?: Array<CampaignRequirementInput & { id?: string; campaignId?: string }>;
+}
+
+export interface CampaignApplicationResponse {
+  id: string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | string;
+  appliedAt?: string;
+  influencer?: {
+    id: string;
+    bio?: string | null;
+    categories?: unknown;
+    user?: { name?: string | null; email?: string | null };
+    platformAccounts?: Array<{
+      id: string;
+      platform: string;
+      handle: string;
+      followers?: number;
+      avgViews?: number;
+      engagementRate?: number;
+    }>;
+  };
+}
+
+export async function apiCreateCampaign(token: string, data: CampaignInput): Promise<CampaignResponse> {
+  const res = await fetch(`${API_URL}/campaigns`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create campaign"));
+  return res.json();
+}
+
+export async function apiGetCampaign(token: string, id: string): Promise<CampaignResponse> {
+  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch campaign"));
+  return res.json();
+}
+
+export async function apiUpdateCampaign(
+  token: string,
+  id: string,
+  data: Partial<CampaignInput> & { status?: CampaignStatus },
+): Promise<CampaignResponse> {
+  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to update campaign"));
+  return res.json();
+}
+
+export async function apiDeleteCampaign(token: string, id: string): Promise<void> {
+  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to delete campaign"));
+}
+
+export async function apiApplyToCampaign(token: string, id: string): Promise<CampaignApplicationResponse> {
+  const res = await fetch(`${API_URL}/campaigns/${id}/apply`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to apply to campaign"));
+  return res.json();
+}
+
+export async function apiGetCampaignApplications(token: string, id: string): Promise<CampaignApplicationResponse[]> {
+  const res = await fetch(`${API_URL}/campaigns/${id}/applications`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch applications"));
+  return res.json();
+}
+
+export async function apiUpdateCampaignApplicationStatus(
+  token: string,
+  campaignId: string,
+  applicationId: string,
+  status: "PENDING" | "ACCEPTED" | "REJECTED",
+): Promise<CampaignApplicationResponse> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/applications/${applicationId}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ status }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to update application"));
   return res.json();
 }
 

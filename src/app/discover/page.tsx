@@ -3,11 +3,10 @@
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
-import { Influencer, Campaign } from "@/lib/types";
+import { Influencer } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
-import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation } from "@/lib/api";
+import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation, apiGetCampaigns, CampaignResponse } from "@/lib/api";
 import { useUserStore } from "@/store/useUserStore";
-import { useCampaignStore } from "@/store/useCampaignStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
@@ -91,9 +90,8 @@ function DiscoverPageContent() {
   const processedSearchRef = useRef<string | null>(null);
   const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
 
-  // Campaign picker modal state
-  const { campaigns } = useCampaignStore();
   const { token, role } = useUserStore();
+  const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
   const [addConfirmed, setAddConfirmed] = useState(false);
@@ -102,6 +100,16 @@ function DiscoverPageContent() {
   const [messagePickerInfluencer, setMessagePickerInfluencer] = useState<Influencer | null>(null);
   const [messagePickedCampaignId, setMessagePickedCampaignId] = useState<string | null>(null);
   const [startingConv, setStartingConv] = useState(false);
+
+  useEffect(() => {
+    if (!token || role === "influencer") {
+      setCampaigns([]);
+      return;
+    }
+    apiGetCampaigns(token)
+      .then(setCampaigns)
+      .catch((err) => console.error("Failed to fetch campaigns:", err));
+  }, [role, token]);
 
   const handleStartConversation = async () => {
     if (!token || !messagePickerInfluencer || !messagePickedCampaignId) return;
@@ -1022,11 +1030,13 @@ function DiscoverPageContent() {
                         : "border-border hover:border-primary/40 hover:bg-muted/50"
                     )}
                   >
-                    <p className="text-sm font-semibold">{campaign.title}</p>
+                    <p className="text-sm font-semibold">{campaign.name}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
                     <div className="flex items-center gap-2 mt-1.5">
                       <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
-                      <span className="text-[10px] text-muted-foreground">${campaign.budget.toLocaleString()} budget</span>
+                      <span className="text-[10px] text-muted-foreground">
+                        {campaign.budget != null ? `THB ${Number(campaign.budget).toLocaleString()}` : "Budget TBD"}
+                      </span>
                     </div>
                   </button>
                 ))
@@ -1090,7 +1100,7 @@ function DiscoverPageContent() {
               {campaigns.length === 0 ? (
                 <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
               ) : (
-                campaigns.map((campaign: Campaign) => (
+                campaigns.map((campaign) => (
                   <button
                     key={campaign.id}
                     onClick={() => setMessagePickedCampaignId(campaign.id)}
@@ -1100,7 +1110,7 @@ function DiscoverPageContent() {
                         : "border-border hover:border-primary/30 hover:bg-muted/50"
                     }`}
                   >
-                    {campaign.title}
+                    {campaign.name}
                   </button>
                 ))
               )}
