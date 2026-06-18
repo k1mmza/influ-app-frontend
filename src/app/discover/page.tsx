@@ -139,8 +139,8 @@ function DiscoverPageContent() {
     if (!searchFromQuery || processedSearchRef.current === searchFromQuery) return;
     processedSearchRef.current = searchFromQuery;
     setUnifiedSearchInput(searchFromQuery);
-    applySmartQuery(searchFromQuery);
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // Put the raw query into smart search state; parsing is handled server-side.
+    setSmartQuery(searchFromQuery);
   }, [searchFromQuery]);
   const [minAverageViews, setMinAverageViews] = useState(0);
   const [minEngagementRate, setMinEngagementRate] = useState(0);
@@ -188,26 +188,31 @@ function DiscoverPageContent() {
     const fetchInfluencers = async () => {
       setLoading(true);
       try {
-        const params: any = {
-          q: smartQuery || undefined,
-          categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
-          platform: selectedPlatforms[0] || "All",
-          followerRange,
-          minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
-          keyword,
-          minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
-          minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
-          minGrowthRate: minGrowthRate > 0 ? minGrowthRate : undefined,
-          minAverageViews: minAverageViews > 0 ? minAverageViews : undefined,
-          minResponseRate: minResponseRate > 0 ? minResponseRate : undefined,
-          maxRatePerPost: maxRatePerPost > 0 ? maxRatePerPost : undefined,
-          minRatePerPost: minRatePerPost > 0 ? minRatePerPost : undefined,
-          minFollowers: minFollowers > 0 ? minFollowers : undefined,
-          stylePresent: stylePresent !== "All" ? stylePresent : undefined,
-          audienceGender: audienceGender !== "All" ? audienceGender : undefined,
-          audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
-          availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
-        };
+        let params: any;
+        if (smartQuery && smartQuery.trim()) {
+          // When a smart query is active, only send `q` to avoid conflicting parsed filters
+          params = { q: smartQuery };
+        } else {
+          params = {
+            categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
+            platform: selectedPlatforms.length > 0 ? selectedPlatforms.join(",") : "All",
+            followerRange,
+            minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
+            keyword,
+            minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
+            minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
+            minGrowthRate: minGrowthRate > 0 ? minGrowthRate : undefined,
+            minAverageViews: minAverageViews > 0 ? minAverageViews : undefined,
+            minResponseRate: minResponseRate > 0 ? minResponseRate : undefined,
+            maxRatePerPost: maxRatePerPost > 0 ? maxRatePerPost : undefined,
+            minRatePerPost: minRatePerPost > 0 ? minRatePerPost : undefined,
+            minFollowers: minFollowers > 0 ? minFollowers : undefined,
+            stylePresent: stylePresent !== "All" ? stylePresent : undefined,
+            audienceGender: audienceGender !== "All" ? audienceGender : undefined,
+            audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
+            availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
+          };
+        }
         const data = await apiGetInfluencers(params);
         setInfluencers(data);
       } catch (err) {
@@ -257,85 +262,7 @@ function DiscoverPageContent() {
     setMainPlatformFilter("All");
     setAvailabilityStatus("All");
   };
-  const applySmartQuery = (query?: string) => {
-    const normalized = (query ?? smartQuery).toLowerCase();
-    if (!normalized.trim()) return;
-
-    const detectedPlatforms = platforms.filter((item) => normalized.includes(item.toLowerCase()));
-    if (detectedPlatforms.length > 0) {
-      setSelectedPlatforms(detectedPlatforms);
-    }
-
-    const detectedCategory = categories.find(
-      (item) => item !== "All" && normalized.includes(item.toLowerCase())
-    );
-    if (detectedCategory) {
-      setSelectedCategories((prev) =>
-        prev.includes(detectedCategory) ? prev : [...prev, detectedCategory]
-      );
-    }
-
-    if (normalized.includes("nano")) setFollowerRange("Nano");
-    if (normalized.includes("micro")) setFollowerRange("Micro");
-    if (normalized.includes("mid")) setFollowerRange("Mid");
-    if (normalized.includes("macro")) setFollowerRange("Macro");
-    if (normalized.includes("mega")) setFollowerRange("Mega");
-
-    const intentMatches = campaignIntents.filter((intent) => normalized.includes(intent.toLowerCase()));
-    if (intentMatches.length > 0) {
-      setSelectedCampaignIntents(intentMatches);
-    }
-
-    if (normalized.includes("female")) setAudienceGender("Female");
-    if (normalized.includes("male")) setAudienceGender("Male");
-    if (normalized.includes("mixed")) setAudienceGender("Mixed");
-
-    const matchedAgeGroup = ageGroups.find((item) => item !== "All" && normalized.includes(item.toLowerCase()));
-    if (matchedAgeGroup) {
-      setAudienceAgeGroup(matchedAgeGroup);
-    }
-    const matchedStylePresent = stylePresentOptions.find(
-      (item) => item !== "All" && normalized.includes(item.toLowerCase())
-    );
-    if (matchedStylePresent) {
-      setStylePresent(matchedStylePresent);
-    }
-
-    const extractNumber = (regex: RegExp) => {
-      const match = normalized.match(regex);
-      if (!match || !match[1]) return null;
-      return Number(match[1]);
-    };
-
-    const avgViews = extractNumber(/(?:avg|average)\s*views?\s*(?:>|>=|above|over)?\s*(\d+)/);
-    if (avgViews !== null && !Number.isNaN(avgViews)) setMinAverageViews(avgViews);
-
-    const engagementRate = extractNumber(/engagement\s*(?:rate)?\s*(?:>|>=|above|over)?\s*(\d+(?:\.\d+)?)/);
-    if (engagementRate !== null && !Number.isNaN(engagementRate)) setMinEngagementRate(engagementRate);
-
-    const growthRate = extractNumber(/growth\s*(?:rate)?\s*(?:>|>=|above|over)?\s*(\d+(?:\.\d+)?)/);
-    if (growthRate !== null && !Number.isNaN(growthRate)) setMinGrowthRate(growthRate);
-
-    const audiencePct = extractNumber(/audience\s*%?\s*(?:threshold)?\s*(?:>|>=|above|over)?\s*(\d+)/);
-    if (audiencePct !== null && !Number.isNaN(audiencePct)) updateAudienceThreshold(audiencePct);
-
-    const quality = extractNumber(/quality\s*(?:score)?\s*(?:>|>=|above|over)?\s*(\d+)/);
-    if (quality !== null && !Number.isNaN(quality)) updateQualityScore(quality);
-
-    const performance = extractNumber(/performance\s*(?:score)?\s*(?:>|>=|above|over)?\s*(\d+)/);
-    if (performance !== null && !Number.isNaN(performance)) updatePerformanceScore(performance);
-
-    const maxPrice = extractNumber(/(?:max|under|below|budget)\s*\$?\s*(\d+)/);
-    if (maxPrice !== null && !Number.isNaN(maxPrice)) setMaxRatePerPost(maxPrice);
-
-    const responseRate = extractNumber(/(?:response|availability)\s*(?:rate)?\s*(?:>|>=|above|over)?\s*(\d+)/);
-    if (responseRate !== null && !Number.isNaN(responseRate)) updateResponseRate(responseRate);
-
-    const matchedKeyword = normalized.match(/(?:keyword|hashtags?|tag)\s*[:=]?\s*([a-z0-9#\s,-]+)/);
-    if (matchedKeyword && matchedKeyword[1]) {
-      setKeyword(matchedKeyword[1].trim().replace(/^#/, ""));
-    }
-  };
+  // applySmartQuery removed: parsing moved server-side to avoid conflicts with Claude parsing
 
   const getPlatformFromUrl = (hostname: string) => {
     if (hostname.includes("tiktok")) return "TikTok";
@@ -495,7 +422,6 @@ function DiscoverPageContent() {
 
     setUrlLookupStatus(null);
     setSmartQuery(query);
-    applySmartQuery(query);
     setUrlSearchError("");
   };
 
