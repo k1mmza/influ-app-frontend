@@ -216,6 +216,45 @@ export async function apiGenerateSmartPlan(
   return res.json();
 }
 
+export interface SaveBriefInput {
+  strategy?: string;
+  concept?: string;
+  briefBody?: string;
+  campaignId?: string;
+}
+
+export async function apiSaveSmartPlanBrief(
+  token: string,
+  data: SaveBriefInput,
+): Promise<{ id: string }> {
+  const res = await fetch(`${API_URL}/smart-plan/save`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) {
+    const error = await res.json();
+    throw new Error(error.message || "Failed to save brief");
+  }
+  return res.json();
+}
+
+export async function apiGetSmartPlanBrief(
+  token: string,
+): Promise<GeneratedBrief | null> {
+  const res = await fetch(`${API_URL}/smart-plan/brief`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  const data = await res.json();
+  // Backend returns null when no brief exists
+  if (!data) return null;
+  return data as GeneratedBrief;
+}
+
 export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {
   await fetch(`${API_URL}/profile`, {
     method: "PATCH",

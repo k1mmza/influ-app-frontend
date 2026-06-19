@@ -1,9 +1,9 @@
 "use client";
 
-import { FormEvent, useMemo, useState } from "react";
+import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGenerateSmartPlan } from "@/lib/api";
+import { apiGenerateSmartPlan, apiGetCampaigns, apiGetSmartPlanBrief, apiSaveSmartPlanBrief } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -93,52 +93,35 @@ const sectionAlias: Record<string, StepId | BriefSubSection> = {
   tracking: "brief",
 };
 
-const myCampaignSeed: Campaign[] = [
-  {
-    id: "cmp-1",
-    name: "Glow Summer Launch",
-    status: "Active",
-    budget: "$12,000",
-    timeRange: "Jun 1 – Jul 15",
-    result: "78% KPI hit",
+/** Maps a raw API campaign to the local Campaign shape used by the list view. */
+function apiCampaignToLocal(c: any): Campaign {
+  const budget = c.budget != null ? `฿${Number(c.budget).toLocaleString()}` : "—";
+  const start = c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null;
+  const end = c.paymentDate ? new Date(c.paymentDate).toLocaleDateString("en-GB", { day: "numeric", month: "short" }) : null;
+  const timeRange = start && end ? `${start} – ${end}` : start ?? end ?? "—";
+  return {
+    id: c.id,
+    name: c.name,
+    status: c.status ?? "DRAFT",
+    budget,
+    timeRange,
+    result: "—", // TODO: wire real KPI result when tracking is implemented
     requirement: {
-      campaignName: "Glow Summer Launch",
-      objective: "Drive awareness and first purchase for summer skincare line",
-      contentAngle: "Before/after glow routine with creator storytelling",
-      productInfo: "Vitamin C serum and SPF bundle",
-      productLinkOrWebsite: "https://glow.example.com/summer",
-      ctaMessage: "Shop the summer glow set now",
-      targetAudience: "Women 20-35 in urban areas",
-      brandTone: "Confident, fresh, and uplifting",
-      budget: "$12,000",
-      timeline: "Jun 1 – Jul 15",
-      kpi: "Reach 2M, CTR 2.5%, 1,000 purchases",
-      doDont: "Do: show routine steps. Don't: overclaim product effect.",
+      campaignName: c.name ?? "",
+      objective: c.objective ?? "",
+      contentAngle: "",
+      productInfo: "",
+      productLinkOrWebsite: "",
+      ctaMessage: "",
+      targetAudience: "",
+      brandTone: "",
+      budget: c.budget != null ? String(c.budget) : "",
+      timeline: timeRange,
+      kpi: "",
+      doDont: c.doAndDont ?? "",
     },
-  },
-  {
-    id: "cmp-2",
-    name: "Fit Habit Challenge",
-    status: "Draft",
-    budget: "$8,500",
-    timeRange: "May 10 – Jun 20",
-    result: "Pending",
-    requirement: {
-      campaignName: "Fit Habit Challenge",
-      objective: "Get signups for 30-day fitness challenge",
-      contentAngle: "Daily progress check-ins and accountability",
-      productInfo: "Challenge app + coaching plan",
-      productLinkOrWebsite: "https://fit.example.com/challenge",
-      ctaMessage: "Join the challenge today",
-      targetAudience: "Young professionals 22-40",
-      brandTone: "Motivational and supportive",
-      budget: "$8,500",
-      timeline: "May 10 – Jun 20",
-      kpi: "1,500 signups and 8% conversion",
-      doDont: "Do: realistic goals. Don't: shame-based messaging.",
-    },
-  },
-];
+  };
+}
 
 const emptyRequirement: RequirementData = {
   campaignName: "",
@@ -173,6 +156,37 @@ export default function SmartPlanPage() {
   const [formDraft, setFormDraft] = useState<RequirementData>(emptyRequirement);
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
+
+  // Fix 1 — Save Brief state
+  const [isSaving, setIsSaving] = useState(false);
+  const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+
+  // Fix 2 — Real campaigns from API
+  const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
+  const [campaignsLoading, setCampaignsLoading] = useState(false);
+  const [campaignsError, setCampaignsError] = useState<string | null>(null);
+
+  // Fix 1 — restore last saved brief when the page loads (brand/agency only)
+  useEffect(() => {
+    if (!token || (role !== "brand" && role !== "agency")) return;
+    apiGetSmartPlanBrief(token).then((saved) => {
+      if (saved && (saved.strategy || saved.concept || saved.briefBody)) {
+        applyGeneratedBrief(saved);
+      }
+    });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []); // run once on mount
+
+  // Fix 2 — fetch real campaigns when the list view is opened
+  useEffect(() => {
+    if (viewMode !== "list" || !token) return;
+    setCampaignsLoading(true);
+    setCampaignsError(null);
+    apiGetCampaigns(token)
+      .then((data) => setMyCampaigns(data.map(apiCampaignToLocal)))
+      .catch((err) => setCampaignsError(err.message ?? "Failed to load campaigns"))
+      .finally(() => setCampaignsLoading(false));
+  }, [viewMode, token]);
 
   const promptHint = useMemo(() => {
     return hasStarted
@@ -237,6 +251,28 @@ export default function SmartPlanPage() {
       setIsGenerating(false);
     }
     return true;
+  };
+
+  // Fix 1 — Save Brief handler
+  const handleSaveBrief = async () => {
+    if (!token) return;
+    setIsSaving(true);
+    setSaveStatus("idle");
+    try {
+      await apiSaveSmartPlanBrief(token, {
+        strategy: strategyText,
+        concept: conceptText,
+        briefBody: briefText,
+        campaignId: selectedCampaign?.id,
+      });
+      setSaveStatus("saved");
+      // Reset the success indicator after 3 s
+      setTimeout(() => setSaveStatus("idle"), 3000);
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const applyPrompt = async (event: FormEvent<HTMLFormElement>) => {
@@ -350,50 +386,99 @@ export default function SmartPlanPage() {
               <Plus className="mr-2 h-4 w-4" /> New Campaign
             </Button>
           </div>
-          <div className="grid gap-4 sm:grid-cols-2">
-            {myCampaignSeed.map((campaign) => (
-              <Card key={campaign.id} className="border-none shadow-sm transition-all hover:shadow-md">
-                <CardContent className="p-6">
-                  <div className="mb-4 flex items-start justify-between">
-                    <div>
-                      <h3 className="font-bold font-serif text-foreground">{campaign.name}</h3>
-                      <p className="mt-0.5 text-xs text-muted-foreground">{campaign.timeRange}</p>
+
+          {/* Loading skeleton */}
+          {campaignsLoading && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {[0, 1].map((i) => (
+                <Card key={i} className="border-none shadow-sm">
+                  <CardContent className="p-6 space-y-3">
+                    <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
+                    <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                    <div className="grid grid-cols-2 gap-3 pt-2">
+                      <div className="h-6 rounded bg-muted animate-pulse" />
+                      <div className="h-6 rounded bg-muted animate-pulse" />
                     </div>
-                    <Badge
-                      variant={campaign.status === "Active" ? "default" : "secondary"}
-                      className="rounded-full"
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
+
+          {/* Error state */}
+          {campaignsError && !campaignsLoading && (
+            <p className="text-sm text-destructive">{campaignsError}</p>
+          )}
+
+          {/* Empty state */}
+          {!campaignsLoading && !campaignsError && myCampaigns.length === 0 && (
+            <Card className="border-none shadow-sm">
+              <CardContent className="flex flex-col items-center gap-4 py-12 text-center">
+                <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-muted">
+                  <FileText className="h-7 w-7 text-muted-foreground" />
+                </div>
+                <div>
+                  <p className="font-semibold text-foreground">No campaigns yet</p>
+                  <p className="mt-1 text-sm text-muted-foreground">
+                    Create your first campaign to track it here.
+                  </p>
+                </div>
+                <Button asChild size="sm" className="rounded-xl shadow-sm">
+                  <Link href="/campaigns/create">
+                    <Plus className="mr-2 h-4 w-4" /> Create your first campaign
+                  </Link>
+                </Button>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Campaign cards */}
+          {!campaignsLoading && !campaignsError && myCampaigns.length > 0 && (
+            <div className="grid gap-4 sm:grid-cols-2">
+              {myCampaigns.map((campaign) => (
+                <Card key={campaign.id} className="border-none shadow-sm transition-all hover:shadow-md">
+                  <CardContent className="p-6">
+                    <div className="mb-4 flex items-start justify-between">
+                      <div>
+                        <h3 className="font-bold font-serif text-foreground">{campaign.name}</h3>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{campaign.timeRange}</p>
+                      </div>
+                      <Badge
+                        variant={campaign.status === "ACTIVE" ? "default" : "secondary"}
+                        className="rounded-full"
+                      >
+                        {campaign.status}
+                      </Badge>
+                    </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Budget</p>
+                        <p className="text-sm font-semibold text-foreground">{campaign.budget}</p>
+                      </div>
+                      <div className="space-y-0.5">
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Result</p>
+                        <p className="text-sm font-semibold text-foreground">{campaign.result}</p>
+                      </div>
+                    </div>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      className="mt-4 w-full justify-between rounded-xl font-bold text-primary hover:text-primary/80"
+                      onClick={() => {
+                        applyCampaignRequirementToBrief(campaign);
+                        setViewMode("detail");
+                        setIsPlannerVisible(true);
+                        setHasStarted(true);
+                        setActiveStep("requirement");
+                      }}
                     >
-                      {campaign.status}
-                    </Badge>
-                  </div>
-                  <div className="grid grid-cols-2 gap-3">
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Budget</p>
-                      <p className="text-sm font-semibold text-foreground">{campaign.budget}</p>
-                    </div>
-                    <div className="space-y-0.5">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Result</p>
-                      <p className="text-sm font-semibold text-foreground">{campaign.result}</p>
-                    </div>
-                  </div>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    className="mt-4 w-full justify-between rounded-xl font-bold text-primary hover:text-primary/80"
-                    onClick={() => {
-                      applyCampaignRequirementToBrief(campaign);
-                      setViewMode("detail");
-                      setIsPlannerVisible(true);
-                      setHasStarted(true);
-                      setActiveStep("requirement");
-                    }}
-                  >
-                    View Details <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
+                      View Details <ChevronRight className="h-4 w-4" />
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          )}
         </div>
       )}
 
@@ -677,22 +762,31 @@ export default function SmartPlanPage() {
 
                   {isBriefCampaignPickerOpen && (
                     <div className="mt-4 space-y-2 border-t border-border pt-4">
-                      {myCampaignSeed.map((campaign) => (
-                        <button
-                          key={campaign.id}
-                          type="button"
-                          onClick={() => {
-                            applyCampaignRequirementToBrief(campaign);
-                            setIsBriefCampaignPickerOpen(false);
-                          }}
-                          className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left text-sm transition hover:border-primary/30 hover:bg-primary/5"
-                        >
-                          <span className="font-semibold text-foreground">{campaign.name}</span>
-                          <Badge variant="secondary" className="rounded-full text-xs">
-                            {campaign.status}
-                          </Badge>
-                        </button>
-                      ))}
+                      {myCampaigns.length === 0 ? (
+                        <p className="text-sm text-muted-foreground">
+                          No campaigns yet.{" "}
+                          <Link href="/campaigns/create" className="text-primary hover:underline">
+                            Create one first.
+                          </Link>
+                        </p>
+                      ) : (
+                        myCampaigns.map((campaign) => (
+                          <button
+                            key={campaign.id}
+                            type="button"
+                            onClick={() => {
+                              applyCampaignRequirementToBrief(campaign);
+                              setIsBriefCampaignPickerOpen(false);
+                            }}
+                            className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left text-sm transition hover:border-primary/30 hover:bg-primary/5"
+                          >
+                            <span className="font-semibold text-foreground">{campaign.name}</span>
+                            <Badge variant="secondary" className="rounded-full text-xs">
+                              {campaign.status}
+                            </Badge>
+                          </button>
+                        ))
+                      )}
                     </div>
                   )}
                 </div>
@@ -762,10 +856,26 @@ export default function SmartPlanPage() {
                   </div>
                 )}
 
-                <div className="flex justify-end border-t border-border pt-4">
-                  <Button type="button" className="rounded-xl shadow-sm">
-                    <CheckCircle2 className="mr-2 h-4 w-4" />
-                    Save Brief
+                <div className="flex items-center justify-end gap-3 border-t border-border pt-4">
+                  {saveStatus === "saved" && (
+                    <span className="flex items-center gap-1.5 text-sm text-green-600">
+                      <CheckCircle2 className="h-4 w-4" /> Brief saved
+                    </span>
+                  )}
+                  {saveStatus === "error" && (
+                    <span className="text-sm text-destructive">Save failed — try again</span>
+                  )}
+                  <Button
+                    type="button"
+                    onClick={handleSaveBrief}
+                    disabled={isSaving}
+                    className="rounded-xl shadow-sm"
+                  >
+                    {isSaving ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Saving…</>
+                    ) : (
+                      <><CheckCircle2 className="mr-2 h-4 w-4" /> Save Brief</>
+                    )}
                   </Button>
                 </div>
               </CardContent>
