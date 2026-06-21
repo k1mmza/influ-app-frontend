@@ -219,6 +219,11 @@ function BrandProfileView() {
       ? "Agency and account details; add your site and socials so creators know who they are working with."
       : "Company and account details; add your site and socials for creator trust.";
 
+  const avgRating = useMemo(
+    () => useReviewStore.getState().getAverageRatingReceived(profileRole, userName),
+    [profileRole, userName],
+  );
+
   const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
 
   if (loading) {
@@ -246,7 +251,7 @@ function BrandProfileView() {
               />
               <div className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md">
                 <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
-                <span>{useMemo(() => useReviewStore.getState().getAverageRatingReceived(profileRole, userName), [userName])?.toFixed(1) ?? "—"}</span>
+                <span>{avgRating?.toFixed(1) ?? "—"}</span>
               </div>
             </div>
             {showAvatarPicker && token && (

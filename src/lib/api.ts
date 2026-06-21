@@ -197,10 +197,50 @@ export interface GeneratedBrief {
   briefBody: string;
 }
 
+// ── Smart Plan → Draft Campaign ─────────────────────────────────────────────
+
+export interface PlanRequirements {
+  minFollowers?: number;
+  minEngagementRate?: number;
+  minAvgViews?: number;
+  platforms?: string[];
+  locations?: string[];
+  categories?: string[];
+  contentType?: string;
+}
+
+/** Campaign fields inferred by /smart-plan/generate. Mirrors the backend PlanCampaignFields. */
+export interface CampaignFields {
+  name?: string;
+  objective?: string;
+  budget?: number;
+  visibility?: string;
+  paymentType?: string;
+  keyMessage?: string;
+  doAndDont?: string;
+  deliverables?: string;
+  applyDeadline?: string | null;
+  submissionDate?: string | null;
+  reviewDate?: string | null;
+  paymentDate?: string | null;
+  requirements?: PlanRequirements;
+}
+
+export interface Provenance {
+  userProvided: string[];
+  aiSuggested: string[];
+}
+
+/** New /smart-plan/generate response: brief + inferred campaign fields + provenance. */
+export interface GeneratePlanResponse extends GeneratedBrief {
+  campaignFields: CampaignFields;
+  provenance: Provenance;
+}
+
 export async function apiGenerateSmartPlan(
   token: string,
   data: SmartPlanInput,
-): Promise<GeneratedBrief> {
+): Promise<GeneratePlanResponse> {
   const res = await fetch(`${API_URL}/smart-plan/generate`, {
     method: "POST",
     headers: {
@@ -213,6 +253,31 @@ export async function apiGenerateSmartPlan(
     const error = await res.json();
     throw new Error(error.message || "Failed to generate campaign brief");
   }
+  return res.json();
+}
+
+export interface CreateFromPlanPayload {
+  campaignFields: CampaignFields;
+  strategy?: string;
+  concept?: string;
+  briefBody?: string;
+  /** Required for AGENCY users — the backend returns 400 without it. */
+  clientBrandId?: string;
+}
+
+export async function apiCreateCampaignFromPlan(
+  token: string,
+  payload: CreateFromPlanPayload,
+): Promise<{ campaignId: string }> {
+  const res = await fetch(`${API_URL}/smart-plan/create-campaign`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create campaign"));
   return res.json();
 }
 
@@ -366,7 +431,9 @@ export interface CampaignResponse extends CampaignInput {
 
 export interface CampaignApplicationResponse {
   id: string;
-  status: "PENDING" | "ACCEPTED" | "REJECTED" | string;
+  status: "PENDING" | "ACCEPTED" | "REJECTED" | "INVITED" | "DECLINED" | string;
+  // APPLICATION = influencer applied; INVITATION = brand invited. Older rows may omit it.
+  origin?: "APPLICATION" | "INVITATION" | string;
   appliedAt?: string;
   conversationId?: string | null;
   influencer?: {
@@ -549,6 +616,32 @@ export async function apiGetConversation(token: string, conversationId: string) 
   return res.json();
 }
 
+// ── Shortlist ─────────────────────────────────────────────────────────────
+
+export async function apiGetShortlist(token: string): Promise<any[]> {
+  const res = await fetch(`${API_URL}/shortlist`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, 'Failed to fetch shortlist'));
+  return res.json();
+}
+
+export async function apiAddToShortlist(token: string, influencerId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/shortlist/${influencerId}`, {
+    method: 'POST',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, 'Failed to add to shortlist'));
+}
+
+export async function apiRemoveFromShortlist(token: string, influencerId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/shortlist/${influencerId}`, {
+    method: 'DELETE',
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, 'Failed to remove from shortlist'));
+}
+
 export async function apiUploadConversationFile(
   token: string,
   conversationId: string,
@@ -568,4 +661,81 @@ export async function apiUploadConversationFile(
     throw new Error(error.message || "Upload failed");
   }
   return res.json() as Promise<{ url: string; type: string }>;
+}
+
+// ── Campaign Invitations ────────────────────────────────────────────────────
+// Brand/agency invites a registered influencer to a campaign; influencer accepts/declines.
+// Reuses the CampaignApplication model (status INVITED → ACCEPTED/DECLINED).
+
+export type InviteResult = "INVITED" | "RE_INVITED" | "ALREADY_INVITED" | "ALREADY_ACCEPTED";
+
+export interface InviteResponse {
+  id: string;
+  campaignId: string;
+  influencerId: string;
+  status: string;
+  origin: string;
+  inviteResult: InviteResult;
+}
+
+export interface Invitation {
+  id: string;
+  status: string;
+  invitedAt: string;
+  campaignId: string;
+  campaignName: string | null;
+  objective: string | null;
+  budget: number | null;
+  keyMessage: string | null;
+  deliverables: string | null;
+  applyDeadline: string | null;
+  visibility: string | null;
+  brandName: string | null;
+}
+
+/**
+ * Invite an influencer to a campaign.
+ * Throws with "This influencer has already applied to this campaign." (409) when the
+ * influencer already has a pending application — surface this message to the user.
+ */
+export async function apiInviteToCampaign(
+  token: string,
+  campaignId: string,
+  influencerId: string,
+): Promise<InviteResponse> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/invite`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ influencerId }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to send invitation"));
+  return res.json();
+}
+
+export async function apiGetInvitations(token: string): Promise<Invitation[]> {
+  const res = await fetch(`${API_URL}/invitations`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch invitations"));
+  return res.json();
+}
+
+export async function apiAcceptInvitation(
+  token: string,
+  invitationId: string,
+): Promise<{ id: string; status: string; conversationId: string }> {
+  const res = await fetch(`${API_URL}/invitations/${invitationId}/accept`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to accept invitation"));
+  return res.json();
+}
+
+export async function apiDeclineInvitation(token: string, invitationId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/invitations/${invitationId}/decline`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to decline invitation"));
 }

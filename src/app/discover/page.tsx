@@ -5,7 +5,7 @@ import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { apiGetInfluencers } from "@/lib/influencers";
-import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation, apiGetCampaigns, CampaignResponse } from "@/lib/api";
+import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation, apiGetCampaigns, apiInviteToCampaign, CampaignResponse } from "@/lib/api";
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -95,6 +95,8 @@ function DiscoverPageContent() {
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
   const [addConfirmed, setAddConfirmed] = useState(false);
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
 
   // Message / start conversation state
   const [messagePickerInfluencer, setMessagePickerInfluencer] = useState<Influencer | null>(null);
@@ -110,6 +112,28 @@ function DiscoverPageContent() {
       .then(setCampaigns)
       .catch((err) => console.error("Failed to fetch campaigns:", err));
   }, [role, token]);
+
+  const handleConfirmInvite = async () => {
+    if (!token || !campaignPickerInfluencer || !pickedCampaignId) return;
+    // External / URL-derived profiles are not registered influencers — inviting them is
+    // the deferred external-outreach flow, out of scope here.
+    if (campaignPickerInfluencer.id.startsWith("url-derived-")) {
+      setInviteError("This creator isn't registered on InfluApp yet, so they can't be invited.");
+      return;
+    }
+    setInviting(true);
+    setInviteError(null);
+    try {
+      await apiInviteToCampaign(token, pickedCampaignId, campaignPickerInfluencer.id);
+      setAddConfirmed(true);
+      setTimeout(() => setCampaignPickerInfluencer(null), 1500);
+    } catch (err) {
+      // Includes the "already applied" conflict message from the backend.
+      setInviteError(err instanceof Error ? err.message : "Failed to send invitation");
+    } finally {
+      setInviting(false);
+    }
+  };
 
   const handleStartConversation = async () => {
     if (!token || !messagePickerInfluencer || !messagePickedCampaignId) return;
@@ -955,7 +979,7 @@ function DiscoverPageContent() {
                     influencer={influencer}
                     isActive={selectedInfluencerId === influencer.id}
                     onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-                    onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); }}
+                    onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
                   />
                 </div>
               );
@@ -986,7 +1010,7 @@ function DiscoverPageContent() {
           influencer={selectedInfluencer}
           meta={selectedInfluencerMeta}
           onClose={() => setSelectedInfluencerId(null)}
-          onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); }}
+          onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
           onMessage={(inf) => { setMessagePickerInfluencer(inf); setMessagePickedCampaignId(null); }}
         />
       )}
@@ -1012,7 +1036,7 @@ function DiscoverPageContent() {
                 </button>
               </div>
               <p className="text-xs text-muted-foreground">
-                Adding <span className="font-semibold text-foreground">{campaignPickerInfluencer.name}</span> to a campaign
+                Invite <span className="font-semibold text-foreground">{campaignPickerInfluencer.name}</span> to one of your campaigns
               </p>
             </CardHeader>
             <CardContent className="space-y-2 pb-4">
@@ -1041,10 +1065,22 @@ function DiscoverPageContent() {
                   </button>
                 ))
               )}
+              {campaignPickerInfluencer.id.startsWith("url-derived-") && (
+                <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">
+                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                  This creator isn&apos;t registered on InfluApp yet, so they can&apos;t be invited.
+                </div>
+              )}
               {addConfirmed && (
                 <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 pt-1">
                   <CheckCheck className="h-4 w-4" />
-                  {campaignPickerInfluencer.name} added to campaign!
+                  Invitation sent to {campaignPickerInfluencer.name}!
+                </div>
+              )}
+              {inviteError && (
+                <div className="flex items-center gap-2 text-sm font-semibold text-rose-600 pt-1">
+                  <AlertCircle className="h-4 w-4 shrink-0" />
+                  {inviteError}
                 </div>
               )}
               <div className="flex gap-2 pt-2">
@@ -1057,14 +1093,15 @@ function DiscoverPageContent() {
                 </Button>
                 <Button
                   className="flex-1 rounded-xl"
-                  disabled={!pickedCampaignId || addConfirmed}
-                  onClick={() => {
-                    if (!pickedCampaignId) return;
-                    setAddConfirmed(true);
-                    setTimeout(() => setCampaignPickerInfluencer(null), 1500);
-                  }}
+                  disabled={
+                    !pickedCampaignId ||
+                    addConfirmed ||
+                    inviting ||
+                    campaignPickerInfluencer.id.startsWith("url-derived-")
+                  }
+                  onClick={handleConfirmInvite}
                 >
-                  Confirm
+                  {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invitation"}
                 </Button>
               </div>
             </CardContent>

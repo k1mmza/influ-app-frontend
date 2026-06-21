@@ -22,6 +22,8 @@ export interface Influencer {
   avgViewsByPlatform: Record<string, number>;
   engagementByPlatform: Record<string, number>;
   handleByPlatform: Record<string, string>;
+  /** Per-platform public profile URLs — used as contact points on the profile. */
+  profileUrlByPlatform?: Record<string, string | null>;
   avatarByPlatform: Record<string, string | null>;
   syncedAtByPlatform: Record<string, string | null>;
   spotlightByPlatform: Record<string, { id: string; title: string; thumbnail: string } | null>;

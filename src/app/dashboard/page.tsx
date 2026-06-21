@@ -2,26 +2,173 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { BrandDashboard } from "@/components/brand-dashboard";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetDashboard } from "@/lib/api";
+import {
+  apiGetDashboard,
+  apiGetInvitations,
+  apiAcceptInvitation,
+  apiDeclineInvitation,
+  Invitation,
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Wallet, 
-  Rocket, 
-  FileText, 
-  MessageSquare, 
-  TrendingUp, 
+import {
+  Wallet,
+  Rocket,
+  FileText,
+  MessageSquare,
+  TrendingUp,
   UserCircle,
   Bell,
   CheckCircle2,
   ExternalLink,
   Sparkles,
-  Loader2
+  Loader2,
+  Inbox,
+  Check,
+  X
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+function InfluencerInvitations() {
+  const { token } = useUserStore();
+  const router = useRouter();
+  const [invitations, setInvitations] = useState<Invitation[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [busyId, setBusyId] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const data = await apiGetInvitations(token);
+        if (!cancelled) setInvitations(data);
+      } catch (err) {
+        if (!cancelled) setError(err instanceof Error ? err.message : "Failed to load invitations");
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
+  const accept = async (invitation: Invitation) => {
+    if (!token) return;
+    setBusyId(invitation.id);
+    setError(null);
+    try {
+      const res = await apiAcceptInvitation(token, invitation.id);
+      setInvitations((prev) => prev.filter((i) => i.id !== invitation.id));
+      // Land on the conversation, same as an accepted application today.
+      if (res.conversationId) router.push(`/messages?convId=${res.conversationId}`);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to accept invitation");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const decline = async (invitation: Invitation) => {
+    if (!token) return;
+    setBusyId(invitation.id);
+    setError(null);
+    try {
+      await apiDeclineInvitation(token, invitation.id);
+      setInvitations((prev) => prev.filter((i) => i.id !== invitation.id));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to decline invitation");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  if (loading) return null;
+
+  if (!invitations.length) {
+    return (
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Inbox className="h-4 w-4" /> Campaign Invitations
+          </CardTitle>
+          <CardDescription>Brands that invite you to campaigns will appear here.</CardDescription>
+        </CardHeader>
+        <CardContent>
+          {error ? (
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">No pending invitations right now.</p>
+          )}
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card className="border-none shadow-sm">
+      <CardHeader>
+        <CardTitle className="text-lg flex items-center gap-2">
+          <Inbox className="h-4 w-4" /> Campaign Invitations
+          <Badge className="bg-primary text-primary-foreground">{invitations.length}</Badge>
+        </CardTitle>
+        <CardDescription>Brands have invited you to these campaigns.</CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        {error && <p className="text-sm font-medium text-destructive">{error}</p>}
+        {invitations.map((inv) => (
+          <div key={inv.id} className="rounded-xl border border-border p-4">
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div className="min-w-0">
+                <p className="font-semibold text-foreground font-serif">{inv.campaignName ?? "Campaign"}</p>
+                <p className="text-sm text-muted-foreground">{inv.brandName ?? "Brand"}</p>
+                <div className="mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted-foreground">
+                  {inv.objective ? (
+                    <span>Objective: <span className="font-medium text-foreground">{inv.objective}</span></span>
+                  ) : null}
+                  {inv.budget != null ? (
+                    <span>Budget: <span className="font-medium text-foreground">THB {Number(inv.budget).toLocaleString()}</span></span>
+                  ) : null}
+                  {inv.applyDeadline ? (
+                    <span>Deadline: <span className="font-medium text-foreground">{new Date(inv.applyDeadline).toLocaleDateString()}</span></span>
+                  ) : null}
+                </div>
+                {inv.keyMessage ? (
+                  <p className="mt-2 text-sm text-muted-foreground line-clamp-2">{inv.keyMessage}</p>
+                ) : null}
+              </div>
+              {inv.visibility ? (
+                <Badge variant="secondary" className="uppercase">{inv.visibility}</Badge>
+              ) : null}
+            </div>
+            <div className="mt-3 flex gap-2">
+              <Button size="sm" disabled={busyId === inv.id} onClick={() => accept(inv)} className="rounded-xl">
+                {busyId === inv.id ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Check className="mr-2 h-3 w-3" />}
+                Accept
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={busyId === inv.id}
+                onClick={() => decline(inv)}
+                className="rounded-xl"
+              >
+                <X className="mr-2 h-3 w-3" />
+                Decline
+              </Button>
+            </div>
+          </div>
+        ))}
+      </CardContent>
+    </Card>
+  );
+}
 
 function InfluencerDashboard({ data }: { data: any }) {
   const stats = {
@@ -69,6 +216,8 @@ function InfluencerDashboard({ data }: { data: any }) {
         <Button className="rounded-xl shadow-lg shadow-primary/20">Find Campaigns</Button>
         <Button variant="outline" className="rounded-xl bg-background">View Messages</Button>
       </div>
+
+      <InfluencerInvitations />
 
       <div className="space-y-6">
         <div className="flex items-center justify-between">

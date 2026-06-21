@@ -3,13 +3,15 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, Loader2, MessageSquare, Send, Trash2, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, Loader2, MessageSquare, Send, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
   apiGetCampaign,
   apiGetCampaignApplications,
   apiGetPublicCampaigns,
+  apiGetShortlist,
+  apiInviteToCampaign,
   apiUpdateCampaign,
   apiUpdateCampaignApplicationStatus,
   CampaignApplicationResponse,
@@ -80,7 +82,17 @@ export default function CampaignDetailPage() {
   const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
   const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
 
+  // ── Invite-from-shortlist state ──────────────────────────────────────────
+  const [showInvitePicker, setShowInvitePicker] = useState(false);
+  const [shortlist, setShortlist] = useState<any[]>([]);
+  const [shortlistLoading, setShortlistLoading] = useState(false);
+  const [invitingId, setInvitingId] = useState<string | null>(null);
+
   const canManageCampaign = role === "brand" || role === "agency";
+
+  // Split the unified application list: brand-initiated invites vs. influencer-initiated applications.
+  const invitations = applications.filter((a) => a.origin === "INVITATION");
+  const inboundApplications = applications.filter((a) => (a.origin ?? "APPLICATION") === "APPLICATION");
   const isCampaignFinished =
     !!campaign &&
     (campaign.status === "COMPLETED" || collaborations.some((item) => item.campaignId === campaign.id));
@@ -170,6 +182,43 @@ export default function CampaignDetailPage() {
     if (!token) return;
     const fresh = await apiGetCampaignApplications(token, id);
     setApplications(fresh);
+  };
+
+  const openInvitePicker = async () => {
+    if (!token) return;
+    setShowInvitePicker(true);
+    setShortlistLoading(true);
+    setError(null);
+    try {
+      setShortlist(await apiGetShortlist(token));
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load shortlist");
+    } finally {
+      setShortlistLoading(false);
+    }
+  };
+
+  const inviteFromShortlist = async (influencerId: string) => {
+    if (!token || !campaign) return;
+    setInvitingId(influencerId);
+    setError(null);
+    setMessage("");
+    try {
+      const res = await apiInviteToCampaign(token, campaign.id, influencerId);
+      const msgByResult: Record<string, string> = {
+        INVITED: "Invitation sent.",
+        RE_INVITED: "Invitation re-sent.",
+        ALREADY_INVITED: "This influencer is already invited.",
+        ALREADY_ACCEPTED: "This influencer already accepted.",
+      };
+      setMessage(msgByResult[res.inviteResult] ?? "Invitation sent.");
+      await refreshApplications();
+    } catch (err) {
+      // Includes the "already applied" conflict message.
+      setError(err instanceof Error ? err.message : "Failed to send invitation");
+    } finally {
+      setInvitingId(null);
+    }
   };
 
   const updateCampaignStatus = async (status: CampaignStatus) => {
@@ -783,11 +832,11 @@ export default function CampaignDetailPage() {
             <CardTitle className="text-lg">Applications</CardTitle>
           </CardHeader>
           <CardContent>
-            {applications.length === 0 ? (
+            {inboundApplications.length === 0 ? (
               <p className="text-sm text-muted-foreground">No applications yet.</p>
             ) : (
               <div className="space-y-3">
-                {applications.map((application) => {
+                {inboundApplications.map((application) => {
                   const accounts = application.influencer?.platformAccounts ?? [];
                   return (
                     <div key={application.id} className="rounded-xl border border-border p-4">
@@ -841,6 +890,78 @@ export default function CampaignDetailPage() {
         </Card>
       ) : null}
 
+      {canManageCampaign ? (
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-lg">Invited influencers</CardTitle>
+              <Button size="sm" onClick={openInvitePicker} className="rounded-xl">
+                <UserPlus className="mr-2 h-3.5 w-3.5" />
+                Invite from shortlist
+              </Button>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {invitations.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No invitations yet. Invite creators from your shortlist or from Discover.
+              </p>
+            ) : (
+              <div className="space-y-5">
+                {([
+                  ["INVITED", "Awaiting response"],
+                  ["ACCEPTED", "Accepted"],
+                  ["DECLINED", "Declined"],
+                ] as const).map(([groupStatus, label]) => {
+                  const rows = invitations.filter((i) => i.status === groupStatus);
+                  if (rows.length === 0) return null;
+                  return (
+                    <div key={groupStatus} className="space-y-2">
+                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        {label} ({rows.length})
+                      </p>
+                      {rows.map((invitation) => {
+                        const accounts = invitation.influencer?.platformAccounts ?? [];
+                        return (
+                          <div key={invitation.id} className="rounded-xl border border-border p-4">
+                            <div className="flex flex-wrap items-start justify-between gap-3">
+                              <div>
+                                <p className="font-semibold text-foreground">{getInfluencerName(invitation)}</p>
+                                <p className="mt-1 text-xs text-muted-foreground">
+                                  {accounts.length
+                                    ? accounts.map((account) => `${account.platform} @${account.handle}`).join(" | ")
+                                    : "No connected platform data"}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <Badge className={cn("border-none uppercase", statusClass(invitation.status))}>
+                                  {invitation.status}
+                                </Badge>
+                                {invitation.status === "ACCEPTED" && invitation.conversationId ? (
+                                  <Button
+                                    size="sm"
+                                    variant="outline"
+                                    className="rounded-xl"
+                                    onClick={() => router.push(`/messages?convId=${invitation.conversationId}`)}
+                                  >
+                                    <MessageSquare className="mr-2 h-3 w-3" />
+                                    Message
+                                  </Button>
+                                ) : null}
+                              </div>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {isCampaignFinished ? (
         <CampaignPartnerReviews
           campaignId={campaign.id}
@@ -872,6 +993,76 @@ export default function CampaignDetailPage() {
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {showInvitePicker ? (
+        <div
+          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
+          onClick={() => setShowInvitePicker(false)}
+        >
+          <Card className="w-full max-w-md shadow-2xl border-none" onClick={(e) => e.stopPropagation()}>
+            <CardHeader className="pb-3">
+              <div className="flex items-center justify-between">
+                <CardTitle className="text-base">Invite from shortlist</CardTitle>
+                <button
+                  onClick={() => setShowInvitePicker(false)}
+                  className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
+                >
+                  <X className="h-4 w-4 text-muted-foreground" />
+                </button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Inviting to <span className="font-semibold text-foreground">{campaign.name}</span>
+              </p>
+            </CardHeader>
+            <CardContent className="space-y-2 pb-4 max-h-[60vh] overflow-y-auto">
+              {shortlistLoading ? (
+                <div className="flex justify-center py-6">
+                  <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                </div>
+              ) : shortlist.length === 0 ? (
+                <p className="py-4 text-center text-sm text-muted-foreground">
+                  Your shortlist is empty. Save creators from Discover first.
+                </p>
+              ) : (
+                shortlist.map((inf) => {
+                  const existing = applications.find((a) => a.influencer?.id === inf.id);
+                  const already = existing?.status === "INVITED" || existing?.status === "ACCEPTED";
+                  return (
+                    <div
+                      key={inf.id}
+                      className="flex items-center justify-between gap-3 rounded-xl border border-border p-3"
+                    >
+                      <div className="min-w-0">
+                        <p className="truncate text-sm font-semibold">{inf.name}</p>
+                        <p className="truncate text-xs text-muted-foreground">
+                          {Array.isArray(inf.platforms) && inf.platforms.length
+                            ? inf.platforms.join(", ")
+                            : "No platform data"}
+                        </p>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant={already ? "outline" : "default"}
+                        disabled={already || invitingId === inf.id}
+                        onClick={() => inviteFromShortlist(inf.id)}
+                        className="rounded-xl shrink-0"
+                      >
+                        {invitingId === inf.id ? (
+                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                        ) : already ? (
+                          existing?.status === "ACCEPTED" ? "Accepted" : "Invited"
+                        ) : (
+                          "Invite"
+                        )}
+                      </Button>
+                    </div>
+                  );
+                })
+              )}
+            </CardContent>
+          </Card>
+        </div>
       ) : null}
     </section>
   );

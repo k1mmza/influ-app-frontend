@@ -2,8 +2,18 @@
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGenerateSmartPlan, apiGetCampaigns, apiGetSmartPlanBrief, apiSaveSmartPlanBrief } from "@/lib/api";
+import {
+  apiGenerateSmartPlan,
+  apiGetCampaigns,
+  apiGetSmartPlanBrief,
+  apiSaveSmartPlanBrief,
+  apiCreateCampaignFromPlan,
+  type CampaignFields,
+  type Provenance,
+  type GeneratePlanResponse,
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -24,6 +34,10 @@ import {
   PenLine,
   BookOpen,
   Loader2,
+  Calendar,
+  Building2,
+  Wand2,
+  Rocket,
 } from "lucide-react";
 
 type StepId = "requirement" | "brief";
@@ -75,6 +89,55 @@ const requirementFields: { key: keyof RequirementData; label: string; fullWidth?
 
 type BriefSubSection = "strategy" | "concept" | "briefBody";
 type StartMode = "none" | "prompt" | "form";
+
+// New: review phase between generation and campaign creation
+type FlowPhase = "input" | "review" | "creating";
+
+// Human labels for campaignFields keys (dot-notation for nested requirements.*)
+const FIELD_LABELS: Record<string, string> = {
+  name: "Campaign name",
+  objective: "Objective",
+  budget: "Budget (THB)",
+  visibility: "Visibility",
+  paymentType: "Payment type",
+  keyMessage: "Key message",
+  doAndDont: "Do & Don't",
+  deliverables: "Deliverables",
+  applyDeadline: "Apply deadline",
+  submissionDate: "Submission date",
+  reviewDate: "Review date",
+  paymentDate: "Payment date",
+  "requirements.minFollowers": "Min followers",
+  "requirements.minEngagementRate": "Min engagement rate (%)",
+  "requirements.minAvgViews": "Min avg views",
+  "requirements.platforms": "Platforms",
+  "requirements.locations": "Locations",
+  "requirements.categories": "Categories",
+  "requirements.contentType": "Content type",
+};
+
+// Date fields always come back null from the backend — rendered as empty date inputs.
+const DATE_PATHS = ["applyDeadline", "submissionDate", "reviewDate", "paymentDate"];
+const NUMBER_PATHS = ["budget", "requirements.minFollowers", "requirements.minEngagementRate", "requirements.minAvgViews"];
+const ARRAY_PATHS = ["requirements.platforms", "requirements.locations", "requirements.categories"];
+const TEXTAREA_PATHS = ["keyMessage", "doAndDont", "deliverables"];
+
+function getByPath(obj: CampaignFields, path: string): unknown {
+  if (!path.includes(".")) return (obj as Record<string, unknown>)[path];
+  const [parent, child] = path.split(".");
+  const nested = (obj as Record<string, any>)[parent];
+  return nested ? nested[child] : undefined;
+}
+
+/** Immutably set a (possibly nested) path on a CampaignFields object. */
+function setByPath(obj: CampaignFields, path: string, value: unknown): CampaignFields {
+  if (!path.includes(".")) {
+    return { ...obj, [path]: value };
+  }
+  const [parent, child] = path.split(".");
+  const nested = { ...((obj as Record<string, any>)[parent] ?? {}), [child]: value };
+  return { ...obj, [parent]: nested };
+}
 
 function requirementInputPlaceholder(field: keyof RequirementData, label: string) {
   if (field === "productLinkOrWebsite") return "https://…";
@@ -140,6 +203,7 @@ const emptyRequirement: RequirementData = {
 
 export default function SmartPlanPage() {
   const { role, token } = useUserStore();
+  const router = useRouter();
   const [promptInput, setPromptInput] = useState("");
   const [activeStep, setActiveStep] = useState<StepId>("requirement");
   const [activeBriefSub, setActiveBriefSub] = useState<BriefSubSection>("strategy");
@@ -165,6 +229,16 @@ export default function SmartPlanPage() {
   const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
   const [campaignsLoading, setCampaignsLoading] = useState(false);
   const [campaignsError, setCampaignsError] = useState<string | null>(null);
+
+  // Smart Plan → Draft Campaign: review phase state
+  const [flowPhase, setFlowPhase] = useState<FlowPhase>("input");
+  const [campaignFields, setCampaignFields] = useState<CampaignFields | null>(null);
+  const [provenance, setProvenance] = useState<Provenance>({ userProvided: [], aiSuggested: [] });
+  const [createError, setCreateError] = useState<string | null>(null);
+  // Agency-only: client brand id, typed manually (same mechanism as the Create Campaign page,
+  // which uses a plain text input — no list endpoint exists for an agency's client brands).
+  // TODO: replace with a proper dropdown once GET /agency/client-brands (or similar) exists.
+  const [agencyClientBrandId, setAgencyClientBrandId] = useState("");
 
   // Fix 1 — restore last saved brief when the page loads (brand/agency only)
   useEffect(() => {
@@ -204,6 +278,125 @@ export default function SmartPlanPage() {
     setActiveBriefSub("strategy");
   };
 
+  // New: capture the full generated plan and enter the REVIEW phase.
+  // Brief text is stored too so the "Just save the brief" path still works.
+  const applyGeneratedPlan = (result: GeneratePlanResponse) => {
+    setStrategyText(result.strategy);
+    setConceptText(result.concept);
+    setBriefText(result.briefBody);
+    setCampaignFields(result.campaignFields ?? {});
+    setProvenance(result.provenance ?? { userProvided: [], aiSuggested: [] });
+    setCreateError(null);
+    setFlowPhase("review");
+  };
+
+  const updateCampaignField = (path: string, value: unknown) => {
+    setCampaignFields((prev) => setByPath(prev ?? {}, path, value));
+  };
+
+  // Primary CTA — create the DRAFT campaign from the (possibly edited) fields.
+  const handleCreateDraftCampaign = async () => {
+    if (!token || !campaignFields) return;
+    setFlowPhase("creating");
+    setCreateError(null);
+    try {
+      const { campaignId } = await apiCreateCampaignFromPlan(token, {
+        campaignFields,
+        strategy: strategyText,
+        concept: conceptText,
+        briefBody: briefText,
+        clientBrandId: role === "agency" ? agencyClientBrandId.trim() || undefined : undefined,
+      });
+      router.push(`/campaigns/${campaignId}`);
+    } catch (err: any) {
+      // Inline error banner (this page has no toast lib — matches generateError pattern)
+      setCreateError(err?.message || "Failed to create campaign. Please try again.");
+      setFlowPhase("review");
+    }
+  };
+
+  // Secondary CTA — preserve today's brief-only behavior: drop into the brief tabs
+  // and persist the standalone brief via the existing save endpoint.
+  const handleJustSaveBrief = async () => {
+    setFlowPhase("input");
+    applyGeneratedBrief({ strategy: strategyText, concept: conceptText, briefBody: briefText });
+    await handleSaveBrief();
+  };
+
+  // Renders one editable field in the review screen based on its path's value type.
+  const renderReviewField = (path: string) => {
+    const label = FIELD_LABELS[path] ?? path;
+    const raw = getByPath(campaignFields ?? {}, path);
+    const isDate = DATE_PATHS.includes(path);
+    const isNumber = NUMBER_PATHS.includes(path);
+    const isArray = ARRAY_PATHS.includes(path);
+    const isTextarea = TEXTAREA_PATHS.includes(path);
+
+    let control: React.ReactNode;
+    if (isArray) {
+      const arr = Array.isArray(raw) ? (raw as string[]) : [];
+      control = (
+        <Input
+          value={arr.join(", ")}
+          onChange={(e) =>
+            updateCampaignField(
+              path,
+              e.target.value.split(",").map((s) => s.trim()).filter(Boolean),
+            )
+          }
+          placeholder="Comma-separated"
+        />
+      );
+    } else if (isNumber) {
+      control = (
+        <Input
+          type="number"
+          value={raw == null ? "" : String(raw)}
+          onChange={(e) =>
+            updateCampaignField(path, e.target.value === "" ? undefined : Number(e.target.value))
+          }
+          placeholder="0"
+        />
+      );
+    } else if (isDate) {
+      control = (
+        <Input
+          type="date"
+          value={typeof raw === "string" ? raw : ""}
+          onChange={(e) => updateCampaignField(path, e.target.value || null)}
+        />
+      );
+    } else if (isTextarea) {
+      control = (
+        <textarea
+          rows={3}
+          value={typeof raw === "string" ? raw : ""}
+          onChange={(e) => updateCampaignField(path, e.target.value)}
+          className="w-full resize-none rounded-xl border border-border bg-background px-4 py-3 text-sm text-foreground outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
+        />
+      );
+    } else {
+      control = (
+        <Input
+          value={typeof raw === "string" || typeof raw === "number" ? String(raw) : ""}
+          onChange={(e) => updateCampaignField(path, e.target.value)}
+        />
+      );
+    }
+
+    return (
+      <label key={path} className="block space-y-1.5">
+        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+          {label}
+        </span>
+        {control}
+        {isDate && (
+          <span className="text-[10px] text-muted-foreground">Optional — you can set this on the campaign page.</span>
+        )}
+      </label>
+    );
+  };
+
   const applyPromptText = async (input: string): Promise<boolean> => {
     const trimmed = input.trim();
     if (!trimmed) return false;
@@ -239,12 +432,12 @@ export default function SmartPlanPage() {
       return true;
     }
 
-    // @Requirement or freeform → call AI
+    // @Requirement or freeform → call AI, then enter the REVIEW phase
     setIsGenerating(true);
     setGenerateError(null);
     try {
-      const brief = await apiGenerateSmartPlan(token!, { rawPrompt: trimmed });
-      applyGeneratedBrief(brief);
+      const result = await apiGenerateSmartPlan(token!, { rawPrompt: trimmed });
+      applyGeneratedPlan(result);
     } catch (err: any) {
       setGenerateError(err.message || "Generation failed. Please try again.");
     } finally {
@@ -303,8 +496,8 @@ export default function SmartPlanPage() {
     setIsGenerating(true);
     setGenerateError(null);
     try {
-      const brief = await apiGenerateSmartPlan(token!, formDraft);
-      applyGeneratedBrief(brief);
+      const result = await apiGenerateSmartPlan(token!, formDraft);
+      applyGeneratedPlan(result);
     } catch (err: any) {
       setGenerateError(err.message || "Generation failed. Please try again.");
       setHasStarted(true);
@@ -483,7 +676,7 @@ export default function SmartPlanPage() {
       )}
 
       {/* Create View — Start Mode Selection */}
-      {viewMode === "create" && !isPlannerVisible && (
+      {viewMode === "create" && !isPlannerVisible && flowPhase === "input" && (
         <div className="space-y-6">
           {startMode === "none" && (
             <>
@@ -641,8 +834,151 @@ export default function SmartPlanPage() {
         </div>
       )}
 
+      {/* Review Phase — confirm AI-inferred campaign before creating a draft.
+          Stays mounted during "creating" so the button spinner is visible. */}
+      {viewMode === "create" && flowPhase !== "input" && campaignFields && (
+        <div className="space-y-6">
+          <div className="flex items-start justify-between gap-3">
+            <div>
+              <h2 className="text-lg font-bold font-serif text-foreground">Review your campaign</h2>
+              <p className="mt-1 text-sm text-muted-foreground">
+                We drafted these fields from your input. Edit anything before creating the draft campaign.
+              </p>
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => { setFlowPhase("input"); }}
+              className="text-muted-foreground"
+            >
+              ← Back
+            </Button>
+          </div>
+
+          {createError && (
+            <div className="rounded-xl border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
+              {createError}
+            </div>
+          )}
+
+          {/* You provided */}
+          {provenance.userProvided.length > 0 && (
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 font-serif text-base">
+                  <CheckCircle2 className="h-4 w-4 text-green-600" />
+                  You provided
+                </CardTitle>
+                <CardDescription>Fields taken directly from your input.</CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid gap-4 sm:grid-cols-2">
+                  {provenance.userProvided.map((path) => renderReviewField(path))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* AI suggested */}
+          <Card className="border-none shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 font-serif text-base">
+                <Wand2 className="h-4 w-4 text-secondary" />
+                AI suggested — review these
+              </CardTitle>
+              <CardDescription>Best-guess values. Double-check and adjust as needed.</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid gap-4 sm:grid-cols-2">
+                {/* AI-suggested fields + the four date fields (always shown, empty) */}
+                {[
+                  ...provenance.aiSuggested,
+                  ...DATE_PATHS.filter((d) => !provenance.aiSuggested.includes(d)),
+                ].map((path) => renderReviewField(path))}
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Agency-only client brand selector (required by the backend for AGENCY) */}
+          {role === "agency" && (
+            <Card className="border-none shadow-sm">
+              <CardHeader className="pb-2">
+                <CardTitle className="flex items-center gap-2 font-serif text-base">
+                  <Building2 className="h-4 w-4 text-primary" />
+                  Client brand
+                </CardTitle>
+                <CardDescription>
+                  Required — the campaign is created under this client brand.
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <label className="block space-y-1.5">
+                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    Client brand ID
+                  </span>
+                  <Input
+                    value={agencyClientBrandId}
+                    onChange={(e) => setAgencyClientBrandId(e.target.value)}
+                    placeholder="Paste the client brand ID"
+                  />
+                </label>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Generated brief — collapsible, unchanged content */}
+          <details className="rounded-2xl border border-border bg-card shadow-sm">
+            <summary className="flex cursor-pointer items-center gap-2 px-5 py-4 text-sm font-semibold text-foreground">
+              <BookOpen className="h-4 w-4 text-primary" />
+              View generated brief (strategy, concept, creative brief)
+            </summary>
+            <div className="space-y-4 border-t border-border p-5">
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Strategy</span>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{strategyText || "—"}</p>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Concept</span>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{conceptText || "—"}</p>
+              </div>
+              <div className="space-y-1.5">
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Creative Brief</span>
+                <p className="whitespace-pre-wrap text-sm text-foreground">{briefText || "—"}</p>
+              </div>
+            </div>
+          </details>
+
+          {/* Actions */}
+          <div className="flex flex-wrap items-center justify-end gap-3 border-t border-border pt-4">
+            <Button
+              variant="outline"
+              onClick={handleJustSaveBrief}
+              disabled={flowPhase === "creating"}
+              className="rounded-xl"
+            >
+              <FileText className="mr-2 h-4 w-4" /> Just save the brief
+            </Button>
+            <Button
+              onClick={handleCreateDraftCampaign}
+              disabled={
+                flowPhase === "creating" ||
+                !campaignFields ||
+                (role === "agency" && !agencyClientBrandId.trim())
+              }
+              className="rounded-xl shadow-sm"
+            >
+              {flowPhase === "creating" ? (
+                <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating…</>
+              ) : (
+                <><Rocket className="mr-2 h-4 w-4" /> Create draft campaign</>
+              )}
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Planner Workspace */}
-      {(viewMode === "detail" || (viewMode === "create" && isPlannerVisible)) && (
+      {flowPhase === "input" && (viewMode === "detail" || (viewMode === "create" && isPlannerVisible)) && (
         <div className="space-y-6">
           {/* Step Bar */}
           <Card className="border-none shadow-sm">

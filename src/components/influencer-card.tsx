@@ -75,7 +75,6 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
   );
   const { toggle, has } = useShortlistStore();
   const saved = has(influencer.id);
-  const multiPlatform = orderedPlatforms.length > 1;
 
   return (
     <Card
@@ -94,9 +93,25 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         />
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
 
+        {/* Active-platform badge — mirrors the platform whose stats are currently shown
+            (updates when the user switches platforms via the pills below). */}
+        {activePlatform && (() => {
+          const { Icon, iconClassName } = platformPresentation(activePlatform);
+          return (
+            <div className="absolute top-3 left-3">
+              <span
+                title={activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)}
+                className="flex h-7 w-7 items-center justify-center rounded-full bg-card/90 shadow-sm backdrop-blur-sm"
+              >
+                <Icon className={cn("size-3.5 shrink-0", iconClassName)} />
+              </span>
+            </div>
+          );
+        })()}
+
         <div className="absolute top-3 right-3 flex items-center gap-2">
           <button
-            onClick={(e) => { e.stopPropagation(); toggle(influencer.id); }}
+            onClick={(e) => { e.stopPropagation(); toggle(influencer.id, influencer); }}
             className={cn(
               "flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors cursor-pointer",
               saved ? "bg-rose-500/90 text-white" : "bg-card/80 text-muted-foreground hover:text-rose-500",
@@ -129,8 +144,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
       </div>
 
       <CardContent className="p-4 space-y-3 bg-background">
-        {/* Platform switcher pills — only when 2+ platforms */}
-        {multiPlatform && (
+        {/* Platform switcher pills — always shown so a connected platform is visible
+            even when the influencer has only one. */}
+        {orderedPlatforms.length > 0 && (
           <div
             className="flex gap-1.5"
             role="tablist"

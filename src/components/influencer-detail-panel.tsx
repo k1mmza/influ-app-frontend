@@ -16,6 +16,7 @@ import {
   FileText,
   RefreshCw,
   TrendingUp,
+  AtSign,
 } from "lucide-react";
 import { SiYoutube, SiTiktok, SiInstagram, SiFacebook, SiX as SiXIcon } from "react-icons/si";
 import { FaGlobe } from "react-icons/fa";
@@ -559,6 +560,56 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                 View Full Rate Card
                 <ExternalLink className="ml-auto h-3.5 w-3.5" />
               </a>
+            )}
+          </section>
+
+          {/* Contact — how a brand can reach this influencer.
+              Reality check: TikTok/Instagram/YouTube APIs do NOT expose contact emails,
+              and the schema has no email/phone/website on InfluencerProfile or
+              PlatformAccount. So the only reliable contact points are the connected
+              platform handles (linking to the public profile URL when available).
+              TODO: add an optional `contactEmail` field to InfluencerProfile (schema
+              migration) so influencers can provide a direct email, then surface it here. */}
+          <section className="space-y-4">
+            <h3 className="text-sm font-bold uppercase tracking-widest text-foreground flex items-center gap-2 font-serif">
+              <AtSign className="h-4 w-4" />
+              Contact
+            </h3>
+            {orderedPlatforms.some((p) => influencer.handleByPlatform?.[p]) ? (
+              <Card className="border-none bg-muted/80 shadow-none">
+                <CardContent className="p-5 space-y-3">
+                  {orderedPlatforms.map((platform) => {
+                    const handle = influencer.handleByPlatform?.[platform];
+                    if (!handle) return null;
+                    const profileUrl = influencer.profileUrlByPlatform?.[platform];
+                    const label = platform.charAt(0).toUpperCase() + platform.slice(1);
+                    const displayHandle = `@${handle.replace(/^@/, "")}`;
+                    return (
+                      <div key={platform} className="flex items-center justify-between gap-3 text-sm">
+                        <span className="flex items-center gap-2 text-muted-foreground font-medium">
+                          <PlatformIcon platform={platform} className="h-4 w-4 shrink-0" />
+                          {label}
+                        </span>
+                        {profileUrl ? (
+                          <a
+                            href={profileUrl}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-1 font-semibold text-primary hover:underline truncate"
+                          >
+                            {displayHandle}
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="font-semibold text-foreground truncate">{displayHandle}</span>
+                        )}
+                      </div>
+                    );
+                  })}
+                </CardContent>
+              </Card>
+            ) : (
+              <p className="text-sm text-muted-foreground">No contact info available.</p>
             )}
           </section>
         </div>
