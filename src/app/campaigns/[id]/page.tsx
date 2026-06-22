@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, Loader2, MessageSquare, Send, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -14,11 +14,13 @@ import {
   apiInviteToCampaign,
   apiUpdateCampaign,
   apiUpdateCampaignApplicationStatus,
+  apiFetchInfluencer,
   CampaignApplicationResponse,
   CampaignResponse,
   CampaignStatus,
 } from "@/lib/api";
 import { CampaignPartnerReviews } from "@/components/CampaignPartnerReviews";
+import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { useUserStore } from "@/store/useUserStore";
 import { Role } from "@/lib/types";
 import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
@@ -48,6 +50,28 @@ function statusClass(status?: string) {
   return "bg-muted text-muted-foreground";
 }
 
+function formatFollowers(n?: number) {
+  if (!n || n <= 0) return "—";
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+  return String(n);
+}
+
+function applicationAvatar(name: string) {
+  return `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(name || "creator")}`;
+}
+
+function getPrimaryAccount(
+  accounts?: Array<{ platform: string; handle: string; followers?: number; avgViews?: number; engagementRate?: number }>,
+) {
+  if (!accounts || accounts.length === 0) return null;
+  return [...accounts].sort((a, b) => (b.followers ?? 0) - (a.followers ?? 0))[0];
+}
+
+function toCategoryList(categories: unknown): string[] {
+  return Array.isArray(categories) ? categories.filter((c): c is string => typeof c === "string") : [];
+}
+
 const objectives = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 
 function numberOrUndefined(value: string) {
@@ -75,6 +99,9 @@ export default function CampaignDetailPage() {
   const [applications, setApplications] = useState<CampaignApplicationResponse[]>([]);
   const [loading, setLoading] = useState(true);
   const [busyAction, setBusyAction] = useState<string | null>(null);
+  const [applicationsView, setApplicationsView] = useState<"text" | "card">("text");
+  const [detailInfluencer, setDetailInfluencer] = useState<any | null>(null);
+  const [detailLoadingId, setDetailLoadingId] = useState<string | null>(null);
   const [message, setMessage] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
@@ -289,6 +316,54 @@ export default function CampaignDetailPage() {
       setBusyAction(null);
     }
   };
+
+  // Open the Discover-style detail panel for an applicant's influencer profile.
+  const openInfluencerDetail = async (influencerId?: string) => {
+    if (!influencerId) return;
+    setDetailLoadingId(influencerId);
+    try {
+      const data = await apiFetchInfluencer(influencerId);
+      if (data) setDetailInfluencer(data);
+    } catch {
+      // Non-fatal — leave the panel closed if the profile can't be fetched.
+    } finally {
+      setDetailLoadingId(null);
+    }
+  };
+
+  // Accept / Reject / Message actions — shared between the text and card views.
+  const renderApplicationActions = (application: CampaignApplicationResponse) => (
+    <>
+      <Button
+        size="sm"
+        onClick={() => updateApplication(application.id, "ACCEPTED")}
+        disabled={busyAction != null || application.status === "ACCEPTED"}
+      >
+        {busyAction === application.id ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Check className="mr-2 h-3 w-3" />}
+        Accept
+      </Button>
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => updateApplication(application.id, "REJECTED")}
+        disabled={busyAction != null || application.status === "REJECTED"}
+      >
+        <X className="mr-2 h-3 w-3" />
+        Reject
+      </Button>
+      {application.status === "ACCEPTED" && application.conversationId ? (
+        <Button
+          size="sm"
+          variant="outline"
+          className="rounded-xl"
+          onClick={() => router.push(`/messages?convId=${application.conversationId}`)}
+        >
+          <MessageSquare className="mr-2 h-3 w-3" />
+          Message
+        </Button>
+      ) : null}
+    </>
+  );
 
   const copyShareLink = async () => {
     if (!campaign || typeof window === "undefined") return;
@@ -829,57 +904,142 @@ export default function CampaignDetailPage() {
       {canManageCampaign ? (
         <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Applications</CardTitle>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-lg">Applications</CardTitle>
+              {inboundApplications.length > 0 ? (
+                <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+                  {([
+                    ["text", "Text", Rows3],
+                    ["card", "Profile card", LayoutGrid],
+                  ] as const).map(([mode, label, Icon]) => (
+                    <button
+                      key={mode}
+                      type="button"
+                      onClick={() => setApplicationsView(mode)}
+                      aria-pressed={applicationsView === mode}
+                      className={cn(
+                        "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition",
+                        applicationsView === mode
+                          ? "bg-card text-foreground shadow-sm"
+                          : "text-muted-foreground hover:text-foreground",
+                      )}
+                    >
+                      <Icon className="h-3.5 w-3.5" />
+                      {label}
+                    </button>
+                  ))}
+                </div>
+              ) : null}
+            </div>
           </CardHeader>
           <CardContent>
             {inboundApplications.length === 0 ? (
               <p className="text-sm text-muted-foreground">No applications yet.</p>
-            ) : (
-              <div className="space-y-3">
+            ) : applicationsView === "text" ? (
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
                 {inboundApplications.map((application) => {
                   const accounts = application.influencer?.platformAccounts ?? [];
                   return (
-                    <div key={application.id} className="rounded-xl border border-border p-4">
-                      <div className="flex flex-wrap items-start justify-between gap-3">
-                        <div>
-                          <p className="font-semibold text-foreground">{getInfluencerName(application)}</p>
-                          <p className="mt-1 text-xs text-muted-foreground">
-                            {accounts.length
-                              ? accounts.map((account) => `${account.platform} @${account.handle}`).join(" | ")
-                              : "No connected platform data"}
+                    <div key={application.id} className="flex flex-wrap items-center justify-between gap-3 px-4 py-3">
+                      <div className="min-w-0">
+                        <div className="flex items-center gap-2">
+                          <p className="truncate font-semibold text-foreground">{getInfluencerName(application)}</p>
+                          <Badge className={cn("border-none uppercase", statusClass(application.status))}>{application.status}</Badge>
+                        </div>
+                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                          {accounts.length
+                            ? accounts.map((account) => `${account.platform} @${account.handle}`).join(" | ")
+                            : "No connected platform data"}
+                        </p>
+                      </div>
+                      <div className="flex flex-wrap gap-2">{renderApplicationActions(application)}</div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {inboundApplications.map((application) => {
+                  const name = getInfluencerName(application);
+                  const accounts = application.influencer?.platformAccounts ?? [];
+                  const primary = getPrimaryAccount(accounts);
+                  const cats = toCategoryList(application.influencer?.categories).slice(0, 3);
+                  const isLoadingDetail = detailLoadingId === application.influencer?.id;
+                  return (
+                    <div
+                      key={application.id}
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openInfluencerDetail(application.influencer?.id)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" || e.key === " ") {
+                          e.preventDefault();
+                          openInfluencerDetail(application.influencer?.id);
+                        }
+                      }}
+                      className="flex cursor-pointer flex-col rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+                    >
+                      <div className="flex items-start gap-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={applicationAvatar(name)}
+                          alt={name}
+                          className="h-12 w-12 shrink-0 rounded-full border border-border bg-muted object-cover"
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="truncate font-semibold text-foreground">{name}</p>
+                          <p className="truncate text-xs text-muted-foreground">
+                            {primary ? `${primary.platform} @${primary.handle}` : "No connected platform"}
                           </p>
                         </div>
                         <Badge className={cn("border-none uppercase", statusClass(application.status))}>{application.status}</Badge>
                       </div>
-                      <div className="mt-3 flex flex-wrap gap-2">
-                        <Button
-                          size="sm"
-                          onClick={() => updateApplication(application.id, "ACCEPTED")}
-                          disabled={busyAction != null || application.status === "ACCEPTED"}
-                        >
-                          {busyAction === application.id ? <Loader2 className="mr-2 h-3 w-3 animate-spin" /> : <Check className="mr-2 h-3 w-3" />}
-                          Accept
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => updateApplication(application.id, "REJECTED")}
-                          disabled={busyAction != null || application.status === "REJECTED"}
-                        >
-                          <X className="mr-2 h-3 w-3" />
-                          Reject
-                        </Button>
-                        {application.status === "ACCEPTED" && application.conversationId ? (
-                          <Button
-                            size="sm"
-                            variant="outline"
-                            className="rounded-xl"
-                            onClick={() => router.push(`/messages?convId=${application.conversationId}`)}
-                          >
-                            <MessageSquare className="mr-2 h-3 w-3" />
-                            Message
-                          </Button>
-                        ) : null}
+
+                      {application.influencer?.bio ? (
+                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{application.influencer.bio}</p>
+                      ) : null}
+
+                      {primary ? (
+                        <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted/40 p-2 text-center">
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.followers)}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Followers</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.avgViews)}</p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Avg views</p>
+                          </div>
+                          <div>
+                            <p className="text-sm font-semibold text-foreground">
+                              {primary.engagementRate != null ? `${primary.engagementRate.toFixed(1)}%` : "—"}
+                            </p>
+                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Eng.</p>
+                          </div>
+                        </div>
+                      ) : null}
+
+                      {cats.length ? (
+                        <div className="mt-3 flex flex-wrap gap-1.5">
+                          {cats.map((c) => (
+                            <span key={c} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                              {c}
+                            </span>
+                          ))}
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-primary">
+                        {isLoadingDetail ? (
+                          <>
+                            <Loader2 className="h-3 w-3 animate-spin" /> Loading profile…
+                          </>
+                        ) : (
+                          "Click to view full profile"
+                        )}
+                      </div>
+
+                      <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+                        {renderApplicationActions(application)}
                       </div>
                     </div>
                   );
@@ -993,6 +1153,14 @@ export default function CampaignDetailPage() {
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {detailInfluencer && detailInfluencer.meta ? (
+        <InfluencerDetailPanel
+          influencer={detailInfluencer}
+          meta={detailInfluencer.meta}
+          onClose={() => setDetailInfluencer(null)}
+        />
       ) : null}
 
       {showInvitePicker ? (

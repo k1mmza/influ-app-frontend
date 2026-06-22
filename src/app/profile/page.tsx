@@ -1,11 +1,10 @@
 "use client";
 
-import { Download, Heart, Upload, Loader2, CheckCircle2, Link2, FileText, Trash2, ExternalLink, Youtube, Unlink } from "lucide-react";
+import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
 import {
   buildMediaKitExportPayload,
-  parseMediaKitImportFile,
   useMediaKitStore,
 } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
@@ -14,6 +13,7 @@ import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, 
 import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 import { Camera } from "lucide-react";
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
+import { MediaKitImportPanel, type MediaKitImportHandle } from "@/components/media-kit-import-panel";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
 
@@ -372,11 +372,10 @@ function InfluencerProfileView() {
   const kit = useMediaKitStore();
   const setKit = useMediaKitStore((s) => s.setKit);
   const setSocialRow = useMediaKitStore((s) => s.setSocialRow);
-  const applyImport = useMediaKitStore((s) => s.applyImport);
   const setUploadedPdfFileName = useMediaKitStore((s) => s.setUploadedPdfFileName);
   const uploadRef = useRef<HTMLInputElement>(null);
+  const mediaKitPanelRef = useRef<MediaKitImportHandle>(null);
   const [importMessage, setImportMessage] = useState<string | null>(null);
-  const [profileUrl, setProfileUrl] = useState("");
   const [saving, setSaving] = useState(false);
   const [saved, setSaved] = useState(false);
   const [profileLoaded, setProfileLoaded] = useState(false);
@@ -408,9 +407,9 @@ function InfluencerProfileView() {
     }
   }, []);
 
-  // Load real profile data into the media kit store once
-  useEffect(() => {
-    if (!token || profileLoaded) return;
+  // Fetch real profile data into the media kit store. Reused after a media-kit import.
+  const refreshProfile = () => {
+    if (!token) return;
     Promise.all([apiGetProfile(token), apiGetCompleteness(token)])
       .then(([data, score]) => {
         setCompletenessScore(score);
@@ -436,6 +435,13 @@ function InfluencerProfileView() {
         setProfileLoaded(true);
       })
       .catch(console.error);
+  };
+
+  // Load real profile data into the media kit store once
+  useEffect(() => {
+    if (!token || profileLoaded) return;
+    refreshProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [token]);
 
   const handleSave = async () => {
@@ -490,25 +496,9 @@ function InfluencerProfileView() {
     const file = e.target.files?.[0];
     e.target.value = "";
     if (!file) return;
-
-    if (file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf")) {
-      setUploadedPdfFileName(file.name);
-      setImportMessage(`Attached PDF for brands: ${file.name} (stored locally for this demo).`);
-      return;
-    }
-
-    const reader = new FileReader();
-    reader.onload = () => {
-      const text = String(reader.result ?? "");
-      const partial = parseMediaKitImportFile(text);
-      if (partial) {
-        applyImport(partial);
-        setImportMessage("Media kit JSON imported.");
-      } else {
-        setImportMessage("Could not read that file as media kit JSON.");
-      }
-    };
-    reader.readAsText(file);
+    // Hand the file to the AI media-kit import → review & confirm panel.
+    setImportMessage(null);
+    void mediaKitPanelRef.current?.analyze(file);
   };
 
   const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
@@ -531,7 +521,7 @@ function InfluencerProfileView() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <input ref={uploadRef} type="file" accept=".json,application/json,application/pdf,.pdf" className="hidden" onChange={onUploadFiles} />
+            <input ref={uploadRef} type="file" accept=".json,application/json,.pdf,application/pdf" className="hidden" onChange={onUploadFiles} />
             <button
               type="button"
               onClick={() => uploadRef.current?.click()}
@@ -552,40 +542,11 @@ function InfluencerProfileView() {
         </div>
       </div>
 
-      {/* Social URL import — future feature */}
-      <div className="rounded-2xl border border-dashed border-border bg-card p-5 shadow-sm">
-        <div className="mb-3 flex items-center gap-2">
-          <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary/10">
-            <Link2 className="h-4 w-4 text-primary" />
-          </div>
-          <div className="flex items-center gap-2">
-            <h2 className="text-sm font-semibold text-foreground">Import from social profile URL</h2>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              Coming soon
-            </span>
-          </div>
-        </div>
-        <p className="mb-3 text-xs text-muted-foreground">
-          Paste an Instagram, TikTok, or YouTube profile link and we'll automatically pull your follower count, engagement rate, and bio.
-        </p>
-        <div className="flex gap-2">
-          <input
-            type="url"
-            value={profileUrl}
-            onChange={(e) => setProfileUrl(e.target.value)}
-            placeholder="https://www.instagram.com/yourhandle"
-            className="flex-1 rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10"
-          />
-          <button
-            type="button"
-            disabled
-            title="Coming soon"
-            className="inline-flex cursor-not-allowed items-center gap-2 rounded-xl border border-border bg-muted px-4 py-2 text-sm font-semibold text-muted-foreground opacity-60"
-          >
-            Pull Data
-          </button>
-        </div>
-      </div>
+      {/* AI media-kit import — driven by the header "Upload JSON / PDF" button.
+          Renders only after a file is picked; nothing auto-saves. */}
+      {token && (
+        <MediaKitImportPanel ref={mediaKitPanelRef} token={token} onApplied={refreshProfile} />
+      )}
 
       {/* Connected platforms */}
       <article className="rounded-2xl bg-card p-5 shadow-sm">

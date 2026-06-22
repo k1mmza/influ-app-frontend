@@ -371,6 +371,51 @@ export async function apiUploadRateCard(token: string, file: File): Promise<{ ra
   return res.json();
 }
 
+export interface MediaKitRateCard {
+  pricePerPost?: number;
+  pricePerVideo?: number;
+  pricePerStory?: number;
+  packagePrice?: number;
+  packageDescription?: string;
+}
+
+export interface MediaKitProposed {
+  bio?: string;
+  categories?: string[];
+  styleTags?: string[];
+  keywords?: string[];
+  hashtags?: string[];
+  availabilityStatus?: string;
+  rateCard?: MediaKitRateCard;
+}
+
+export interface MediaKitAnalysis {
+  proposed: MediaKitProposed;
+  claimedMetrics: Record<string, number>;
+  warnings: string[];
+  source: "json" | "pdf" | "image" | "unknown";
+}
+
+/**
+ * Upload a media kit (JSON or text PDF) for AI/deterministic extraction.
+ * Returns PROPOSED self-reported fields for review — saves NOTHING. The user
+ * confirms, then apiUpdateProfile performs the only write.
+ */
+export async function apiAnalyzeMediaKit(token: string, file: File): Promise<MediaKitAnalysis> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/profile/media-kit/analyze`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) {
+    const error = await res.json().catch(() => ({}));
+    throw new Error(error.message || "Media kit analysis failed");
+  }
+  return res.json();
+}
+
 export async function apiDeleteRateCard(token: string): Promise<void> {
   const res = await fetch(`${API_URL}/profile/rate-card`, {
     method: "DELETE",

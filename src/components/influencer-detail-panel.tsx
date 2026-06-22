@@ -614,25 +614,31 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
           </section>
         </div>
 
-        <footer className="sticky bottom-0 border-t bg-background/80 p-6 backdrop-blur-md">
-          <div className="flex gap-3">
-            <Button
-              className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20"
-              onClick={() => onAddToCampaign?.(influencer)}
-            >
-              <PlusCircle className="mr-2 h-5 w-5" />
-              Add to Campaign
-            </Button>
-            <Button
-              variant="outline"
-              className="flex-1 rounded-xl h-12 text-base font-bold"
-              onClick={() => onMessage?.(influencer)}
-            >
-              <MessageCircle className="mr-2 h-5 w-5" />
-              Message
-            </Button>
-          </div>
-        </footer>
+        {(onAddToCampaign || onMessage) && (
+          <footer className="sticky bottom-0 border-t bg-background/80 p-6 backdrop-blur-md">
+            <div className="flex gap-3">
+              {onAddToCampaign && (
+                <Button
+                  className="flex-1 rounded-xl h-12 text-base font-bold shadow-lg shadow-primary/20"
+                  onClick={() => onAddToCampaign(influencer)}
+                >
+                  <PlusCircle className="mr-2 h-5 w-5" />
+                  Add to Campaign
+                </Button>
+              )}
+              {onMessage && (
+                <Button
+                  variant="outline"
+                  className="flex-1 rounded-xl h-12 text-base font-bold"
+                  onClick={() => onMessage(influencer)}
+                >
+                  <MessageCircle className="mr-2 h-5 w-5" />
+                  Message
+                </Button>
+              )}
+            </div>
+          </footer>
+        )}
       </div>
     </aside>
   );

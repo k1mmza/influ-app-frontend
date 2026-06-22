@@ -251,16 +251,18 @@ export default function SmartPlanPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []); // run once on mount
 
-  // Fix 2 — fetch real campaigns when the list view is opened
+  // Fix 2 — load the user's campaigns for brand/agency. Needed by BOTH the list view
+  // and the brief-panel campaign picker (which renders in the create/detail views), so
+  // it must not be gated on viewMode. Refetches on view change to stay fresh.
   useEffect(() => {
-    if (viewMode !== "list" || !token) return;
+    if (!token || (role !== "brand" && role !== "agency")) return;
     setCampaignsLoading(true);
     setCampaignsError(null);
     apiGetCampaigns(token)
       .then((data) => setMyCampaigns(data.map(apiCampaignToLocal)))
       .catch((err) => setCampaignsError(err.message ?? "Failed to load campaigns"))
       .finally(() => setCampaignsLoading(false));
-  }, [viewMode, token]);
+  }, [token, role, viewMode]);
 
   const promptHint = useMemo(() => {
     return hasStarted
@@ -485,6 +487,13 @@ export default function SmartPlanPage() {
     setStrategyText("");
     setConceptText("");
     setBriefText("");
+  };
+
+  // Option A: attach the CURRENT (already-generated) brief to an existing campaign so the
+  // next save sets campaignId — without wiping the strategy/concept/brief text the user has.
+  const attachCampaignToBrief = (campaign: Campaign | null) => {
+    if (!campaign) return;
+    setSelectedCampaign(campaign);
   };
 
   const updateFormDraft = (field: keyof RequirementData, value: string) => {
@@ -1098,7 +1107,11 @@ export default function SmartPlanPage() {
 
                   {isBriefCampaignPickerOpen && (
                     <div className="mt-4 space-y-2 border-t border-border pt-4">
-                      {myCampaigns.length === 0 ? (
+                      {campaignsLoading ? (
+                        <p className="text-sm text-muted-foreground">Loading campaigns…</p>
+                      ) : campaignsError ? (
+                        <p className="text-sm text-destructive">{campaignsError}</p>
+                      ) : myCampaigns.length === 0 ? (
                         <p className="text-sm text-muted-foreground">
                           No campaigns yet.{" "}
                           <Link href="/campaigns/create" className="text-primary hover:underline">
@@ -1111,7 +1124,7 @@ export default function SmartPlanPage() {
                             key={campaign.id}
                             type="button"
                             onClick={() => {
-                              applyCampaignRequirementToBrief(campaign);
+                              attachCampaignToBrief(campaign);
                               setIsBriefCampaignPickerOpen(false);
                             }}
                             className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left text-sm transition hover:border-primary/30 hover:bg-primary/5"
