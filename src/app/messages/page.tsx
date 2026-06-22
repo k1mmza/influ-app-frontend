@@ -13,7 +13,9 @@ import {
   apiMarkPhaseReady,
   apiMarkConversationRead,
   apiGetConversation,
+  apiGetConversationBrief,
   apiUploadConversationFile,
+  type ConversationBrief,
 } from "@/lib/api";
 import { Loader2, Send } from "lucide-react";
 
@@ -33,6 +35,9 @@ function MessagesView({ role }: { role: string }) {
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedCampaignId, setSelectedCampaignId] = useState<string>("");
   const [attachments, setAttachments] = useState<{ contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null }>({ contractUrl: null, briefFileUrl: null, paymentProofUrl: null });
+  const [brief, setBrief] = useState<ConversationBrief | null>(null);
+  const [draftsRefreshKey, setDraftsRefreshKey] = useState(0);
+  const [paymentsRefreshKey, setPaymentsRefreshKey] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const socketRef = useRef<Socket | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
@@ -86,11 +91,18 @@ function MessagesView({ role }: { role: string }) {
       );
     };
 
+    const handleDraftsUpdate = () => setDraftsRefreshKey((k) => k + 1);
+    const handlePaymentsUpdate = () => setPaymentsRefreshKey((k) => k + 1);
+
     socket.on("new-message", handleNewMessage);
     socket.on("phase-update", handlePhaseUpdate);
+    socket.on("drafts-update", handleDraftsUpdate);
+    socket.on("payments-update", handlePaymentsUpdate);
     return () => {
       socket.off("new-message", handleNewMessage);
       socket.off("phase-update", handlePhaseUpdate);
+      socket.off("drafts-update", handleDraftsUpdate);
+      socket.off("payments-update", handlePaymentsUpdate);
     };
   }, [activeConvId]);
 
@@ -128,9 +140,10 @@ function MessagesView({ role }: { role: string }) {
       if (!token || !activeConvId) return;
       try {
         setLoadingMessages(true);
-        const [msgs, conv] = await Promise.all([
+        const [msgs, conv, briefData] = await Promise.all([
           apiGetMessages(token, activeConvId),
           apiGetConversation(token, activeConvId),
+          apiGetConversationBrief(token, activeConvId),
         ]);
         setMessages(msgs);
         if (conv) {
@@ -140,6 +153,7 @@ function MessagesView({ role }: { role: string }) {
             paymentProofUrl: conv.paymentProofUrl ?? null,
           });
         }
+        setBrief(briefData);
       } catch (err) {
         console.error("Failed to fetch messages:", err);
       } finally {
@@ -329,6 +343,11 @@ function MessagesView({ role }: { role: string }) {
                     onFinishPhase={handleFinishPhase}
                     onFileUpload={handleFileUpload}
                     attachments={attachments}
+                    brief={brief}
+                    conversationId={activeConvId}
+                    token={token}
+                    draftsRefreshKey={draftsRefreshKey}
+                    paymentsRefreshKey={paymentsRefreshKey}
                     linkedCampaign={
                       activeConv.campaignId
                         ? { id: activeConv.campaignId, name: activeConv.campaignName ?? "" }

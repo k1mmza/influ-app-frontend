@@ -2,7 +2,15 @@ import { Influencer } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-export async function apiGetInfluencers(filters: any = {}) {
+export interface PaginatedInfluencers {
+  data: Influencer[];
+  total: number;
+  page: number;
+  limit: number;
+  totalPages: number;
+}
+
+export async function apiGetInfluencers(filters: any = {}): Promise<PaginatedInfluencers> {
   const cleanFilters: any = {};
   Object.keys(filters).forEach(key => {
     if (filters[key] !== undefined && filters[key] !== null) {

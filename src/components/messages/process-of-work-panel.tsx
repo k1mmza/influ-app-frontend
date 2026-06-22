@@ -1,6 +1,22 @@
 "use client";
 
-import { useCallback, useMemo, useState, type ReactNode } from "react";
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
+import {
+  fileUrl,
+  apiGetDrafts,
+  apiCreateDraft,
+  apiUpdateDraft,
+  apiDeleteDraft,
+  apiReviewDraft,
+  apiUploadDraftFile,
+  apiGetPayments,
+  apiCreatePayment,
+  apiUploadPaymentProof,
+  apiConfirmPayment,
+  type ConversationBrief,
+  type Draft,
+  type Payment,
+} from "@/lib/api";
 
 export type WorkPhase = "contact" | "brief" | "draft" | "work" | "payment";
 
@@ -49,25 +65,29 @@ export function WorkStatusDot({ phase }: { phase: WorkPhase }) {
   );
 }
 
-type DraftRow = { id: string; name: string; version: string; status: string; updated: string; notes: string };
-type BriefCampaign = {
-  id: string;
-  name: string;
-  objective: string;
-  targetAudience: string;
-  contentAngle: string;
-  productInfo: string;
-  productLink: string;
-  ctaMessage: string;
-  brandTone: string;
-  budget: string;
-  timeline: string;
-  kpi: string;
-  keyMessages: string;
-  doDont: string;
+type ProcessVariant = "influencer" | "brand";
+
+const DRAFT_STATUS_BADGE: Record<Draft["status"], string> = {
+  DRAFT: "bg-muted text-muted-foreground",
+  SUBMITTED: "bg-sky-100 text-sky-700",
+  APPROVED: "bg-emerald-100 text-emerald-700",
+  REVISION_REQUESTED: "bg-amber-100 text-amber-700",
 };
 
-type ProcessVariant = "influencer" | "brand";
+const DRAFT_STATUS_LABEL: Record<Draft["status"], string> = {
+  DRAFT: "Draft",
+  SUBMITTED: "Submitted",
+  APPROVED: "Approved",
+  REVISION_REQUESTED: "Revision requested",
+};
+
+/** Render a Json requirement value (array → comma list; scalar → string). Returns null when empty. */
+function formatReqValue(value: unknown): string | null {
+  if (value == null) return null;
+  if (Array.isArray(value)) return value.length ? value.join(", ") : null;
+  const s = String(value).trim();
+  return s.length ? s : null;
+}
 
 function downloadBlob(filename: string, content: string, mime = "text/plain") {
   const blob = new Blob([content], { type: mime });
@@ -109,46 +129,6 @@ function Modal({
   );
 }
 
-const initialDrafts: DraftRow[] = [
-  { id: "1", name: "TikTok hook v1", version: "v1", status: "In review", updated: "4 May 2026", notes: "15s hook, product at 0:03." },
-  { id: "2", name: "TikTok full cut", version: "v0.9", status: "Draft", updated: "3 May 2026", notes: "Awaiting CTA line from brand." },
-];
-
-const briefCampaignSeed: BriefCampaign[] = [
-  {
-    id: "summer-skincare",
-    name: "Summer Skincare",
-    objective: "Awareness + trial sign-ups.",
-    targetAudience: "Women 20-35 interested in skincare and wellness.",
-    contentAngle: "Daily skin routine with before/after storytelling.",
-    productInfo: "Gentle cleanser, vitamin serum, and SPF50 day cream.",
-    productLink: "https://example.com/summer-skincare",
-    ctaMessage: "Try the Summer Skincare set now.",
-    brandTone: "Confident, educational, and friendly.",
-    budget: "THB 120,000",
-    timeline: "1 Jun - 31 Jul 2026",
-    kpi: "2M reach, 3% CTR, 1,200 trial sign-ups.",
-    keyMessages: "Gentle routine, SPF daily, dermatologist-tested.",
-    doDont: "No medical claims; show product label clearly.",
-  },
-  {
-    id: "fit-habit",
-    name: "Fit Habit Challenge",
-    objective: "Drive challenge registration and app downloads.",
-    targetAudience: "Office workers 22-40 who want sustainable fitness habits.",
-    contentAngle: "30-day challenge journey with realistic progress updates.",
-    productInfo: "Fitness app subscription + guided challenge plan.",
-    productLink: "https://example.com/fit-habit",
-    ctaMessage: "Join the 30-day Fit Habit challenge.",
-    brandTone: "Motivational, supportive, and practical.",
-    budget: "THB 85,000",
-    timeline: "10 May - 20 Jun 2026",
-    kpi: "1,500 registrations, 900 app installs.",
-    keyMessages: "30-day routine, achievable progress, coach-backed tips.",
-    doDont: "No body-shaming; avoid unrealistic transformation claims.",
-  },
-];
-
 export function ProcessOfWorkPanel({
   variant,
   currentPhase,
@@ -158,6 +138,11 @@ export function ProcessOfWorkPanel({
   onFileUpload,
   attachments,
   linkedCampaign,
+  brief,
+  conversationId,
+  token,
+  draftsRefreshKey = 0,
+  paymentsRefreshKey = 0,
 }: {
   variant: ProcessVariant;
   currentPhase?: WorkPhase;
@@ -167,41 +152,219 @@ export function ProcessOfWorkPanel({
   onFileUpload?: (type: "contract" | "brief" | "payment", file: File) => void;
   attachments?: { contractUrl: string | null; briefFileUrl: string | null; paymentProofUrl: string | null };
   linkedCampaign?: { id: string; name: string } | null;
+  brief?: ConversationBrief | null;
+  conversationId?: string | null;
+  token?: string | null;
+  draftsRefreshKey?: number;
+  paymentsRefreshKey?: number;
 }) {
   const [active, setActive] = useState<WorkPhase | null>(null);
-  const [drafts, setDrafts] = useState<DraftRow[]>(initialDrafts);
-  const [selectedDraft, setSelectedDraft] = useState<DraftRow | null>(null);
-  const [newDraftName, setNewDraftName] = useState("");
-  const [workLink, setWorkLink] = useState("https://tiktok.com/@demo/video/000");
-  const [brandComments, setBrandComments] = useState<Record<string, string[]>>({ "1": ["Strong open—tighten CTA at end."] });
-  const [commentInput, setCommentInput] = useState("");
-  const [selectedBriefCampaignId, setSelectedBriefCampaignId] = useState<string>(
-    linkedCampaign?.id ?? briefCampaignSeed[0].id
+  const isInfluencer = variant === "influencer";
+
+  // ── Real draft state ──
+  const [drafts, setDrafts] = useState<Draft[]>([]);
+  const [draftsLoading, setDraftsLoading] = useState(false);
+  const [draftError, setDraftError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  // Influencer create form
+  const [newTitle, setNewTitle] = useState("");
+  const [newNotes, setNewNotes] = useState("");
+  const [newMode, setNewMode] = useState<"upload" | "link">("upload");
+  const [newLink, setNewLink] = useState("");
+  const [newFile, setNewFile] = useState<File | null>(null);
+  // Brand review form, keyed by draft id
+  const [revisionNotes, setRevisionNotes] = useState<Record<string, string>>({});
+
+  const loadDrafts = useCallback(async () => {
+    if (!token || !conversationId) return;
+    try {
+      setDraftsLoading(true);
+      setDrafts(await apiGetDrafts(token, conversationId));
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to load drafts");
+    } finally {
+      setDraftsLoading(false);
+    }
+  }, [token, conversationId]);
+
+  useEffect(() => {
+    loadDrafts();
+  }, [loadDrafts, draftsRefreshKey]);
+
+  // Published content = approved drafts that carry a live link.
+  const publishedLinks = useMemo(
+    () => drafts.filter((d) => d.status === "APPROVED" && !!d.linkUrl),
+    [drafts],
   );
+
+  // ── Real payment state ──
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [paymentsLoading, setPaymentsLoading] = useState(false);
+  const [paymentError, setPaymentError] = useState<string | null>(null);
+  const [payBusy, setPayBusy] = useState(false);
+  const [newAmount, setNewAmount] = useState("");
+  const [newPaymentType, setNewPaymentType] = useState("");
+
+  const loadPayments = useCallback(async () => {
+    if (!token || !conversationId) return;
+    try {
+      setPaymentsLoading(true);
+      setPayments(await apiGetPayments(token, conversationId));
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Failed to load payments");
+    } finally {
+      setPaymentsLoading(false);
+    }
+  }, [token, conversationId]);
+
+  useEffect(() => {
+    loadPayments();
+  }, [loadPayments, paymentsRefreshKey]);
+
+  const handleCreatePayment = async () => {
+    if (!token || !conversationId) return;
+    const amount = Number(newAmount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      setPaymentError("Enter a valid amount.");
+      return;
+    }
+    setPayBusy(true);
+    setPaymentError(null);
+    try {
+      await apiCreatePayment(token, conversationId, {
+        amount,
+        paymentType: newPaymentType.trim() || undefined,
+      });
+      setNewAmount("");
+      setNewPaymentType("");
+      await loadPayments();
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Failed to create payment");
+    } finally {
+      setPayBusy(false);
+    }
+  };
+
+  const handleUploadProof = async (paymentId: string, file: File) => {
+    if (!token || !conversationId) return;
+    setPayBusy(true);
+    setPaymentError(null);
+    try {
+      await apiUploadPaymentProof(token, conversationId, paymentId, file);
+      await loadPayments();
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Failed to upload proof");
+    } finally {
+      setPayBusy(false);
+    }
+  };
+
+  const handleConfirmPayment = async (paymentId: string) => {
+    if (!token || !conversationId) return;
+    setPayBusy(true);
+    setPaymentError(null);
+    try {
+      await apiConfirmPayment(token, conversationId, paymentId);
+      await loadPayments();
+    } catch (err) {
+      setPaymentError(err instanceof Error ? err.message : "Failed to confirm payment");
+    } finally {
+      setPayBusy(false);
+    }
+  };
 
   const close = useCallback(() => setActive(null), []);
 
-  const addDraft = () => {
-    const name = newDraftName.trim() || `Draft ${drafts.length + 1}`;
-    setDrafts((d) => [
-      ...d,
-      {
-        id: String(Date.now()),
-        name,
-        version: "v1",
-        status: "Draft",
-        updated: new Date().toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }),
-        notes: "New draft — add description.",
-      },
-    ]);
-    setNewDraftName("");
+  const handleCreateDraft = async () => {
+    if (!token || !conversationId || !newTitle.trim()) return;
+    setBusy(true);
+    setDraftError(null);
+    try {
+      const created = await apiCreateDraft(token, conversationId, {
+        title: newTitle.trim(),
+        notes: newNotes.trim() || undefined,
+        linkUrl: newMode === "link" ? newLink.trim() || undefined : undefined,
+        contentType: newMode === "link" ? "link" : undefined,
+      });
+      if (newMode === "upload" && newFile) {
+        await apiUploadDraftFile(token, conversationId, created.id, newFile);
+      }
+      setNewTitle("");
+      setNewNotes("");
+      setNewLink("");
+      setNewFile(null);
+      setNewMode("upload");
+      await loadDrafts();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to create draft");
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const appendComment = (draftId: string) => {
-    const t = commentInput.trim();
-    if (!t) return;
-    setBrandComments((c) => ({ ...c, [draftId]: [...(c[draftId] ?? []), t] }));
-    setCommentInput("");
+  const handleDeleteDraft = async (draftId: string) => {
+    if (!token || !conversationId) return;
+    setBusy(true);
+    try {
+      await apiDeleteDraft(token, conversationId, draftId);
+      await loadDrafts();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to delete draft");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleSubmitDraft = async (draftId: string) => {
+    if (!token || !conversationId) return;
+    setBusy(true);
+    try {
+      await apiUpdateDraft(token, conversationId, draftId, { status: "SUBMITTED" });
+      await loadDrafts();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to submit draft");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleReplaceDraftFile = async (draftId: string, file: File) => {
+    if (!token || !conversationId) return;
+    setBusy(true);
+    try {
+      await apiUploadDraftFile(token, conversationId, draftId, file);
+      await loadDrafts();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to upload file");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const handleReviewDraft = async (
+    draftId: string,
+    status: "APPROVED" | "REVISION_REQUESTED",
+  ) => {
+    if (!token || !conversationId) return;
+    const note = revisionNotes[draftId]?.trim();
+    if (status === "REVISION_REQUESTED" && !note) {
+      setDraftError("Add a revision note before requesting changes.");
+      return;
+    }
+    setBusy(true);
+    setDraftError(null);
+    try {
+      await apiReviewDraft(token, conversationId, draftId, {
+        status,
+        revisionNote: status === "REVISION_REQUESTED" ? note : undefined,
+      });
+      setRevisionNotes((r) => ({ ...r, [draftId]: "" }));
+      await loadDrafts();
+    } catch (err) {
+      setDraftError(err instanceof Error ? err.message : "Failed to review draft");
+    } finally {
+      setBusy(false);
+    }
   };
 
   const steps = useMemo(
@@ -216,33 +379,38 @@ export function ProcessOfWorkPanel({
     [variant]
   );
 
-  const allBriefCampaigns = useMemo(() => {
-    if (!linkedCampaign) return briefCampaignSeed;
-    const alreadyIncluded = briefCampaignSeed.some((c) => c.id === linkedCampaign.id);
-    if (alreadyIncluded) return briefCampaignSeed;
-    const realCampaign: BriefCampaign = {
-      id: linkedCampaign.id,
-      name: linkedCampaign.name,
-      objective: "-",
-      targetAudience: "-",
-      contentAngle: "-",
-      productInfo: "-",
-      productLink: "",
-      ctaMessage: "-",
-      brandTone: "-",
-      budget: "-",
-      timeline: "-",
-      kpi: "-",
-      keyMessages: "-",
-      doDont: "-",
-    };
-    return [realCampaign, ...briefCampaignSeed];
-  }, [linkedCampaign]);
+  // Brief data derived from the conversation's linked campaign (real backend data).
+  const briefCampaign = brief?.campaign ?? null;
+  const requirement = brief?.requirement ?? null;
+  const smartPlanBrief = brief?.smartPlanBrief ?? null;
+  const requirementRows = useMemo(() => {
+    if (!requirement) return [] as { label: string; value: string }[];
+    const fmtNum = (n: number | null) => (n == null ? null : n.toLocaleString());
+    const rows: { label: string; value: string | null }[] = [
+      { label: "Min. followers", value: fmtNum(requirement.minFollowers) },
+      {
+        label: "Min. engagement rate",
+        value: requirement.minEngagementRate == null ? null : `${requirement.minEngagementRate}%`,
+      },
+      { label: "Min. avg. views", value: fmtNum(requirement.minAvgViews) },
+      { label: "Platforms", value: formatReqValue(requirement.platforms) },
+      { label: "Categories", value: formatReqValue(requirement.categories) },
+      { label: "Locations", value: formatReqValue(requirement.locations) },
+      { label: "Follower tier", value: requirement.followerTier },
+      { label: "Content type", value: requirement.contentType },
+    ];
+    return rows.filter((r): r is { label: string; value: string } => !!r.value);
+  }, [requirement]);
 
-  const selectedBriefCampaign = useMemo(
-    () => allBriefCampaigns.find((campaign) => campaign.id === selectedBriefCampaignId) ?? null,
-    [allBriefCampaigns, selectedBriefCampaignId]
-  );
+  const smartPlanText =
+    smartPlanBrief?.generatedBrief ||
+    [smartPlanBrief?.strategy, smartPlanBrief?.concept, smartPlanBrief?.briefBody]
+      .filter(Boolean)
+      .join("\n\n") ||
+    null;
+
+  const briefName = briefCampaign?.name ?? linkedCampaign?.name ?? "No campaign linked";
+  const resolvedBriefFileUrl = fileUrl(brief?.briefFileUrl ?? attachments?.briefFileUrl ?? null);
 
   return (
     <div>
@@ -317,7 +485,7 @@ export function ProcessOfWorkPanel({
         {attachments?.contractUrl ? (
           <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <span className="text-xs font-semibold text-emerald-700">Uploaded</span>
-            <a href={attachments.contractUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline truncate">
+            <a href={fileUrl(attachments.contractUrl) ?? "#"} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline truncate">
               View contract
             </a>
           </div>
@@ -347,110 +515,94 @@ export function ProcessOfWorkPanel({
 
       <Modal open={active === "brief"} title="Brief" onClose={close}>
         <div className="space-y-4">
-          <div className="rounded-xl border border-primary/10 bg-gradient-to-r from-primary/5 to-sky-50 p-4">
-            <label htmlFor="brief-campaign-select" className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              Select campaign
-            </label>
-            <div className="mt-2 flex flex-wrap items-center gap-2">
-              <select
-                id="brief-campaign-select"
-                value={selectedBriefCampaignId}
-                onChange={(event) => setSelectedBriefCampaignId(event.target.value)}
-                className="min-w-[220px] flex-1 rounded-lg border border-primary/20 bg-card px-3 py-2 text-sm text-foreground shadow-sm outline-none transition focus:border-primary/80 focus:ring-2 focus:ring-primary/10"
-              >
-                <option value="">No campaign selected</option>
-                {allBriefCampaigns.map((campaign) => (
-                  <option key={campaign.id} value={campaign.id}>
-                    {campaign.name}
-                  </option>
-                ))}
-              </select>
-              <button
-                type="button"
-                onClick={() => setSelectedBriefCampaignId("")}
-                className="rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted"
-              >
-                Cancel campaign
-              </button>
-            </div>
-          </div>
-
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
               <div>
                 <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief overview</p>
-                <h4 className="text-base font-semibold text-foreground">{selectedBriefCampaign?.name ?? "No campaign selected"}</h4>
+                <h4 className="text-base font-semibold text-foreground">{briefName}</h4>
               </div>
-              {selectedBriefCampaign ? (
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/90">Requirement-linked</span>
+              {briefCampaign ? (
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/90">Campaign-linked</span>
               ) : null}
             </div>
 
-            <div className="mt-4 grid grid-cols-1 gap-x-4 gap-y-3 text-sm sm:grid-cols-2">
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Objective:</span> {selectedBriefCampaign?.objective ?? "-"}
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Target audience:</span> {selectedBriefCampaign?.targetAudience ?? "-"}
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Content angle:</span> {selectedBriefCampaign?.contentAngle ?? "-"}
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Brand tone:</span> {selectedBriefCampaign?.brandTone ?? "-"}
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Budget:</span> {selectedBriefCampaign?.budget ?? "-"}
-              </p>
-              <p className="text-muted-foreground">
-                <span className="font-semibold text-foreground">Timeline:</span> {selectedBriefCampaign?.timeline ?? "-"}
-              </p>
-              <p className="text-muted-foreground sm:col-span-2">
-                <span className="font-semibold text-foreground">KPI:</span> {selectedBriefCampaign?.kpi ?? "-"}
-              </p>
-            </div>
+            {briefCampaign ? (
+              <div className="mt-4 space-y-3 text-sm">
+                {briefCampaign.objective ? (
+                  <p className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">Objective:</span> {briefCampaign.objective}
+                  </p>
+                ) : null}
+                {briefCampaign.keyMessage ? (
+                  <p className="whitespace-pre-wrap text-muted-foreground">
+                    <span className="font-semibold text-foreground">Key message:</span> {briefCampaign.keyMessage}
+                  </p>
+                ) : null}
+                {briefCampaign.budget != null ? (
+                  <p className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">Budget:</span> THB {briefCampaign.budget.toLocaleString()}
+                    {briefCampaign.paymentType ? ` (${briefCampaign.paymentType})` : ""}
+                  </p>
+                ) : null}
+                {briefCampaign.submissionDate ? (
+                  <p className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">Submission date:</span>{" "}
+                    {new Date(briefCampaign.submissionDate).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                  </p>
+                ) : null}
+                {!briefCampaign.objective && !briefCampaign.keyMessage && briefCampaign.budget == null ? (
+                  <p className="text-sm text-muted-foreground">No overview details provided for this campaign yet.</p>
+                ) : null}
+              </div>
+            ) : (
+              <p className="mt-4 text-sm text-muted-foreground">This conversation has no linked campaign brief.</p>
+            )}
           </div>
 
-          <div className="rounded-xl border border-border bg-muted p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Requirement details</p>
-            <div className="mt-3 space-y-2 text-sm text-muted-foreground">
-              <p>
-                <span className="font-semibold text-foreground">Product info:</span> {selectedBriefCampaign?.productInfo ?? "-"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Product link:</span>{" "}
-                {selectedBriefCampaign?.productLink ? (
-                  <a
-                    href={selectedBriefCampaign.productLink}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="font-medium text-primary hover:underline"
-                  >
-                    {selectedBriefCampaign.productLink}
-                  </a>
-                ) : (
-                  "-"
-                )}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">CTA:</span> {selectedBriefCampaign?.ctaMessage ?? "-"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Key messages:</span> {selectedBriefCampaign?.keyMessages ?? "-"}
-              </p>
-              <p>
-                <span className="font-semibold text-foreground">Do / Don&apos;t:</span> {selectedBriefCampaign?.doDont ?? "-"}
-              </p>
+          {requirementRows.length > 0 ? (
+            <div className="rounded-xl border border-border bg-muted p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Requirement details</p>
+              <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
+                {requirementRows.map((row) => (
+                  <p key={row.label} className="text-muted-foreground">
+                    <span className="font-semibold text-foreground">{row.label}:</span> {row.value}
+                  </p>
+                ))}
+              </div>
             </div>
-          </div>
+          ) : null}
+
+          {briefCampaign?.deliverables ? (
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{briefCampaign.deliverables}</p>
+            </div>
+          ) : null}
+
+          {briefCampaign?.doAndDont ? (
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Do &amp; Don&apos;t</p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{briefCampaign.doAndDont}</p>
+            </div>
+          ) : null}
+
+          {smartPlanText ? (
+            <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
+              <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+                Smart Plan brief{smartPlanBrief?.inputMode ? ` · ${smartPlanBrief.inputMode}` : ""}
+              </p>
+              <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{smartPlanText}</p>
+            </div>
+          ) : null}
         </div>
+
         {variant === "brand" ? (
           <div className="mt-4 rounded-xl border border-border bg-card p-4">
             <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-              {attachments?.briefFileUrl ? "Replace brief file" : "Upload brief (PDF / doc)"}
+              {resolvedBriefFileUrl ? "Replace brief file" : "Upload brief (PDF / doc)"}
             </label>
-            {attachments?.briefFileUrl ? (
-              <a href={attachments.briefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+            {resolvedBriefFileUrl ? (
+              <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
                 View uploaded brief
               </a>
             ) : null}
@@ -464,185 +616,347 @@ export function ProcessOfWorkPanel({
               }}
             />
           </div>
-        ) : (
-          attachments?.briefFileUrl ? (
-            <div className="mt-4 rounded-xl border border-border bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief file</p>
-              <a href={attachments.briefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
-                Download brief
-              </a>
-            </div>
-          ) : null
-        )}
-        <button
-          type="button"
-          className="mt-4 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-foreground transition hover:bg-muted"
-          onClick={() => downloadBlob("campaign-brief.txt", "Full brief export (demo).")}
-        >
-          Download brief
-        </button>
-      </Modal>
-
-      <Modal open={active === "draft"} title="Draft management" onClose={close}>
-        <div className="overflow-x-auto rounded-lg border border-border">
-          <table className="w-full min-w-[320px] text-left text-xs">
-            <thead className="bg-muted text-muted-foreground">
-              <tr>
-                <th className="px-2 py-2 font-semibold">Name</th>
-                <th className="px-2 py-2 font-semibold">Ver.</th>
-                <th className="px-2 py-2 font-semibold">Status</th>
-                <th className="px-2 py-2 font-semibold">Updated</th>
-                <th className="px-2 py-2 font-semibold"> </th>
-              </tr>
-            </thead>
-            <tbody>
-              {drafts.map((row) => (
-                <tr key={row.id} className="border-t border-border">
-                  <td className="px-2 py-2 text-foreground">{row.name}</td>
-                  <td className="px-2 py-2 text-muted-foreground">{row.version}</td>
-                  <td className="px-2 py-2 text-muted-foreground">{row.status}</td>
-                  <td className="px-2 py-2 text-muted-foreground">{row.updated}</td>
-                  <td className="px-2 py-2">
-                    <button type="button" className="text-primary hover:underline" onClick={() => setSelectedDraft(row)}>
-                      View
-                    </button>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-        {variant === "influencer" ? (
-          <div className="mt-3 flex gap-2">
-            <input
-              value={newDraftName}
-              onChange={(e) => setNewDraftName(e.target.value)}
-              placeholder="New draft name"
-              className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1.5 text-xs"
-            />
-            <button type="button" onClick={addDraft} className="shrink-0 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white">
-              Add draft
-            </button>
+        ) : resolvedBriefFileUrl ? (
+          <div className="mt-4 rounded-xl border border-border bg-card p-4">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief file</p>
+            <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+              Download brief
+            </a>
           </div>
         ) : null}
       </Modal>
 
-      <Modal
-        open={!!selectedDraft}
-        title={selectedDraft ? selectedDraft.name : ""}
-        onClose={() => setSelectedDraft(null)}
-        zClass="z-[60]"
-      >
-        {selectedDraft ? (
-          <div className="space-y-3 text-sm text-muted-foreground">
-            <p>
-              <span className="font-semibold text-foreground">Version:</span> {selectedDraft.version}
+      <Modal open={active === "draft"} title="Draft management" onClose={close}>
+        {draftError ? (
+          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{draftError}</p>
+        ) : null}
+
+        <div className="space-y-3">
+          {draftsLoading && drafts.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Loading drafts…</p>
+          ) : drafts.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-6 text-center text-sm text-muted-foreground">
+              {isInfluencer ? "No drafts yet — create your first one below." : "The influencer hasn't submitted any drafts yet."}
             </p>
-            <p>
-              <span className="font-semibold text-foreground">Status:</span> {selectedDraft.status}
-            </p>
-            <p>
-              <span className="font-semibold text-foreground">Notes:</span> {selectedDraft.notes}
-            </p>
-            {variant === "brand" ? (
-              <div className="rounded-lg border border-border bg-muted p-3">
-                <p className="text-xs font-semibold text-foreground">Comments</p>
-                <ul className="mt-2 list-inside list-disc space-y-1 text-xs text-muted-foreground">
-                  {(brandComments[selectedDraft.id] ?? []).map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-                </ul>
-                <div className="mt-3 flex gap-2">
-                  <input
-                    value={commentInput}
-                    onChange={(e) => setCommentInput(e.target.value)}
-                    placeholder="Add comment…"
-                    className="min-w-0 flex-1 rounded-lg border border-border px-2 py-1.5 text-xs"
-                  />
-                  <button
-                    type="button"
-                    onClick={() => appendComment(selectedDraft.id)}
-                    className="shrink-0 rounded-lg bg-slate-900 px-3 py-1.5 text-xs font-semibold text-white"
-                  >
-                    Add
-                  </button>
+          ) : (
+            drafts.map((d) => {
+              const draftFile = fileUrl(d.fileUrl);
+              return (
+                <div key={d.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="truncate text-sm font-semibold text-foreground">{d.title}</p>
+                      {d.notes ? <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">{d.notes}</p> : null}
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${DRAFT_STATUS_BADGE[d.status]}`}>
+                      {DRAFT_STATUS_LABEL[d.status]}
+                    </span>
+                  </div>
+
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                    {draftFile ? (
+                      <a href={draftFile} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
+                        View file{d.contentType ? ` (${d.contentType})` : ""}
+                      </a>
+                    ) : null}
+                    {d.linkUrl ? (
+                      <a href={d.linkUrl} target="_blank" rel="noreferrer" className="break-all font-semibold text-primary hover:underline">
+                        Open link
+                      </a>
+                    ) : null}
+                    {!draftFile && !d.linkUrl ? <span className="text-muted-foreground">No file or link attached</span> : null}
+                  </div>
+
+                  {d.status === "REVISION_REQUESTED" && d.revisionNote ? (
+                    <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
+                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Revision requested</p>
+                      <p className="mt-1 whitespace-pre-wrap text-xs text-amber-800">{d.revisionNote}</p>
+                    </div>
+                  ) : null}
+
+                  {/* Influencer actions */}
+                  {isInfluencer ? (
+                    <div className="mt-3 flex flex-wrap items-center gap-2">
+                      {d.status === "DRAFT" || d.status === "REVISION_REQUESTED" ? (
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => handleSubmitDraft(d.id)}
+                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                        >
+                          Submit for review
+                        </button>
+                      ) : null}
+                      <label className="cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                        {draftFile ? "Replace file" : "Upload file"}
+                        <input
+                          type="file"
+                          accept="image/*,.pdf"
+                          className="hidden"
+                          onChange={(e) => {
+                            const f = e.target.files?.[0];
+                            if (f) handleReplaceDraftFile(d.id, f);
+                          }}
+                        />
+                      </label>
+                      <button
+                        type="button"
+                        disabled={busy}
+                        onClick={() => handleDeleteDraft(d.id)}
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                      >
+                        Delete
+                      </button>
+                    </div>
+                  ) : null}
+
+                  {/* Brand/agency review actions */}
+                  {!isInfluencer && d.status !== "APPROVED" ? (
+                    <div className="mt-3 space-y-2 border-t border-border pt-3">
+                      <textarea
+                        value={revisionNotes[d.id] ?? ""}
+                        onChange={(e) => setRevisionNotes((r) => ({ ...r, [d.id]: e.target.value }))}
+                        placeholder="Revision feedback (required to request changes)…"
+                        rows={2}
+                        className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+                      />
+                      <div className="flex flex-wrap gap-2">
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => handleReviewDraft(d.id, "APPROVED")}
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                        >
+                          Approve
+                        </button>
+                        <button
+                          type="button"
+                          disabled={busy}
+                          onClick={() => handleReviewDraft(d.id, "REVISION_REQUESTED")}
+                          className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                        >
+                          Request revision
+                        </button>
+                      </div>
+                    </div>
+                  ) : null}
                 </div>
-              </div>
-            ) : null}
+              );
+            })
+          )}
+        </div>
+
+        {/* Influencer: create a new draft */}
+        {isInfluencer ? (
+          <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">New draft</p>
+            <input
+              value={newTitle}
+              onChange={(e) => setNewTitle(e.target.value)}
+              placeholder="Draft title"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+            />
+            <textarea
+              value={newNotes}
+              onChange={(e) => setNewNotes(e.target.value)}
+              placeholder="Description / notes (optional)"
+              rows={2}
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+            />
+            <div className="flex gap-2 text-xs">
+              <button
+                type="button"
+                onClick={() => setNewMode("upload")}
+                className={`rounded-lg px-3 py-1.5 font-semibold ${newMode === "upload" ? "bg-primary text-white" : "border border-border bg-card text-foreground"}`}
+              >
+                Upload file (pdf/image)
+              </button>
+              <button
+                type="button"
+                onClick={() => setNewMode("link")}
+                className={`rounded-lg px-3 py-1.5 font-semibold ${newMode === "link" ? "bg-primary text-white" : "border border-border bg-card text-foreground"}`}
+              >
+                Paste link (video/Drive)
+              </button>
+            </div>
+            {newMode === "upload" ? (
+              <input
+                type="file"
+                accept="image/*,.pdf"
+                onChange={(e) => setNewFile(e.target.files?.[0] ?? null)}
+                className="w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary/90"
+              />
+            ) : (
+              <input
+                value={newLink}
+                onChange={(e) => setNewLink(e.target.value)}
+                placeholder="https://youtube.com/... or Drive/Frame.io link"
+                className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+              />
+            )}
+            <button
+              type="button"
+              disabled={busy || !newTitle.trim()}
+              onClick={handleCreateDraft}
+              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {busy ? "Saving…" : "Add draft"}
+            </button>
           </div>
         ) : null}
       </Modal>
 
       <Modal open={active === "work"} title="Published content" onClose={close}>
-        {variant === "influencer" ? (
-          <>
-            <p className="text-sm text-muted-foreground">Paste the public URL to your published post or video for tracking.</p>
-            <label className="mt-3 block text-xs font-semibold text-foreground">Work link</label>
-            <input
-              value={workLink}
-              onChange={(e) => setWorkLink(e.target.value)}
-              className="mt-1 w-full rounded-lg border border-border px-3 py-2 text-sm"
-            />
-            <button type="button" className="mt-3 rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white" onClick={close}>
-              Save link
-            </button>
-          </>
-        ) : (
-          <>
-            <p className="text-sm text-muted-foreground">Content submitted by the influencer.</p>
-            <a href={workLink} target="_blank" rel="noreferrer" className="mt-3 inline-block break-all text-sm font-semibold text-primary hover:underline">
-              {workLink}
-            </a>
-          </>
-        )}
+        <p className="text-sm text-muted-foreground">
+          Live links come from approved drafts. Approve a draft in the Draft phase to publish it here.
+        </p>
+        <div className="mt-3 space-y-2">
+          {publishedLinks.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-6 text-center text-sm text-muted-foreground">
+              No approved content links yet.
+            </p>
+          ) : (
+            publishedLinks.map((d) => (
+              <div key={d.id} className="rounded-xl border border-emerald-200 bg-emerald-50 p-3">
+                <p className="text-sm font-semibold text-foreground">{d.title}</p>
+                <a
+                  href={d.linkUrl ?? "#"}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="mt-1 inline-block break-all text-sm font-semibold text-primary hover:underline"
+                >
+                  {d.linkUrl}
+                </a>
+              </div>
+            ))
+          )}
+        </div>
+        {isInfluencer ? (
+          <p className="mt-3 text-xs text-muted-foreground">
+            To publish, add a draft with a link (e.g. your TikTok/YouTube post) and have the brand approve it.
+          </p>
+        ) : null}
       </Modal>
 
       <Modal open={active === "payment"} title="Payment" onClose={close}>
-        <div className="space-y-2 text-sm text-muted-foreground">
-          <p>
-            <span className="font-semibold text-foreground">Influencer payout:</span> THB 9,000 (fixed)
-          </p>
-          <p>
-            <span className="font-semibold text-foreground">Status:</span> Pending transfer after post goes live
-          </p>
-          <p>
-            <span className="font-semibold text-foreground">Method:</span> Bank transfer (demo)
-          </p>
-        </div>
-        <div className="mt-4 rounded-lg border border-border bg-muted p-3">
-          <p className="text-xs font-semibold text-foreground">Proof of Payment from client/ agency</p>
-          <p className="mt-1 text-xs text-muted-foreground">transfer_receipt_demo.png (uploaded 2 May 2026)</p>
-          <button
-            type="button"
-            className="mt-2 text-xs font-semibold text-primary hover:underline"
-            onClick={() => downloadBlob("transfer-receipt-note.txt", "Receipt preview (demo).")}
-          >
-            Download sample receipt
-          </button>
-        </div>
-        {attachments?.paymentProofUrl ? (
-          <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <span className="text-xs font-semibold text-emerald-700">Proof uploaded</span>
-            <a href={attachments.paymentProofUrl} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline">
-              View receipt
-            </a>
-          </div>
+        <p className="text-sm text-muted-foreground">
+          Payments are settled off-platform (PromptPay / bank transfer). The platform only records the
+          transaction — the influencer confirms receipt to mark it paid.
+        </p>
+        {paymentError ? (
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{paymentError}</p>
         ) : null}
-        {variant === "brand" ? (
-          <>
-            <label className="mt-4 block text-xs font-semibold text-foreground">
-              {attachments?.paymentProofUrl ? "Replace payment proof" : "Upload payment proof (image / PDF)"}
-            </label>
+
+        <div className="mt-3 space-y-3">
+          {paymentsLoading && payments.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Loading payments…</p>
+          ) : payments.length === 0 ? (
+            <p className="rounded-lg border border-dashed border-border bg-muted/40 px-3 py-6 text-center text-sm text-muted-foreground">
+              {isInfluencer ? "No payments recorded yet." : "No payments yet — create one below."}
+            </p>
+          ) : (
+            payments.map((p) => {
+              const proof = fileUrl(p.proofUrl);
+              const statusBadge =
+                p.status === "PAID"
+                  ? "bg-emerald-100 text-emerald-700"
+                  : p.status === "AWAITING_CONFIRMATION"
+                  ? "bg-amber-100 text-amber-700"
+                  : "bg-muted text-muted-foreground";
+              const statusLabel =
+                p.status === "PAID"
+                  ? "Paid"
+                  : p.status === "AWAITING_CONFIRMATION"
+                  ? "Awaiting confirmation"
+                  : "Pending";
+              return (
+                <div key={p.id} className="rounded-xl border border-border bg-card p-3">
+                  <div className="flex items-start justify-between gap-2">
+                    <div>
+                      <p className="text-sm font-semibold text-foreground">
+                        THB {p.amount.toLocaleString()}
+                        {p.paymentType ? <span className="text-muted-foreground"> · {p.paymentType}</span> : null}
+                      </p>
+                      {p.confirmedAt ? (
+                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                          Confirmed {new Date(p.confirmedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
+                        </p>
+                      ) : null}
+                    </div>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge}`}>{statusLabel}</span>
+                  </div>
+
+                  {proof ? (
+                    <a href={proof} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">
+                      View payment proof
+                    </a>
+                  ) : (
+                    <p className="mt-2 text-xs text-muted-foreground">No proof uploaded yet.</p>
+                  )}
+
+                  {/* Brand/agency: upload (or replace) proof until influencer confirms */}
+                  {!isInfluencer && p.status !== "PAID" ? (
+                    <label className="mt-2 inline-block cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                      {proof ? "Replace proof" : "Upload payment proof"}
+                      <input
+                        type="file"
+                        accept="image/*,.pdf"
+                        className="hidden"
+                        onChange={(e) => {
+                          const f = e.target.files?.[0];
+                          if (f) handleUploadProof(p.id, f);
+                        }}
+                      />
+                    </label>
+                  ) : null}
+
+                  {/* Influencer: confirm receipt once proof is uploaded */}
+                  {isInfluencer && p.status === "AWAITING_CONFIRMATION" ? (
+                    <button
+                      type="button"
+                      disabled={payBusy}
+                      onClick={() => handleConfirmPayment(p.id)}
+                      className="mt-2 block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                    >
+                      Confirm received
+                    </button>
+                  ) : null}
+                  {isInfluencer && p.status === "PENDING" ? (
+                    <p className="mt-2 text-xs text-muted-foreground">Waiting for the brand to upload payment proof.</p>
+                  ) : null}
+                </div>
+              );
+            })
+          )}
+        </div>
+
+        {/* Brand/agency: record a new payment */}
+        {!isInfluencer ? (
+          <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
+            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Record a payment</p>
             <input
-              type="file"
-              accept="image/*,.pdf"
-              className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
-              onChange={(e) => {
-                const file = e.target.files?.[0];
-                if (file && onFileUpload) onFileUpload("payment", file);
-              }}
+              value={newAmount}
+              onChange={(e) => setNewAmount(e.target.value)}
+              type="number"
+              min="0"
+              placeholder="Amount (THB)"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
             />
-          </>
+            <input
+              value={newPaymentType}
+              onChange={(e) => setNewPaymentType(e.target.value)}
+              placeholder="Type (e.g. Full, Deposit) — optional"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+            />
+            <button
+              type="button"
+              disabled={payBusy || !newAmount}
+              onClick={handleCreatePayment}
+              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+            >
+              {payBusy ? "Saving…" : "Create payment"}
+            </button>
+          </div>
         ) : null}
       </Modal>
     </div>

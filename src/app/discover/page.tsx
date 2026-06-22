@@ -22,6 +22,8 @@ import {
   RotateCcw,
   ChevronDown,
   ChevronUp,
+  ChevronLeft,
+  ChevronRight,
   Globe,
   Layers,
   Loader2,
@@ -54,6 +56,7 @@ const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", 
 const campaignIntents = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
 const audienceGenders = ["All", "Female", "Male", "Mixed"];
+const countryOptions = ["All", "Thailand", "Vietnam", "Singapore", "Malaysia", "Indonesia", "Philippines"];
 const stylePresentOptions = ["All", "Short Story", "Storytelling", "Experiment", "Tutorial", "Review", "Vlog"];
 
 const followerRanges: Record<Exclude<FollowerRange, "All">, { min: number; max?: number }> = {
@@ -70,6 +73,19 @@ export default function DiscoverPage() {
       <DiscoverPageContent />
     </Suspense>
   );
+}
+
+/** Page numbers with ellipsis: e.g. 1 … 4 5 6 … 20 */
+function getPageList(current: number, total: number): (number | "ellipsis")[] {
+  if (total <= 7) return Array.from({ length: total }, (_, i) => i + 1);
+  const pages: (number | "ellipsis")[] = [1];
+  const start = Math.max(2, current - 1);
+  const end = Math.min(total - 1, current + 1);
+  if (start > 2) pages.push("ellipsis");
+  for (let p = start; p <= end; p++) pages.push(p);
+  if (end < total - 1) pages.push("ellipsis");
+  pages.push(total);
+  return pages;
 }
 
 function DiscoverPageFallback() {
@@ -151,6 +167,12 @@ function DiscoverPageContent() {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
 
+  // Pagination — 15 per page (5 rows × 3 cols)
+  const PAGE_SIZE = 15;
+  const [page, setPage] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
+  const [totalCount, setTotalCount] = useState(0);
+
   const [smartQuery, setSmartQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [country, setCountry] = useState("All");
@@ -216,6 +238,22 @@ function DiscoverPageContent() {
     return () => clearInterval(timer);
   }, [generatedInfluencer?.id, generatedInfluencer?.syncStatus]);
 
+  const goToPage = (p: number) => {
+    const clamped = Math.min(Math.max(1, p), totalPages);
+    if (clamped === page) return;
+    setPage(clamped);
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  // Reset to the first page whenever the filters or search change.
+  useEffect(() => {
+    setPage(1);
+  }, [
+    smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
+    minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
+    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country,
+  ]);
+
   useEffect(() => {
     const fetchInfluencers = async () => {
       setLoading(true);
@@ -243,10 +281,15 @@ function DiscoverPageContent() {
             audienceGender: audienceGender !== "All" ? audienceGender : undefined,
             audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
             availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
+            country: country !== "All" ? country : undefined,
           };
         }
-        const data = await apiGetInfluencers(params);
-        setInfluencers(data);
+        params.page = page;
+        params.limit = PAGE_SIZE;
+        const result = await apiGetInfluencers(params);
+        setInfluencers(result.data);
+        setTotalPages(result.totalPages);
+        setTotalCount(result.total);
       } catch (err) {
         console.error("Failed to fetch influencers:", err);
       } finally {
@@ -257,9 +300,10 @@ function DiscoverPageContent() {
     const debounce = setTimeout(fetchInfluencers, 500);
     return () => clearTimeout(debounce);
   }, [
+    page,
     smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
     minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
-    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus,
+    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country,
   ]);
 
   const updateAudienceThreshold = (value: number) => {
@@ -529,7 +573,7 @@ function DiscoverPageContent() {
               <p className="mt-2 text-primary-foreground/80 font-medium">Find campaign-fit creators with smart filters and audience signals.</p>
             </div>
             <Badge variant="outline" className="w-fit border-white/30 bg-card/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
-              {filtered.length} matches found
+              {totalCount} matches found
             </Badge>
           </div>
         </CardContent>
@@ -660,6 +704,25 @@ function DiscoverPageContent() {
                         placeholder="e.g. 50000"
                         className="h-8 text-xs"
                       />
+                    </div>
+
+                    {/* ── LOCATION ── */}
+                    <div className="flex items-center gap-2">
+                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Location</span>
+                      <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Country</Label>
+                      <select
+                        value={country}
+                        onChange={(e) => setCountry(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                      >
+                        {countryOptions.map((c) => (
+                          <option key={c} value={c}>{c === "All" ? "All Countries" : c}</option>
+                        ))}
+                      </select>
                     </div>
 
                     {/* ── AUDIENCE ── */}
@@ -1001,6 +1064,49 @@ function DiscoverPageContent() {
                 </CardContent>
               </Card>
             )}
+          </div>
+        )}
+
+        {/* Pagination — page-number controls (15 per page) */}
+        {!loading && totalPages > 1 && (
+          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-lg font-semibold"
+              disabled={page === 1}
+              onClick={() => goToPage(page - 1)}
+            >
+              <ChevronLeft className="h-4 w-4" />
+              Prev
+            </Button>
+            {getPageList(page, totalPages).map((p, i) =>
+              p === "ellipsis" ? (
+                <span key={`ellipsis-${i}`} className="px-2 text-sm text-muted-foreground select-none">
+                  …
+                </span>
+              ) : (
+                <Button
+                  key={p}
+                  variant={p === page ? "default" : "outline"}
+                  size="sm"
+                  className="min-w-9 rounded-lg font-semibold"
+                  onClick={() => goToPage(p)}
+                >
+                  {p}
+                </Button>
+              )
+            )}
+            <Button
+              variant="outline"
+              size="sm"
+              className="rounded-lg font-semibold"
+              disabled={page === totalPages}
+              onClick={() => goToPage(page + 1)}
+            >
+              Next
+              <ChevronRight className="h-4 w-4" />
+            </Button>
           </div>
         )}
       </div>

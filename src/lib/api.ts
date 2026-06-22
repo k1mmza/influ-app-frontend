@@ -2,6 +2,19 @@ import { Role } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
+/**
+ * Resolve a stored file path into an absolute URL against the backend origin.
+ * Uploaded files are stored as root-relative paths (e.g. "/uploads/conversations/x.pdf").
+ * Used verbatim, the browser resolves these against the frontend origin (:3000) → 404.
+ * Prefixing with API_URL points them at the backend (:3001) where useStaticAssets serves them.
+ * Returns null for empty input; passes through values that are already absolute URLs.
+ */
+export function fileUrl(path?: string | null): string | null {
+  if (!path) return null;
+  if (/^https?:\/\//i.test(path)) return path;
+  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
+}
+
 async function readApiError(res: Response, fallback: string) {
   try {
     const error = await res.json();
@@ -616,6 +629,48 @@ export async function apiGetConversation(token: string, conversationId: string) 
   return res.json();
 }
 
+export interface ConversationBrief {
+  campaign: {
+    id: string;
+    name: string;
+    objective: string | null;
+    budget: number | null;
+    paymentType: string | null;
+    keyMessage: string | null;
+    deliverables: string | null;
+    doAndDont: string | null;
+    applyDeadline: string | null;
+    submissionDate: string | null;
+  } | null;
+  requirement: {
+    minFollowers: number | null;
+    minEngagementRate: number | null;
+    minAvgViews: number | null;
+    platforms: unknown;
+    locations: unknown;
+    categories: unknown;
+    followerTier: string | null;
+    contentType: string | null;
+  } | null;
+  smartPlanBrief: {
+    id: string;
+    strategy: string | null;
+    concept: string | null;
+    briefBody: string | null;
+    generatedBrief: string | null;
+    inputMode: string | null;
+  } | null;
+  briefFileUrl: string | null;
+}
+
+export async function apiGetConversationBrief(token: string, conversationId: string): Promise<ConversationBrief | null> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/brief`, {
+    headers: { "Authorization": `Bearer ${token}` },
+  });
+  if (!res.ok) return null;
+  return res.json();
+}
+
 // ── Shortlist ─────────────────────────────────────────────────────────────
 
 export async function apiGetShortlist(token: string): Promise<any[]> {
@@ -661,6 +716,166 @@ export async function apiUploadConversationFile(
     throw new Error(error.message || "Upload failed");
   }
   return res.json() as Promise<{ url: string; type: string }>;
+}
+
+// ── Drafts (conversation-scoped) ────────────────────────────────────────────
+
+export interface Draft {
+  id: string;
+  conversationId: string;
+  title: string;
+  status: "DRAFT" | "SUBMITTED" | "APPROVED" | "REVISION_REQUESTED";
+  notes: string | null;
+  fileUrl: string | null;
+  linkUrl: string | null;
+  contentType: string | null;
+  revisionNote: string | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export async function apiGetDrafts(token: string, conversationId: string): Promise<Draft[]> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch drafts"));
+  return res.json();
+}
+
+export async function apiCreateDraft(
+  token: string,
+  conversationId: string,
+  data: { title: string; notes?: string; linkUrl?: string; contentType?: string },
+): Promise<Draft> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create draft"));
+  return res.json();
+}
+
+export async function apiUpdateDraft(
+  token: string,
+  conversationId: string,
+  draftId: string,
+  data: { title?: string; notes?: string; linkUrl?: string; contentType?: string; status?: "DRAFT" | "SUBMITTED" },
+): Promise<Draft> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to update draft"));
+  return res.json();
+}
+
+export async function apiDeleteDraft(token: string, conversationId: string, draftId: string): Promise<void> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to delete draft"));
+}
+
+export async function apiReviewDraft(
+  token: string,
+  conversationId: string,
+  draftId: string,
+  data: { status: "APPROVED" | "REVISION_REQUESTED"; revisionNote?: string },
+): Promise<Draft> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/review`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to review draft"));
+  return res.json();
+}
+
+export async function apiUploadDraftFile(
+  token: string,
+  conversationId: string,
+  draftId: string,
+  file: File,
+): Promise<Draft> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/upload`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to upload draft file"));
+  return res.json();
+}
+
+// ── Payments (conversation-scoped) ──────────────────────────────────────────
+
+export interface Payment {
+  id: string;
+  campaignId: string;
+  influencerId: string;
+  amount: number;
+  paymentType: string | null;
+  status: "PENDING" | "AWAITING_CONFIRMATION" | "PAID";
+  proofUrl: string | null;
+  confirmedAt: string | null;
+  paidAt: string | null;
+  createdAt: string;
+}
+
+export async function apiGetPayments(token: string, conversationId: string): Promise<Payment[]> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch payments"));
+  return res.json();
+}
+
+export async function apiCreatePayment(
+  token: string,
+  conversationId: string,
+  data: { amount: number; paymentType?: string },
+): Promise<Payment> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create payment"));
+  return res.json();
+}
+
+export async function apiUploadPaymentProof(
+  token: string,
+  conversationId: string,
+  paymentId: string,
+  file: File,
+): Promise<Payment> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/proof`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to upload payment proof"));
+  return res.json();
+}
+
+export async function apiConfirmPayment(
+  token: string,
+  conversationId: string,
+  paymentId: string,
+): Promise<Payment> {
+  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/confirm`, {
+    method: "PATCH",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to confirm payment"));
+  return res.json();
 }
 
 // ── Campaign Invitations ────────────────────────────────────────────────────
