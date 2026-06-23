@@ -87,6 +87,9 @@ const requirementFields: { key: keyof RequirementData; label: string; fullWidth?
   { key: "doDont", label: "Do & Don't", fullWidth: true },
 ];
 
+// Fields the user must fill before generating a Smart Plan from the form.
+const REQUIRED_FORM_FIELDS: (keyof RequirementData)[] = ["campaignName", "objective", "productInfo"];
+
 type BriefSubSection = "strategy" | "concept" | "briefBody";
 type StartMode = "none" | "prompt" | "form";
 
@@ -218,6 +221,7 @@ export default function SmartPlanPage() {
   const [conceptText, setConceptText] = useState("");
   const [briefText, setBriefText] = useState("");
   const [formDraft, setFormDraft] = useState<RequirementData>(emptyRequirement);
+  const [formErrors, setFormErrors] = useState<Partial<Record<keyof RequirementData, string>>>({});
   const [isGenerating, setIsGenerating] = useState(false);
   const [generateError, setGenerateError] = useState<string | null>(null);
 
@@ -498,9 +502,30 @@ export default function SmartPlanPage() {
 
   const updateFormDraft = (field: keyof RequirementData, value: string) => {
     setFormDraft((prev) => ({ ...prev, [field]: value }));
+    // Clear this field's error as soon as it has non-empty content.
+    if (formErrors[field] && value.trim()) {
+      setFormErrors((prev) => {
+        const next = { ...prev };
+        delete next[field];
+        return next;
+      });
+    }
   };
 
   const finishFormFlow = async () => {
+    // Block submit if any required field is empty (trimmed); show inline errors.
+    const errors: Partial<Record<keyof RequirementData, string>> = {};
+    for (const key of REQUIRED_FORM_FIELDS) {
+      if (!formDraft[key].trim()) {
+        const label = requirementFields.find((f) => f.key === key)?.label ?? key;
+        errors[key] = `${label} is required`;
+      }
+    }
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return;
+    }
+    setFormErrors({});
     setRequirements(formDraft);
     setIsGenerating(true);
     setGenerateError(null);
@@ -805,22 +830,30 @@ export default function SmartPlanPage() {
               </CardHeader>
               <CardContent className="space-y-6">
                 <div className="grid gap-4 sm:grid-cols-2">
-                  {requirementFields.map((field) => (
-                    <label
-                      key={field.key}
-                      className={cn("block space-y-1.5", field.fullWidth && "sm:col-span-2")}
-                    >
-                      <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                        {field.label}
-                      </span>
-                      <Input
-                        value={formDraft[field.key]}
-                        onChange={(e) => updateFormDraft(field.key, e.target.value)}
-                        placeholder={requirementInputPlaceholder(field.key, field.label)}
-                        disabled={isGenerating}
-                      />
-                    </label>
-                  ))}
+                  {requirementFields.map((field) => {
+                    const required = REQUIRED_FORM_FIELDS.includes(field.key);
+                    const error = formErrors[field.key];
+                    return (
+                      <label
+                        key={field.key}
+                        className={cn("block space-y-1.5", field.fullWidth && "sm:col-span-2")}
+                      >
+                        <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                          {field.label}
+                          {required && <span className="ml-0.5 text-destructive">*</span>}
+                        </span>
+                        <Input
+                          value={formDraft[field.key]}
+                          onChange={(e) => updateFormDraft(field.key, e.target.value)}
+                          placeholder={requirementInputPlaceholder(field.key, field.label)}
+                          disabled={isGenerating}
+                          aria-invalid={error ? true : undefined}
+                          className={cn(error && "border-destructive focus-visible:ring-destructive/30")}
+                        />
+                        {error && <p className="text-xs text-destructive">{error}</p>}
+                      </label>
+                    );
+                  })}
                 </div>
                 {generateError && (
                   <p className="text-sm text-destructive">{generateError}</p>
