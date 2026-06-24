@@ -24,8 +24,6 @@ import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { useUserStore } from "@/store/useUserStore";
 import { Role } from "@/lib/types";
 import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
-import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
-import { influencers } from "@/mock/influencers";
 import { exportRowsToExcel } from "@/lib/excel";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -126,30 +124,31 @@ export default function CampaignDetailPage() {
 
   const influencerRows = useMemo(
     () =>
-      influencers.map((influencer, index) => {
-        const { platform: primaryPlatform, followers: platformFollowers } = getMainFollowerPlatform(influencer);
-        const socialHandle = influencer.name.toLowerCase().replace(/\s+/g, "");
+      applications.map((app, index) => {
+        const primary = getPrimaryAccount(app.influencer?.platformAccounts);
+        const platform = primary?.platform ?? "—";
+        const handle = primary?.handle ?? "";
+        const followers = primary?.followers ?? 0;
         const host =
-          primaryPlatform === "YouTube"
+          platform === "YouTube"
             ? "youtube.com"
-            : primaryPlatform === "TikTok"
+            : platform === "TikTok"
               ? "tiktok.com"
-              : primaryPlatform === "Instagram"
+              : platform === "Instagram"
                 ? "instagram.com"
-                : `${primaryPlatform.toLowerCase()}.com`;
+                : `${platform.toLowerCase()}.com`;
         return {
           marker: index + 1,
-          kolName: influencer.name,
-          socialMediaLink: `https://www.${host}/@${socialHandle}`,
-          platform: primaryPlatform,
-          platformFollowers,
-          category: influencer.category,
-          estimateView: Math.round(influencer.followers * 0.35),
-          engagementRate: influencer.engagementRate,
-          kolRate: influencer.ratePerPost,
+          kolName: getInfluencerName(app),
+          socialMediaLink: handle ? `https://www.${host}/@${handle}` : "—",
+          platform,
+          platformFollowers: followers,
+          category: toCategoryList(app.influencer?.categories).join(", ") || "—",
+          estimateView: primary?.avgViews ?? Math.round(followers * 0.35),
+          engagementRate: primary?.engagementRate ?? 0,
         };
       }),
-    [],
+    [applications],
   );
 
   useEffect(() => {
@@ -389,7 +388,6 @@ export default function CampaignDetailPage() {
         "Category/Niche",
         "Estimate view",
         "Engagement Rate",
-        "KOL Rate",
       ],
       rows: influencerRows.map((row) => [
         row.marker,
@@ -400,7 +398,6 @@ export default function CampaignDetailPage() {
         row.category,
         row.estimateView,
         `${row.engagementRate}%`,
-        `THB ${row.kolRate}`,
       ]),
     });
     setMessage("Influencer list exported to Excel.");
