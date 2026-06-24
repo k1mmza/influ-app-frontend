@@ -15,6 +15,7 @@ export interface Influencer {
   id: string;
   handle?: string | null;
   name: string;
+  gender?: "male" | "female" | "other" | null;
   /** Platforms sorted YouTube → TikTok → Instagram → others */
   platforms: string[];
   followers: number;

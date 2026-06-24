@@ -181,6 +181,11 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
                   {[meta.city, meta.country].filter(Boolean).join(", ")}
                 </div>
               )}
+              {influencer.gender && (
+                <div className="mt-0.5 text-xs text-muted-foreground font-medium capitalize">
+                  {influencer.gender}
+                </div>
+              )}
             </div>
           </div>
           <Button variant="ghost" size="icon" onClick={onClose} className="rounded-full hover:bg-muted">

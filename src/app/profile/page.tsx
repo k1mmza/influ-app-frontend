@@ -420,6 +420,7 @@ function InfluencerProfileView() {
         const p = data.profile;
         if (p) {
           if (p.bio) updates.bio = p.bio;
+          if (p.gender) updates.gender = p.gender;
           if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
           if (p.availabilityStatus) updates.availability = p.availabilityStatus;
           if (p.country) updates.location = p.country;
@@ -453,6 +454,7 @@ function InfluencerProfileView() {
         name: kit.displayName,
         influencerProfile: {
           bio: kit.bio,
+          gender: kit.gender || undefined,
           categories: kit.categories,
           availabilityStatus: kit.availability,
           country: kit.location || undefined,
@@ -755,6 +757,15 @@ function InfluencerProfileView() {
           <label className="mt-3 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Bio / positioning</span>
             <textarea value={kit.bio} onChange={(e) => setKit({ bio: e.target.value })} rows={4} className={inputCls} />
+          </label>
+          <label className="mt-3 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</span>
+            <select value={kit.gender} onChange={(e) => setKit({ gender: e.target.value as typeof kit.gender })} className={inputCls}>
+              <option value="">Prefer not to say</option>
+              <option value="male">Male</option>
+              <option value="female">Female</option>
+              <option value="other">Other</option>
+            </select>
           </label>
           <label className="mt-3 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Location</span>

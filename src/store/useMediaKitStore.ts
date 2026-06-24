@@ -15,6 +15,8 @@ export type MediaKitState = {
   displayName: string;
   handle: string;
   bio: string;
+  /** Influencer's own gender (not audience demographics — see `audience.gender`) */
+  gender: "" | "male" | "female" | "other";
   location: string;
   email: string;
   profileCompleteness: number;
@@ -45,6 +47,7 @@ const defaultMediaKit = (): MediaKitState => ({
   displayName: "",
   handle: "",
   bio: "",
+  gender: "",
   location: "",
   email: "",
   profileCompleteness: 0,
@@ -83,6 +86,7 @@ function parseMediaKitJson(raw: unknown): Partial<MediaKitState> | null {
   if (typeof raw.displayName === "string") out.displayName = raw.displayName;
   if (typeof raw.handle === "string") out.handle = raw.handle;
   if (typeof raw.bio === "string") out.bio = raw.bio;
+  if (raw.gender === "male" || raw.gender === "female" || raw.gender === "other") out.gender = raw.gender;
   if (typeof raw.location === "string") out.location = raw.location;
   if (typeof raw.email === "string") out.email = raw.email;
   if (typeof raw.profileCompleteness === "number") out.profileCompleteness = raw.profileCompleteness;
@@ -174,6 +178,7 @@ export const useMediaKitStore = create<MediaKitStore>()(
         displayName: s.displayName,
         handle: s.handle,
         bio: s.bio,
+        gender: s.gender,
         location: s.location,
         email: s.email,
         profileCompleteness: s.profileCompleteness,
@@ -217,6 +222,7 @@ export function buildMediaKitExportPayload(kit: MediaKitState) {
       displayName: kit.displayName,
       handle: kit.handle,
       bio: kit.bio,
+      gender: kit.gender,
       location: kit.location,
       email: kit.email,
       profileCompleteness: kit.profileCompleteness,
