@@ -1,7 +1,9 @@
 "use client";
 
+import { Suspense } from "react";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
+import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { apiApplyToCampaign, apiGetCampaigns, apiGetPublicCampaigns } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -15,6 +17,7 @@ import {
   Filter,
   RotateCcw,
   ChevronRight,
+  ChevronLeft,
   Plus,
   LayoutGrid,
   Calendar,
@@ -25,17 +28,78 @@ import { cn } from "@/lib/utils";
 
 const statusFilterOptions = ["All", "ACTIVE", "DRAFT", "COMPLETED"] as const;
 const visibilityFilterOptions = ["All", "PUBLIC", "PRIVATE"] as const;
-const platformOptions = ["All", "TikTok", "Instagram", "YouTube"];
 const goalOptions = ["All", "Awareness", "Engagement", "Conversion"];
+const PAGE_SIZE = 12;
+
+function PaginationRow({
+  page,
+  totalPages,
+  onPageChange,
+}: {
+  page: number;
+  totalPages: number;
+  onPageChange: (p: number) => void;
+}) {
+  if (totalPages <= 1) return null;
+  const start = Math.max(1, Math.min(page - 2, totalPages - 4));
+  const end = Math.min(totalPages, start + 4);
+  const pages = Array.from({ length: end - start + 1 }, (_, i) => start + i);
+  return (
+    <div className="flex items-center justify-center gap-1 pt-2">
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(page - 1)}
+        disabled={page === 1}
+        className="rounded-lg"
+      >
+        <ChevronLeft className="h-4 w-4" />
+      </Button>
+      {start > 1 && <span className="px-2 text-sm text-muted-foreground">…</span>}
+      {pages.map((p) => (
+        <Button
+          key={p}
+          variant={p === page ? "default" : "outline"}
+          size="sm"
+          onClick={() => onPageChange(p)}
+          className="rounded-lg w-9"
+        >
+          {p}
+        </Button>
+      ))}
+      {end < totalPages && <span className="px-2 text-sm text-muted-foreground">…</span>}
+      <Button
+        variant="outline"
+        size="sm"
+        onClick={() => onPageChange(page + 1)}
+        disabled={page === totalPages}
+        className="rounded-lg"
+      >
+        <ChevronRight className="h-4 w-4" />
+      </Button>
+    </div>
+  );
+}
 
 function BrandCampaignsView() {
   const { token } = useUserStore();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [campaigns, setCampaigns] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState<(typeof statusFilterOptions)[number]>("All");
   const [visibility, setVisibility] = useState<(typeof visibilityFilterOptions)[number]>("All");
+
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+
+  const setPage = (p: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(p));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     if (!token) return;
@@ -58,10 +122,14 @@ function BrandCampaignsView() {
     [campaigns, search, status, visibility]
   );
 
+  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
   const resetFilters = () => {
     setSearch("");
     setStatus("All");
     setVisibility("All");
+    setPage(1);
   };
 
   if (loading) {
@@ -119,7 +187,7 @@ function BrandCampaignsView() {
                 <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                 <Input
                   value={search}
-                  onChange={(e) => setSearch(e.target.value)}
+                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
                   placeholder="Campaign name..."
                   className="pl-9 rounded-xl"
                 />
@@ -129,7 +197,7 @@ function BrandCampaignsView() {
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
               <select
                 value={status}
-                onChange={(e) => setStatus(e.target.value as typeof status)}
+                onChange={(e) => { setStatus(e.target.value as typeof status); setPage(1); }}
                 className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {statusFilterOptions.map((s) => (
@@ -141,7 +209,7 @@ function BrandCampaignsView() {
               <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Visibility</Label>
               <select
                 value={visibility}
-                onChange={(e) => setVisibility(e.target.value as typeof visibility)}
+                onChange={(e) => { setVisibility(e.target.value as typeof visibility); setPage(1); }}
                 className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
               >
                 {visibilityFilterOptions.map((v) => (
@@ -160,7 +228,7 @@ function BrandCampaignsView() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((c) => {
+        {pageItems.map((c) => {
           const statusLower = c.status?.toLowerCase() ?? "draft";
           const deadline = c.applyDeadline
             ? new Date(c.applyDeadline).toLocaleDateString()
@@ -239,28 +307,48 @@ function BrandCampaignsView() {
           </CardContent>
         </Card>
       )}
+
+      <PaginationRow page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
 
 function InfluencerDiscoverCampaignsView() {
   const { token } = useUserStore();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
   const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [total, setTotal] = useState(0);
+  const [totalPages, setTotalPages] = useState(1);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [applyingId, setApplyingId] = useState<string | null>(null);
   const [search, setSearch] = useState("");
-  const [platform, setPlatform] = useState("All");
   const [goal, setGoal] = useState("All");
+
+  const page = Math.max(1, Number(searchParams.get("page") ?? "1"));
+
+  const setPage = (p: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("page", String(p));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
 
   useEffect(() => {
     if (!token) return;
-    apiGetPublicCampaigns(token)
-      .then(setCampaigns)
+    setLoading(true);
+    apiGetPublicCampaigns(token, page, PAGE_SIZE)
+      .then((res) => {
+        setCampaigns(res.data);
+        setTotal(res.total);
+        setTotalPages(res.totalPages);
+        if (page > res.totalPages && res.totalPages > 0) setPage(1);
+      })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, [token, page]);
 
   const filtered = useMemo(
     () =>
@@ -269,16 +357,14 @@ function InfluencerDiscoverCampaignsView() {
           search.trim().length === 0 ||
           c.name?.toLowerCase().includes(search.toLowerCase()) ||
           c.clientBrand?.brandName?.toLowerCase().includes(search.toLowerCase());
-        const passPlatform = platform === "All"; // platform field not in DB schema yet
         const passGoal = goal === "All" || c.objective?.toLowerCase().includes(goal.toLowerCase());
-        return passSearch && passPlatform && passGoal;
+        return passSearch && passGoal;
       }),
-    [campaigns, search, platform, goal]
+    [campaigns, search, goal]
   );
 
   const resetFilters = () => {
     setSearch("");
-    setPlatform("All");
     setGoal("All");
   };
 
@@ -318,7 +404,7 @@ function InfluencerDiscoverCampaignsView() {
           </p>
           <div className="pt-4">
             <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
-              {filtered.length} active opportunities
+              {total} active opportunities
             </Badge>
           </div>
         </CardContent>
@@ -455,12 +541,22 @@ function InfluencerDiscoverCampaignsView() {
           </CardContent>
         </Card>
       )}
+
+      <PaginationRow page={page} totalPages={totalPages} onPageChange={setPage} />
     </div>
   );
 }
 
-export default function CampaignsPage() {
+function CampaignsPageInner() {
   const { role } = useUserStore();
   if (role === "brand" || role === "agency") return <BrandCampaignsView />;
   return <InfluencerDiscoverCampaignsView />;
+}
+
+export default function CampaignsPage() {
+  return (
+    <Suspense>
+      <CampaignsPageInner />
+    </Suspense>
+  );
 }

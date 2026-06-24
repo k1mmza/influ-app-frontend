@@ -432,8 +432,16 @@ export async function apiGetCampaigns(token: string): Promise<any[]> {
   return res.json();
 }
 
-export async function apiGetPublicCampaigns(token: string): Promise<any[]> {
-  const res = await fetch(`${API_URL}/campaigns/public`, {
+export interface PaginatedResponse<T> {
+  data: T[];
+  total: number;
+  page: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+export async function apiGetPublicCampaigns(token: string, page = 1, pageSize = 12): Promise<PaginatedResponse<any>> {
+  const res = await fetch(`${API_URL}/campaigns/public?page=${page}&pageSize=${pageSize}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch public campaigns"));
