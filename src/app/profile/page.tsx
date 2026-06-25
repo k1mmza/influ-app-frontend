@@ -609,7 +609,10 @@ function InfluencerProfileView() {
             },
           ] as const).map(({ key, label, icon, bg, connectBg, description, ...rest }) => {
             const comingSoon = "comingSoon" in rest && rest.comingSoon;
-            const isConnected = !comingSoon && platformAccounts.some((pa) => pa.platform === key);
+            // "Connected" means we still hold OAuth tokens. Disconnect keeps the
+            // PlatformAccount row (preserves historical stats) but nulls the tokens,
+            // so presence alone is not enough — must check hasTokens.
+            const isConnected = !comingSoon && platformAccounts.some((pa) => pa.platform === key && pa.hasTokens);
             const isConnecting = connectingPlatform === key;
             const isDisconnecting = disconnectingPlatform === key;
 
@@ -833,11 +836,11 @@ function InfluencerProfileView() {
           <article className="rounded-2xl bg-card p-5 shadow-sm">
             <h2 className="text-lg font-semibold text-foreground font-serif">Connected platform stats</h2>
             <p className="mt-0.5 text-xs text-muted-foreground">Live data from your linked accounts. Connect platforms above to populate.</p>
-            {platformAccounts.length === 0 ? (
+            {platformAccounts.filter((pa) => pa.hasTokens).length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground">No connected accounts yet.</p>
             ) : (
               <div className="mt-4 space-y-3">
-                {platformAccounts.map((pa) => {
+                {platformAccounts.filter((pa) => pa.hasTokens).map((pa) => {
                   const PlatformIcon =
                     pa.platform === "youtube" ? SiYoutube
                     : pa.platform === "tiktok" ? SiTiktok
