@@ -590,6 +590,48 @@ export async function apiUpdateCampaignApplicationStatus(
   return res.json();
 }
 
+// ── Tracking ────────────────────────────────────────────────────────────────
+
+export interface TrackingSummaryRow {
+  id: string;
+  name: string;
+  status: string;
+  influencerCount: number;
+  totalViews: number;
+  avgEngagementRate: number;
+}
+
+export interface TrackingDetailRow {
+  id: string;
+  influencerName: string;
+  platform: string | null;
+  contentType: string | null;
+  contentUrl: string | null;
+  views: number;
+  likes: number;
+  comments: number;
+  shares: number;
+  engagementRate: number;
+  growthRate: number;
+  recordedAt: string;
+}
+
+export async function apiGetTracking(token: string): Promise<TrackingSummaryRow[]> {
+  const res = await fetch(`${API_URL}/tracking`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking data"));
+  return res.json();
+}
+
+export async function apiGetTrackingDetail(token: string, campaignId: string): Promise<TrackingDetailRow[]> {
+  const res = await fetch(`${API_URL}/tracking/${campaignId}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking detail"));
+  return res.json();
+}
+
 export async function apiConnectPlatform(token: string, platform: string): Promise<{ authUrl: string }> {
   const res = await fetch(`${API_URL}/auth/platform/connect`, {
     method: "POST",

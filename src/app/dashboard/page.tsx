@@ -391,19 +391,30 @@ function AgencyDashboard({ data }: { data: any }) {
 }
 
 export default function DashboardPage() {
-  const { role, token } = useUserStore();
+  const { role, token, logout } = useUserStore();
+  const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // No token at all → not logged in. Send to login rather than fetching with "Bearer null".
+    if (!token) {
+      router.replace("/login");
+      return;
+    }
     async function fetchDashboard() {
-      if (!token) return;
       try {
         setLoading(true);
         const dashboardData = await apiGetDashboard(token);
         setData(dashboardData);
       } catch (err: any) {
+        // Expired/invalid token (1d TTL) → clear the dead session and re-login.
+        if (err?.message === "Unauthorized") {
+          logout();
+          router.replace("/login");
+          return;
+        }
         console.error("Dashboard fetch error:", err);
         setError(err.message);
       } finally {
@@ -411,7 +422,7 @@ export default function DashboardPage() {
       }
     }
     fetchDashboard();
-  }, [token]);
+  }, [token, logout, router]);
 
   if (loading) {
     return (

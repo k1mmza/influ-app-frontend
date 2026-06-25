@@ -6,31 +6,72 @@ import { useEffect } from "react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
-import { brandCampaigns, trackingByCampaign } from "@/mock/brand-campaigns";
+import {
+  apiGetTracking,
+  apiGetTrackingDetail,
+  type TrackingSummaryRow,
+  type TrackingDetailRow,
+} from "@/lib/api";
 import { exportRowsToExcel } from "@/lib/excel";
 
+// "TikTok — video" style label; falls back gracefully when platform/type unknown.
+function contentLabel(row: TrackingDetailRow): string {
+  return [row.platform, row.contentType].filter(Boolean).join(" — ") || "Content";
+}
+
 function TrackingPageContent() {
-  const { role } = useUserStore();
+  const { role, token } = useUserStore();
   const searchParams = useSearchParams();
+  const [campaigns, setCampaigns] = useState<TrackingSummaryRow[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [detailRows, setDetailRows] = useState<TrackingDetailRow[]>([]);
+  const [detailLoading, setDetailLoading] = useState(false);
   const [shareMessage, setShareMessage] = useState("");
 
   const selectedCampaign = useMemo(
-    () => (selectedId ? brandCampaigns.find((c) => c.id === selectedId) : null),
-    [selectedId]
+    () => (selectedId ? campaigns.find((c) => c.id === selectedId) : null),
+    [selectedId, campaigns]
   );
-  const detailRows = selectedId ? trackingByCampaign[selectedId] ?? [] : [];
+
+  const isBrandSide = role === "brand" || role === "agency";
 
   useEffect(() => {
+    if (!token || !isBrandSide) return;
+    setLoading(true);
+    apiGetTracking(token)
+      .then((rows) => {
+        setCampaigns(rows);
+        setError(null);
+      })
+      .catch((e) => setError(e.message))
+      .finally(() => setLoading(false));
+  }, [token, isBrandSide]);
+
+  // Preselect from ?campaign= once campaigns are loaded.
+  useEffect(() => {
     const campaignFromQuery = searchParams.get("campaign");
-    if (!campaignFromQuery) return;
-    const exists = brandCampaigns.some((campaign) => campaign.id === campaignFromQuery);
-    if (exists) {
+    if (campaignFromQuery && campaigns.some((c) => c.id === campaignFromQuery)) {
       setSelectedId(campaignFromQuery);
     }
-  }, [searchParams]);
+  }, [searchParams, campaigns]);
 
-  if (role !== "brand" && role !== "agency") {
+  // Load detail rows whenever the selected campaign changes.
+  useEffect(() => {
+    if (!selectedId || !token) {
+      setDetailRows([]);
+      return;
+    }
+    setDetailLoading(true);
+    setShareMessage("");
+    apiGetTrackingDetail(token, selectedId)
+      .then(setDetailRows)
+      .catch((e) => setError(e.message))
+      .finally(() => setDetailLoading(false));
+  }, [selectedId, token]);
+
+  if (!isBrandSide) {
     return (
       <section className="space-y-4">
         <h1 className="text-2xl font-bold text-foreground font-serif">Tracking</h1>
@@ -62,8 +103,8 @@ function TrackingPageContent() {
       rows: detailRows.map((r) => [
         selectedCampaign?.name ?? "",
         r.influencerName,
-        r.contentLabel,
-        r.contentType,
+        contentLabel(r),
+        r.contentType ?? "",
         r.views,
         r.likes,
         r.comments,
@@ -79,8 +120,10 @@ function TrackingPageContent() {
     <section className="space-y-6">
       <div className="rounded-2xl bg-gradient-to-r from-[#166534] to-[#052e16] p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold font-serif">Tracking</h1>
-        <p className="mt-1 text-sm text-white/70">Realtime-style results for published work (demo data).</p>
+        <p className="mt-1 text-sm text-white/70">Realtime-style results for published work.</p>
       </div>
+
+      {error ? <p className="text-sm font-medium text-red-600">{error}</p> : null}
 
       <article className="overflow-hidden rounded-2xl bg-card shadow-sm">
         <div className="border-b border-border px-4 py-3">
@@ -99,17 +142,21 @@ function TrackingPageContent() {
               </tr>
             </thead>
             <tbody>
-              {brandCampaigns.map((c) => {
-                const rows = trackingByCampaign[c.id] ?? [];
-                const views = rows.reduce((s, r) => s + r.views, 0);
-                const er =
-                  rows.length > 0 ? rows.reduce((s, r) => s + r.engagementRate, 0) / rows.length : 0;
-                return (
+              {loading ? (
+                <tr>
+                  <td className="px-4 py-3 text-muted-foreground" colSpan={5}>Loading tracking data...</td>
+                </tr>
+              ) : campaigns.length === 0 ? (
+                <tr>
+                  <td className="px-4 py-3 text-muted-foreground" colSpan={5}>No campaigns yet.</td>
+                </tr>
+              ) : (
+                campaigns.map((c) => (
                   <tr key={c.id} className="border-t border-border">
                     <td className="px-4 py-2 font-medium text-foreground">{c.name}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{c.status}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{views > 0 ? views.toLocaleString() : "—"}</td>
-                    <td className="px-4 py-2 text-muted-foreground">{rows.length ? `${er.toFixed(1)}%` : "—"}</td>
+                    <td className="px-4 py-2 text-muted-foreground capitalize">{c.status.toLowerCase()}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{c.totalViews > 0 ? c.totalViews.toLocaleString() : "—"}</td>
+                    <td className="px-4 py-2 text-muted-foreground">{c.influencerCount ? `${c.avgEngagementRate.toFixed(1)}%` : "—"}</td>
                     <td className="px-4 py-2 text-right">
                       <button
                         type="button"
@@ -120,8 +167,8 @@ function TrackingPageContent() {
                       </button>
                     </td>
                   </tr>
-                );
-              })}
+                ))
+              )}
             </tbody>
           </table>
         </div>
@@ -132,7 +179,7 @@ function TrackingPageContent() {
           <div className="flex flex-col gap-2 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-lg font-semibold text-foreground font-serif">Detail: {selectedCampaign.name}</h2>
-              <p className="text-xs text-muted-foreground">Per influencer: posts, metrics, and growth (demo).</p>
+              <p className="text-xs text-muted-foreground">Per influencer: posts, metrics, and growth.</p>
             </div>
             <div className="flex flex-wrap gap-2">
               <button
@@ -161,7 +208,9 @@ function TrackingPageContent() {
             </div>
           </div>
           {shareMessage ? <p className="px-4 pt-3 text-xs font-medium text-emerald-700">{shareMessage}</p> : null}
-          {detailRows.length === 0 ? (
+          {detailLoading ? (
+            <p className="p-4 text-sm text-muted-foreground">Loading detail...</p>
+          ) : detailRows.length === 0 ? (
             <p className="p-4 text-sm text-muted-foreground">No live rows for this campaign yet.</p>
           ) : (
             <div className="overflow-x-auto">
@@ -180,8 +229,8 @@ function TrackingPageContent() {
                   {detailRows.map((r) => (
                     <tr key={r.id} className="border-t border-border">
                       <td className="px-4 py-2 font-medium text-foreground">{r.influencerName}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{r.contentLabel}</td>
-                      <td className="px-4 py-2 text-muted-foreground capitalize">{r.contentType}</td>
+                      <td className="px-4 py-2 text-muted-foreground">{contentLabel(r)}</td>
+                      <td className="px-4 py-2 text-muted-foreground capitalize">{r.contentType ?? "—"}</td>
                       <td className="px-4 py-2 text-muted-foreground">{r.views.toLocaleString()}</td>
                       <td className="px-4 py-2 text-muted-foreground">{r.engagementRate}%</td>
                       <td className="px-4 py-2 text-emerald-600">+{r.growthRate}%</td>
