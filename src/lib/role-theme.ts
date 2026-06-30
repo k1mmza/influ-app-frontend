@@ -28,7 +28,7 @@ export interface RoleTheme {
 const ROLE_THEMES: Record<Role, RoleTheme> = {
   brand: {
     pageBg: "bg-role-navy-50",
-    profileChip: "bg-role-navy/10 text-role-navy hover:bg-role-navy/15",
+    profileChip: "bg-role-navy/10 text-role-navy hover:bg-role-navy/15 dark:bg-role-navy/20 dark:text-role-navy-50 dark:hover:bg-role-navy/30",
     profileChipActive: "bg-role-navy text-white shadow-md",
     cardBg: "bg-role-navy/10 border border-role-navy/20",
     profileHeader: "bg-role-navy",
@@ -39,7 +39,7 @@ const ROLE_THEMES: Record<Role, RoleTheme> = {
   },
   agency: {
     pageBg: "bg-emerald-50",
-    profileChip: "bg-emerald-100 text-emerald-900 hover:bg-emerald-200",
+    profileChip: "bg-emerald-100 text-emerald-900 hover:bg-emerald-200 dark:bg-emerald-500/15 dark:text-emerald-200 dark:hover:bg-emerald-500/25",
     profileChipActive: "bg-emerald-600 text-white shadow-md",
     cardBg: "bg-emerald-100 border border-emerald-200",
     profileHeader: "bg-emerald-600",

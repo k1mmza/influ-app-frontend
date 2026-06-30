@@ -2,46 +2,53 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
+import {
+  Activity,
+  Compass,
+  Heart,
+  LayoutDashboard,
+  LogOut,
+  Megaphone,
+  MessageSquare,
+  PanelLeft,
+  PanelLeftClose,
+  Sparkles,
+  type LucideIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { getNavIconActiveClass, getNavIndicatorClass, getNavLinkClass } from "@/lib/nav-theme";
+import { getSidebarMenuHeading, getSidebarWorkspaceLabel } from "@/lib/role-labels";
+import { useSidebarOptional } from "@/components/sidebar-context";
+import { UserProfileChip } from "@/components/user-profile-chip";
+import { useProfileAvatar } from "@/lib/use-profile-avatar";
 import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import type { Role } from "@/lib/types";
 
-const pageAccentColors: Record<string, string> = {
-  "/dashboard":  "#334155",
-  "/campaigns":  "#b45309",
-  "/discover":   "#0284c7",
-  "/shortlist":  "#be185d",
-  "/smart-plan": "#c2410c",
-  "/messages":   "#0f766e",
-  "/tracking":   "#166534",
-  "/profile":    "#92400e",
-};
+type NavLink = { href: string; label: string; icon: LucideIcon };
 
-const roleAccentColors: Record<string, string> = {
-  brand:      "#1e3a8a",
-  agency:     "#059669",
-  influencer: "#dc2626",
-};
-
-const brandLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/campaigns", label: "Campaign" },
-  { href: "/discover", label: "Discover" },
-  { href: "/shortlist", label: "Shortlist" },
-  { href: "/smart-plan", label: "Smart Plan" },
-  { href: "/messages", label: "Message" },
-  { href: "/tracking", label: "Tracking" },
-  { href: "/profile", label: "Profile" }
+// Brand and agency share the full menu (incl. /shortlist per D2).
+const brandAgencyLinks: NavLink[] = [
+  { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+  { href: "/campaigns", label: "Campaign", icon: Megaphone },
+  { href: "/discover", label: "Discover", icon: Compass },
+  { href: "/shortlist", label: "Shortlist", icon: Heart },
+  { href: "/smart-plan", label: "Smart Plan", icon: Sparkles },
+  { href: "/messages", label: "Message", icon: MessageSquare },
+  { href: "/tracking", label: "Tracking", icon: Activity },
 ];
 
-const influencerLinks = [
-  { href: "/dashboard", label: "Dashboard" },
-  { href: "/campaigns", label: "Campaign" },
-  { href: "/messages", label: "Message" },
-  { href: "/profile", label: "Profile" }
-];
+const navLinksByRole: Record<Role, NavLink[]> = {
+  brand: brandAgencyLinks,
+  agency: brandAgencyLinks,
+  influencer: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/campaigns", label: "Campaign", icon: Megaphone },
+    { href: "/messages", label: "Message", icon: MessageSquare },
+  ],
+};
 
 function isNavActive(pathname: string, href: string) {
   if (href === "/dashboard") return pathname === "/dashboard";
@@ -52,30 +59,45 @@ export function Navigation() {
   const pathname = usePathname();
   const router = useRouter();
   const { role, logout, isLoggedIn, name } = useUserStore();
+  const sidebar = useSidebarOptional();
+  const avatarUrl = useProfileAvatar();
+
   const isLandingPage = pathname === "/";
-  const isPublicPage = isLandingPage || pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies" || (pathname === "/discover" && !isLoggedIn);
-  const isAuthPage = ["/login", "/register", "/forgot-password"].includes(pathname);
+  const isPublicPage =
+    isLandingPage ||
+    pathname === "/how-it-works" ||
+    pathname === "/creators" ||
+    pathname === "/agencies" ||
+    (pathname === "/discover" && !isLoggedIn);
+  const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
+
+  // Discover keeps its filter rail mounted via #app-sidebar-slot; force the
+  // sidebar expanded there so collapse never hides those filters (A8).
+  const collapsed = (sidebar?.collapsed ?? false) && pathname !== "/discover";
+  const toggleCollapsed = sidebar?.toggleCollapsed;
 
   const handleLogout = () => {
     logout();
     router.push("/login");
   };
 
+  // N1: nav renders nothing on auth routes.
   if (isAuthPage) {
     return null;
   }
 
-  const publicNavLinks = [
-    { href: "/discover",      label: "Discover",         tip: "Search and filter creators"    },
-    { href: "/how-it-works",  label: "How it Works",     tip: "See how InfluApp works"         },
-    { href: "/creators",      label: "Creators",         tip: "Join as a creator"              },
-    { href: "/agencies",      label: "Agencies & Brands", tip: "Start running campaigns"       },
-  ];
-
+  // N2: keep our existing public/landing top-nav (tokenized, tooltips,
+  // ThemeToggle, real info links). NOT the design's light-only landing nav.
   if (isPublicPage) {
+    const publicNavLinks = [
+      { href: "/discover", label: "Discover", tip: "Search and filter creators" },
+      { href: "/how-it-works", label: "How it Works", tip: "See how InfluApp works" },
+      { href: "/creators", label: "Creators", tip: "Join as a creator" },
+      { href: "/agencies", label: "Agencies & Brands", tip: "Start running campaigns" },
+    ];
+
     return (
       <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border bg-background/80 px-6 py-3 shadow-sm backdrop-blur-md sm:px-8">
-        {/* Left: name + links */}
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold font-serif text-foreground transition hover:opacity-80 shrink-0">
             InfluApp
@@ -96,7 +118,6 @@ export function Navigation() {
                   >
                     {label}
                   </Link>
-                  {/* Hover tooltip bubble */}
                   <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md opacity-0 transition-opacity duration-150 group-hover:opacity-100">
                     {tip}
                     <div className="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-border bg-popover" />
@@ -107,7 +128,6 @@ export function Navigation() {
           </div>
         </div>
 
-        {/* Right: auth + theme */}
         <div className="flex items-center gap-2">
           <ThemeToggle />
           {isLoggedIn ? (
@@ -133,52 +153,127 @@ export function Navigation() {
     );
   }
 
-  const roleColor = role ? (roleAccentColors[role] ?? "#334155") : "#334155";
+  // Authed collapsible sidebar (the design shell). N4: role-based links; crash
+  // guard for null role; N3: ThemeToggle preserved; N6: logout.
+  const links = role ? navLinksByRole[role] : [];
 
   return (
-    <nav className="flex flex-col gap-1 rounded-2xl border bg-card p-2 shadow-sm">
-      <div className="mb-3 flex items-center justify-between px-3 pt-2">
-        <Link href="/" className="transition hover:opacity-80">
-          <span className="text-base font-bold text-foreground font-serif">InfluApp</span>
-        </Link>
-        {role && (
-          <span
-            className="rounded-full px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider text-white"
-            style={{ backgroundColor: roleColor }}
-          >
-            {role}
-          </span>
+    <nav className="flex h-full min-h-0 flex-col">
+      <div
+        className={cn(
+          "flex items-center border-b border-border transition hover:bg-accent/40",
+          collapsed ? "justify-center px-2 py-4 lg:px-2" : "gap-3 px-5 py-5"
         )}
+      >
+        <Link
+          href="/dashboard"
+          className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "gap-3")}
+          title={collapsed ? `InfluApp — ${getSidebarWorkspaceLabel(role)}` : undefined}
+        >
+          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white shadow-lg shadow-primary/25">
+            IA
+          </span>
+          {!collapsed ? (
+            <div className="min-w-0">
+              <p className="truncate text-base font-bold tracking-tight text-foreground font-serif">InfluApp</p>
+              <p className="text-xs font-medium text-muted-foreground">{getSidebarWorkspaceLabel(role)}</p>
+            </div>
+          ) : null}
+        </Link>
       </div>
-      <div className="flex flex-col gap-1">
-        {(role === "influencer" ? influencerLinks : brandLinks).map((link) => {
+
+      <div className={cn("flex flex-1 flex-col gap-0.5 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
+        {!collapsed ? (
+          <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+            {getSidebarMenuHeading(role)}
+          </p>
+        ) : null}
+        {links.map((link) => {
           const active = isNavActive(pathname, link.href);
-          const accentColor = pageAccentColors[link.href] ?? "#334155";
+          const Icon = link.icon;
+
           return (
-            <Button
+            <Link
               key={link.href}
-              variant="ghost"
-              asChild
-              style={active ? { backgroundColor: accentColor, color: "white" } : undefined}
+              href={link.href}
+              title={collapsed ? link.label : undefined}
+              aria-label={link.label}
               className={cn(
-                "justify-start rounded-xl px-4 py-2 text-sm font-medium transition",
-                !active && "text-muted-foreground hover:text-foreground"
+                "group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200",
+                collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
+                getNavLinkClass(link.href, active),
+                active && "shadow-sm"
               )}
             >
-              <Link href={link.href}>{link.label}</Link>
-            </Button>
+              {active && !collapsed ? (
+                <span
+                  className={cn(
+                    "absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full",
+                    getNavIndicatorClass(link.href)
+                  )}
+                />
+              ) : null}
+              <Icon
+                className={cn(
+                  "h-[18px] w-[18px] shrink-0 transition-colors",
+                  active ? getNavIconActiveClass(link.href) : "text-muted-foreground group-hover:text-foreground"
+                )}
+                strokeWidth={active ? 2.25 : 2}
+              />
+              {!collapsed ? <span className="truncate">{link.label}</span> : null}
+            </Link>
           );
         })}
       </div>
-      <div className="mt-4 flex items-center justify-between border-t border-border px-1 pt-4">
-        <Button
-          variant="ghost"
+
+      <div className={cn("mt-auto", collapsed ? "p-2" : "p-3")}>
+        {toggleCollapsed ? (
+          <button
+            type="button"
+            onClick={toggleCollapsed}
+            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
+            className={cn(
+              "group mb-2 hidden w-full items-center rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground lg:flex",
+              collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+            )}
+          >
+            {collapsed ? (
+              <PanelLeft className="h-[18px] w-[18px] shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+            ) : (
+              <PanelLeftClose className="h-[18px] w-[18px] shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
+            )}
+            {!collapsed ? <span>Collapse</span> : null}
+          </button>
+        ) : null}
+
+        {/* N3: ThemeToggle / dark mode preserved in the authed sidebar. */}
+        <div className={cn("mb-2 flex items-center", collapsed ? "justify-center" : "gap-3 px-1")}>
+          <ThemeToggle />
+          {!collapsed ? <span className="text-sm font-medium text-muted-foreground">Theme</span> : null}
+        </div>
+
+        <button
+          type="button"
           onClick={handleLogout}
-          className="flex-1 justify-start rounded-xl px-4 py-2 text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive"
+          title={collapsed ? "Log out" : undefined}
+          aria-label="Log out"
+          className={cn(
+            "group mb-2 flex w-full items-center rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive",
+            collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+          )}
         >
-          Log out
-        </Button>
-        <ThemeToggle />
+          <LogOut className="h-[18px] w-[18px] shrink-0 transition-colors" />
+          {!collapsed ? "Log out" : null}
+        </button>
+
+        <div className={cn(collapsed ? "flex justify-center" : "w-full")}>
+          <UserProfileChip
+            collapsed={collapsed}
+            avatarUrl={avatarUrl}
+            className={cn(!collapsed && "flex w-full gap-3 px-3 py-2.5")}
+          />
+        </div>
       </div>
     </nav>
   );

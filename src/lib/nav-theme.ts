@@ -18,6 +18,7 @@ const NAV_ROUTES = [
   "/campaigns",
   "/messages",
   "/discover",
+  "/shortlist",
   "/tracking"
 ] as const;
 
@@ -26,6 +27,7 @@ const NAV_ACTIVE_CLASSES: Record<string, string> = {
   "/campaigns": "bg-nav-bronze-200 text-nav-bronze-900 dark:bg-nav-bronze-900/40 dark:text-nav-bronze-100",
   "/messages": "bg-nav-teal-200 text-nav-teal-900 dark:bg-nav-teal-900/40 dark:text-nav-teal-100",
   "/discover": "bg-nav-ocean-200 text-nav-ocean-900 dark:bg-nav-ocean-900/40 dark:text-nav-ocean-100",
+  "/shortlist": "bg-nav-rose-200 text-nav-rose-900 dark:bg-nav-rose-900/40 dark:text-nav-rose-100",
   "/smart-plan": "bg-nav-burnt-200 text-nav-burnt-900 dark:bg-nav-burnt-900/40 dark:text-nav-burnt-100",
   "/tracking": "bg-nav-forest-200 text-nav-forest-900 dark:bg-nav-forest-900/40 dark:text-nav-forest-100"
 };
@@ -35,6 +37,7 @@ const NAV_BUTTON_CLASSES: Record<string, string> = {
   "/campaigns": "bg-nav-bronze-900 text-white hover:bg-nav-bronze-800",
   "/messages": "bg-nav-teal-900 text-white hover:bg-nav-teal-800",
   "/discover": "bg-nav-ocean-900 text-white hover:bg-nav-ocean-800",
+  "/shortlist": "bg-nav-rose-900 text-white hover:bg-nav-rose-800",
   "/smart-plan": "bg-nav-burnt-900 text-white hover:bg-nav-burnt-800",
   "/tracking": "bg-nav-forest-900 text-white hover:bg-nav-forest-800"
 };
@@ -44,6 +47,7 @@ const NAV_SOLID_CLASSES: Record<string, string> = {
   "/campaigns": "bg-nav-bronze-900",
   "/messages": "bg-nav-teal-900",
   "/discover": "bg-nav-ocean-900",
+  "/shortlist": "bg-nav-rose-900",
   "/smart-plan": "bg-nav-burnt-900",
   "/tracking": "bg-nav-forest-900"
 };
@@ -53,6 +57,7 @@ const NAV_ACCENT_TEXT_CLASSES: Record<string, string> = {
   "/campaigns": "text-nav-bronze-900 dark:text-nav-bronze-100",
   "/messages": "text-nav-teal-900 dark:text-nav-teal-100",
   "/discover": "text-nav-ocean-900 dark:text-nav-ocean-100",
+  "/shortlist": "text-nav-rose-900 dark:text-nav-rose-100",
   "/smart-plan": "text-nav-burnt-900 dark:text-nav-burnt-100",
   "/tracking": "text-nav-forest-900 dark:text-nav-forest-100"
 };
@@ -62,6 +67,7 @@ const NAV_INDICATOR_CLASSES: Record<string, string> = {
   "/campaigns": "bg-nav-bronze-900",
   "/messages": "bg-nav-teal-900",
   "/discover": "bg-nav-ocean-900",
+  "/shortlist": "bg-nav-rose-900",
   "/smart-plan": "bg-nav-burnt-900",
   "/tracking": "bg-nav-forest-900"
 };
@@ -71,6 +77,7 @@ const NAV_ICON_ACTIVE_CLASSES: Record<string, string> = {
   "/campaigns": "text-nav-bronze-900 dark:text-nav-bronze-100",
   "/messages": "text-nav-teal-900 dark:text-nav-teal-100",
   "/discover": "text-nav-ocean-900 dark:text-nav-ocean-100",
+  "/shortlist": "text-nav-rose-900 dark:text-nav-rose-100",
   "/smart-plan": "text-nav-burnt-900 dark:text-nav-burnt-100",
   "/tracking": "text-nav-forest-900 dark:text-nav-forest-100"
 };
@@ -80,6 +87,7 @@ const NAV_PAGE_BG_CLASSES: Record<string, string> = {
   "/campaigns": "bg-nav-bronze-100 dark:bg-nav-bronze-900/25",
   "/messages": "bg-nav-teal-100 dark:bg-nav-teal-900/25",
   "/discover": "bg-nav-ocean-100 dark:bg-nav-ocean-900/25",
+  "/shortlist": "bg-nav-rose-100 dark:bg-nav-rose-900/25",
   "/smart-plan": "bg-nav-burnt-100 dark:bg-nav-burnt-900/25",
   "/tracking": "bg-nav-forest-100 dark:bg-nav-forest-900/25"
 };
