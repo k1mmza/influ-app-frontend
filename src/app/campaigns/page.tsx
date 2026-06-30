@@ -31,6 +31,89 @@ const visibilityFilterOptions = ["All", "PUBLIC", "PRIVATE"] as const;
 const goalOptions = ["All", "Awareness", "Engagement", "Conversion"];
 const PAGE_SIZE = 12;
 
+// ─── Read-only view-model adapters (our CampaignResponse → design row shape) ───
+// Mirrors the apiCampaignToLocal precedent in smart-plan/page.tsx. No API change.
+
+type BrandCampaignStatus = "active" | "pending" | "completed";
+
+/** Our uppercase status → the design's lowercase set. CANCELLED is intentionally
+ *  mapped to "pending" only as a fallback; cancelled rows are excluded at the
+ *  RENDER layer (never from counts/totals). */
+function mapBrandStatus(raw?: string): BrandCampaignStatus {
+  const s = (raw ?? "").toUpperCase();
+  if (s === "ACTIVE") return "active";
+  if (s === "COMPLETED") return "completed";
+  return "pending"; // DRAFT (and CANCELLED, which is filtered out before render)
+}
+
+/** Budget: we hold a single value, design wants a range → render max-only. */
+function budgetLabel(budget: number): string {
+  return budget > 0 ? `up to THB ${budget.toLocaleString()}` : "TBD";
+}
+
+/** coverImage has no source in our API → role-tinted gradient placeholder. */
+function roleCoverGradient(role: string | null | undefined): string {
+  if (role === "brand") return "bg-gradient-to-br from-role-navy to-role-navy/70";
+  if (role === "influencer") return "bg-gradient-to-br from-role-coral to-role-coral/70";
+  return "bg-gradient-to-br from-emerald-600 to-emerald-500"; // agency
+}
+
+interface BrandCampaignVM {
+  id: string;
+  name: string;
+  visibility: string | null;
+  status: BrandCampaignStatus;
+  budget: number;
+  spent: number;
+  deadline: string;
+  influencersJoined: number;
+  platform: string;
+  objective: string;
+  brandName: string | null;
+}
+
+function toBrandCampaignVM(c: any): BrandCampaignVM {
+  return {
+    id: c.id,
+    name: c.name,
+    visibility: c.visibility ? String(c.visibility).toLowerCase() : null,
+    status: mapBrandStatus(c.status),
+    budget: c.budget ?? 0,
+    spent: c.budgetSpent ?? 0, // name diff: budgetSpent → spent
+    deadline: c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD",
+    influencersJoined: Array.isArray(c.applications)
+      ? c.applications.filter((a: any) => a.status === "ACCEPTED").length
+      : 0,
+    platform: c.requirements?.[0]?.platforms?.[0] ?? "—",
+    objective: c.objective ?? "—", // free-text, not the design enum
+    brandName: c.clientBrand?.brandName ?? null,
+  };
+}
+
+interface InfCampaignVM {
+  id: string;
+  name: string;
+  brand: string;
+  budget: number;
+  platform: string;
+  contentType: string;
+  objective: string;
+  deadline: string;
+}
+
+function toInfCampaignVM(c: any): InfCampaignVM {
+  return {
+    id: c.id,
+    name: c.name,
+    brand: c.clientBrand?.brandName ?? "Brand", // nested → flat
+    budget: c.budget ?? 0,
+    platform: c.requirements?.[0]?.platforms?.[0] ?? "—",
+    contentType: c.requirements?.[0]?.contentType ?? c.deliverables ?? "—",
+    objective: c.objective ?? "—",
+    deadline: c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD",
+  };
+}
+
 function PaginationRow({
   page,
   totalPages,
@@ -82,7 +165,7 @@ function PaginationRow({
 }
 
 function BrandCampaignsView() {
-  const { token } = useUserStore();
+  const { token, role } = useUserStore();
   const searchParams = useSearchParams();
   const router = useRouter();
   const pathname = usePathname();
@@ -122,8 +205,16 @@ function BrandCampaignsView() {
     [campaigns, search, status, visibility]
   );
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
-  const pageItems = filtered.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  // Decision: hide CANCELLED at the RENDER layer ONLY. `filtered` (incl. cancelled)
+  // still drives the count badge and any roll-ups; only the rendered card grid /
+  // pagination operate on `visibleCards`. Filtering late avoids count-mismatch bugs.
+  const visibleCards = useMemo(
+    () => filtered.filter((c) => (c.status ?? "").toUpperCase() !== "CANCELLED"),
+    [filtered]
+  );
+
+  const totalPages = Math.max(1, Math.ceil(visibleCards.length / PAGE_SIZE));
+  const pageItems = visibleCards.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const resetFilters = () => {
     setSearch("");
@@ -228,61 +319,62 @@ function BrandCampaignsView() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {pageItems.map((c) => {
-          const statusLower = c.status?.toLowerCase() ?? "draft";
-          const deadline = c.applyDeadline
-            ? new Date(c.applyDeadline).toLocaleDateString()
-            : "TBD";
+        {pageItems.map((raw) => {
+          const c = toBrandCampaignVM(raw);
           return (
-            <Card key={c.id} className="group overflow-hidden border-none shadow-sm transition-all hover:shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="space-y-1">
-                    <h3 className="font-bold text-foreground leading-tight font-serif">{c.name}</h3>
-                    <div className="flex gap-2 pt-1">
-                      {c.visibility && (
-                        <Badge variant="secondary" className="text-[10px] bg-muted border-none font-bold uppercase">{c.visibility.toLowerCase()}</Badge>
-                      )}
-                      {c.clientBrand?.brandName && (
-                        <Badge variant="outline" className="text-[10px] font-bold">{c.clientBrand.brandName}</Badge>
-                      )}
-                    </div>
-                  </div>
-                  <Badge className={cn(
-                    "font-bold text-[10px] uppercase border-none",
-                    statusLower === "active" ? "bg-emerald-50 text-emerald-700" :
-                    statusLower === "draft" ? "bg-amber-50 text-amber-700" :
-                    "bg-muted text-muted-foreground"
-                  )}>
-                    {statusLower}
-                  </Badge>
+            <Link
+              key={c.id}
+              href={`/campaigns/${c.id}`}
+              className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              {/* Role-tinted gradient cover (no image source in our API). */}
+              <div className={cn("relative h-24 w-full", roleCoverGradient(role))}>
+                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+                <span
+                  className={cn(
+                    "absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
+                    c.status === "active"
+                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
+                      : c.status === "pending"
+                        ? "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
+                        : "bg-card/90 text-muted-foreground"
+                  )}
+                >
+                  {c.status}
+                </span>
+                <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-bold text-white font-serif drop-shadow">
+                  {c.name}
+                </h3>
+              </div>
+
+              <div className="p-5">
+                <div className="flex flex-wrap gap-2">
+                  {c.visibility && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
+                      {c.visibility}
+                    </span>
+                  )}
+                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+                    {c.platform}
+                  </span>
+                  {c.brandName && (
+                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+                      {c.brandName}
+                    </span>
+                  )}
                 </div>
-
-                <div className="mt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Budget</p>
-                      <p className="text-sm font-bold">
-                        {c.budget ? `THB ${Number(c.budget).toLocaleString()}` : "TBD"}
-                      </p>
-                    </div>
-                    <div className="space-y-1 text-right">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Applications</p>
-                      <p className="text-sm font-bold">{c.applications?.length ?? 0}</p>
-                    </div>
-                  </div>
-
-                  <div className="flex items-center gap-2 text-xs font-medium text-muted-foreground bg-muted p-2.5 rounded-xl">
-                    <Calendar className="h-3.5 w-3.5" />
-                    Deadline: {deadline}
-                  </div>
-                </div>
-
-                <Button variant="link" asChild className="mt-4 px-0 font-bold text-primary h-auto group-hover:translate-x-1 transition-transform">
-                  <Link href={`/campaigns/${c.id}`}>View Management <ChevronRight className="ml-1 h-4 w-4" /></Link>
-                </Button>
-              </CardContent>
-            </Card>
+                <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                  <li>Budget: {budgetLabel(c.budget)} · Spent: THB {c.spent.toLocaleString()}</li>
+                  <li className="flex items-center gap-1.5">
+                    <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
+                  </li>
+                  <li>Influencers: {c.influencersJoined}</li>
+                </ul>
+                <p className="mt-3 inline-flex items-center text-sm font-bold text-primary transition-transform group-hover:translate-x-1">
+                  View management <ChevronRight className="ml-1 h-4 w-4" />
+                </p>
+              </div>
+            </Link>
           );
         })}
       </div>
@@ -458,72 +550,54 @@ function InfluencerDiscoverCampaignsView() {
       )}
 
       {notice && (
-        <Card className="border-emerald-200 bg-emerald-50">
-          <CardContent className="p-4 text-sm font-medium text-emerald-700">{notice}</CardContent>
+        <Card className="border-emerald-200 bg-emerald-50 dark:border-emerald-500/25 dark:bg-emerald-500/10">
+          <CardContent className="p-4 text-sm font-medium text-emerald-700 dark:text-emerald-300">{notice}</CardContent>
         </Card>
       )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {filtered.map((c) => {
-          const deadline = c.applyDeadline
-            ? new Date(c.applyDeadline).toLocaleDateString()
-            : "TBD";
+        {filtered.map((raw) => {
+          const c = toInfCampaignVM(raw);
           return (
-            <Card key={c.id} className="overflow-hidden border-none shadow-sm transition-all hover:shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div>
-                    <h3 className="font-bold text-foreground leading-tight font-serif">{c.name}</h3>
-                    <p className="text-xs font-semibold text-primary mt-1">
-                      {c.clientBrand?.brandName ?? "Brand"}
-                    </p>
-                  </div>
-                  <Badge variant="secondary" className="bg-muted border-none font-bold text-[10px] uppercase">
-                    {c.status?.toLowerCase()}
-                  </Badge>
+            <article
+              key={c.id}
+              className="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <h3 className="truncate font-bold text-foreground leading-tight font-serif">{c.name}</h3>
+                  <p className="mt-1 text-sm font-semibold text-primary">{c.brand}</p>
                 </div>
+                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                  {c.platform}
+                </span>
+              </div>
 
-                <div className="mt-6 space-y-4">
-                  <div className="grid grid-cols-2 gap-4">
-                    <div className="space-y-1 text-xs">
-                      <p className="font-bold uppercase tracking-widest text-muted-foreground">Budget</p>
-                      <p className="font-bold text-foreground">
-                        {c.budget ? `THB ${Number(c.budget).toLocaleString()}` : "TBD"}
-                      </p>
-                    </div>
-                    <div className="space-y-1 text-right text-xs">
-                      <p className="font-bold uppercase tracking-widest text-muted-foreground">Objective</p>
-                      <p className="font-bold text-foreground">{c.objective ?? "—"}</p>
-                    </div>
-                  </div>
+              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+                <li>Budget: {budgetLabel(c.budget)}</li>
+                <li>Content: {c.contentType}</li>
+                <li className="flex items-center gap-1.5">
+                  <Target className="h-3.5 w-3.5" /> Goal: {c.objective}
+                </li>
+                <li className="flex items-center gap-1.5">
+                  <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
+                </li>
+              </ul>
 
-                  <div className="flex items-center justify-between text-xs font-medium text-muted-foreground">
-                    <div className="flex items-center gap-1.5">
-                      <Target className="h-3.5 w-3.5" />
-                      {c.objective ?? "Open"}
-                    </div>
-                    <div className="flex items-center gap-1.5">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {deadline}
-                    </div>
-                  </div>
-                </div>
-
-                <div className="mt-6 flex gap-2">
-                  <Button
-                    className="flex-1 rounded-xl font-bold text-xs h-10 shadow-sm"
-                    disabled={applyingId != null}
-                    onClick={() => applyToCampaign(c.id)}
-                  >
-                    {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                    Apply Now
-                  </Button>
-                  <Button variant="outline" asChild className="flex-1 rounded-xl font-bold text-xs h-10">
-                    <Link href={`/campaigns/${c.id}`}>Details</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
+              <div className="mt-4 flex gap-2">
+                <Button
+                  className="flex-1 rounded-xl font-bold text-xs h-10 shadow-sm"
+                  disabled={applyingId != null}
+                  onClick={() => applyToCampaign(c.id)}
+                >
+                  {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                  Apply Now
+                </Button>
+                <Button variant="outline" asChild className="flex-1 rounded-xl font-bold text-xs h-10">
+                  <Link href={`/campaigns/${c.id}`}>Details</Link>
+                </Button>
+              </div>
+            </article>
           );
         })}
       </div>
