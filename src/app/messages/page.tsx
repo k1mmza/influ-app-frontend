@@ -265,7 +265,7 @@ function MessagesView({ role }: { role: string }) {
                 onClick={() => selectConversation(conv.id)}
                 className={`rounded-xl border p-3 shadow-sm cursor-pointer transition-all ${
                   activeConvId === conv.id
-                    ? "border-[#0f766e] bg-[#0f766e]/5"
+                    ? "border-nav-teal-900 bg-nav-teal-100 dark:border-nav-teal-800 dark:bg-nav-teal-900/30"
                     : "border-border bg-card hover:bg-muted/50"
                 }`}
               >
@@ -357,7 +357,7 @@ function MessagesView({ role }: { role: string }) {
                 </div>
               </div>
 
-              <div className="flex-1 overflow-y-auto py-4 space-y-4 px-2">
+              <div className="flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-4 space-y-4">
                 {loadingMessages ? (
                   <div className="flex h-full items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin text-primary" />
@@ -372,10 +372,10 @@ function MessagesView({ role }: { role: string }) {
                       return (
                         <div key={msg.id} className={`flex flex-col ${isMe ? "items-end" : "items-start"}`}>
                           <div
-                            className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm shadow-sm ${
+                            className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
                               isMe
-                                ? "rounded-tr-md bg-[#0f766e] text-white"
-                                : "rounded-tl-md bg-muted text-foreground"
+                                ? "rounded-tr-md bg-nav-teal-900 text-white"
+                                : "rounded-tl-md bg-card text-foreground border border-border"
                             }`}
                           >
                             {msg.content}
@@ -399,11 +399,11 @@ function MessagesView({ role }: { role: string }) {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="w-full rounded-xl border border-border px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-nav-teal-900"
                 />
                 <button
                   disabled={!newMessage.trim()}
-                  className="rounded-xl bg-[#0f766e] px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-[#0f766e]/90 transition-all flex items-center gap-2 cursor-pointer"
+                  className="rounded-xl bg-nav-teal-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-nav-teal-800 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Send className="h-4 w-4" />
                   <span className="hidden sm:inline">Send</span>
