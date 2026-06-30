@@ -1,6 +1,7 @@
 "use client";
 
 import { InfluencerCard } from "@/components/influencer-card";
+import { InfluencerShelf } from "@/components/influencer-shelf";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
@@ -196,6 +197,13 @@ function DiscoverPageContent() {
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
 
+  // Shelf pool — a single larger, filter-aware fetch the three shelves sort
+  // client-side. Separate from the paginated grid fetch below. If the backend
+  // caps `limit` lower than POOL_SIZE, shelves just sort whatever it returns.
+  const POOL_SIZE = 48;
+  const [poolInfluencers, setPoolInfluencers] = useState<Influencer[]>([]);
+  const [poolLoading, setPoolLoading] = useState(true);
+
   const [smartQuery, setSmartQuery] = useState("");
   const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>([]);
   const [country, setCountry] = useState("All");
@@ -277,36 +285,61 @@ function DiscoverPageContent() {
     minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country,
   ]);
 
+  // Single source of truth for filter → query params, shared by the paginated
+  // grid fetch and the shelf-pool fetch (identical filters; only page/limit differ).
+  const buildFilterParams = useCallback((): any => {
+    if (smartQuery && smartQuery.trim()) {
+      // Smart query active → send only `q` to avoid conflicting parsed filters.
+      return { q: smartQuery };
+    }
+    return {
+      categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
+      platform: selectedPlatforms.length > 0 ? selectedPlatforms.join(",") : "All",
+      followerRange,
+      minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
+      keyword,
+      minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
+      minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
+      minGrowthRate: minGrowthRate > 0 ? minGrowthRate : undefined,
+      minAverageViews: minAverageViews > 0 ? minAverageViews : undefined,
+      minResponseRate: minResponseRate > 0 ? minResponseRate : undefined,
+      maxRatePerPost: maxRatePerPost > 0 ? maxRatePerPost : undefined,
+      minRatePerPost: minRatePerPost > 0 ? minRatePerPost : undefined,
+      minFollowers: minFollowers > 0 ? minFollowers : undefined,
+      stylePresent: stylePresent !== "All" ? stylePresent : undefined,
+      audienceGender: audienceGender !== "All" ? audienceGender : undefined,
+      audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
+      availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
+      country: country !== "All" ? country : undefined,
+    };
+  }, [smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword, minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews, minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country]);
+
+  // Shelf-pool fetch — same filters, page 1, larger limit; independent of grid pagination.
+  useEffect(() => {
+    const fetchPool = async () => {
+      setPoolLoading(true);
+      try {
+        const params = buildFilterParams();
+        params.page = 1;
+        params.limit = POOL_SIZE;
+        const result = await apiGetInfluencers(params);
+        setPoolInfluencers(result.data);
+      } catch (err) {
+        console.error("Failed to fetch shelf pool:", err);
+        setPoolInfluencers([]);
+      } finally {
+        setPoolLoading(false);
+      }
+    };
+    const debounce = setTimeout(fetchPool, 500);
+    return () => clearTimeout(debounce);
+  }, [buildFilterParams]);
+
   useEffect(() => {
     const fetchInfluencers = async () => {
       setLoading(true);
       try {
-        let params: any;
-        if (smartQuery && smartQuery.trim()) {
-          // When a smart query is active, only send `q` to avoid conflicting parsed filters
-          params = { q: smartQuery };
-        } else {
-          params = {
-            categories: selectedCategories.length > 0 ? selectedCategories.join(",") : undefined,
-            platform: selectedPlatforms.length > 0 ? selectedPlatforms.join(",") : "All",
-            followerRange,
-            minEngagementRate: minEngagementRate > 0 ? minEngagementRate : undefined,
-            keyword,
-            minQualityScore: minQualityScore > 0 ? minQualityScore : undefined,
-            minPerformanceScore: minPerformanceScore > 0 ? minPerformanceScore : undefined,
-            minGrowthRate: minGrowthRate > 0 ? minGrowthRate : undefined,
-            minAverageViews: minAverageViews > 0 ? minAverageViews : undefined,
-            minResponseRate: minResponseRate > 0 ? minResponseRate : undefined,
-            maxRatePerPost: maxRatePerPost > 0 ? maxRatePerPost : undefined,
-            minRatePerPost: minRatePerPost > 0 ? minRatePerPost : undefined,
-            minFollowers: minFollowers > 0 ? minFollowers : undefined,
-            stylePresent: stylePresent !== "All" ? stylePresent : undefined,
-            audienceGender: audienceGender !== "All" ? audienceGender : undefined,
-            audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
-            availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
-            country: country !== "All" ? country : undefined,
-          };
-        }
+        const params = buildFilterParams();
         params.page = page;
         params.limit = PAGE_SIZE;
         const result = await apiGetInfluencers(params);
@@ -322,12 +355,7 @@ function DiscoverPageContent() {
 
     const debounce = setTimeout(fetchInfluencers, 500);
     return () => clearTimeout(debounce);
-  }, [
-    page,
-    smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
-    minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
-    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country,
-  ]);
+  }, [page, buildFilterParams]);
 
   const updateAudienceThreshold = (value: number) => {
     const clamped = Math.max(0, Math.min(100, value));
@@ -533,13 +561,6 @@ function DiscoverPageContent() {
     void buildInfluencerFromSocialUrl(normalizedUrl);
   }, [urlFromQuery]);
 
-  const filtered = useMemo(() => {
-    // We already fetch filtered data from backend, 
-    // but we can still apply minor local refinements or just use the state.
-    // Let's use the fetched influencers state.
-    return influencers;
-  }, [influencers]);
-
   const activeChips = [
     selectedPlatforms.length ? `${selectedPlatforms.length} platforms` : "",
     selectedCampaignIntents.length ? `${selectedCampaignIntents.length} intents` : "",
@@ -552,15 +573,41 @@ function DiscoverPageContent() {
     mainPlatformFilter !== "All" ? `Main audience: ${mainPlatformFilter}` : ""
   ].filter(Boolean);
 
-  const discoverCards = useMemo(() => {
-    if (!generatedInfluencer) return filtered;
-    return [generatedInfluencer, ...filtered.filter((inf) => inf.id !== generatedInfluencer.id)];
-  }, [filtered, generatedInfluencer]);
-
-  const selectedInfluencer = useMemo(
-    () => discoverCards.find((item) => item.id === selectedInfluencerId) ?? null,
-    [discoverCards, selectedInfluencerId]
+  // Three shelves: each re-sorts the filter-aware pool by REAL, always-present
+  // fields (performanceScore, followers, engagementRate). No proxies, no fallbacks.
+  const trendingInfluencers = useMemo(
+    () =>
+      [...poolInfluencers]
+        .sort((a, b) => (b.performanceScore * 1000 + b.followers) - (a.performanceScore * 1000 + a.followers))
+        .slice(0, 10),
+    [poolInfluencers]
   );
+  const recommendedInfluencers = useMemo(
+    () =>
+      [...poolInfluencers]
+        .sort((a, b) => (b.performanceScore + b.engagementRate * 10) - (a.performanceScore + a.engagementRate * 10))
+        .slice(0, 10),
+    [poolInfluencers]
+  );
+  const topPerformers = useMemo(
+    () =>
+      [...poolInfluencers]
+        .sort((a, b) => b.performanceScore - a.performanceScore || b.followers - a.followers)
+        .slice(0, 10),
+    [poolInfluencers]
+  );
+
+  // Resolve the selected creator across every visible source (URL-search result,
+  // shelf pool, and the paginated grid) — a shelf pick may not be on the grid page.
+  const selectedInfluencer = useMemo(() => {
+    if (!selectedInfluencerId) return null;
+    if (generatedInfluencer?.id === selectedInfluencerId) return generatedInfluencer;
+    return (
+      poolInfluencers.find((item) => item.id === selectedInfluencerId) ??
+      influencers.find((item) => item.id === selectedInfluencerId) ??
+      null
+    );
+  }, [selectedInfluencerId, generatedInfluencer, poolInfluencers, influencers]);
 
   const selectedInfluencerMeta = useMemo(() => {
     if (!selectedInfluencer) return null;
@@ -577,11 +624,10 @@ function DiscoverPageContent() {
   }, []);
 
   useEffect(() => {
-    if (!selectedInfluencerId) return;
-    if (!discoverCards.some((item) => item.id === selectedInfluencerId)) {
+    if (selectedInfluencerId && !selectedInfluencer) {
       setSelectedInfluencerId(null);
     }
-  }, [discoverCards, selectedInfluencerId]);
+  }, [selectedInfluencer, selectedInfluencerId]);
 
   return (
     <div className="space-y-6">
@@ -1036,59 +1082,109 @@ function DiscoverPageContent() {
           </Badge>
         )}
 
-        {loading ? (
-          <div className="flex min-h-[400px] items-center justify-center">
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
-          </div>
-        ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-            {discoverCards.map((influencer) => {
-              const isGenerated = generatedInfluencer?.id === influencer.id;
-              return (
-                <div key={influencer.id} className="relative">
-                  {isGenerated && (
-                    <button
-                      onClick={() => { setGeneratedInfluencer(null); setGeneratedInfluencerMeta(null); setUrlLookupStatus(null); if (selectedInfluencerId === influencer.id) setSelectedInfluencerId(null); }}
-                      className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-muted border border-border shadow-sm hover:bg-destructive hover:text-white transition-colors cursor-pointer"
-                      title="Dismiss"
-                    >
-                      <XIcon className="h-3 w-3" />
-                    </button>
-                  )}
-                  {isGenerated && influencer.syncStatus === 'SYNCING' && (
-                    <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm gap-2 pointer-events-none">
-                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                      <span className="text-xs font-medium text-muted-foreground">Fetching profile…</span>
-                    </div>
-                  )}
-                  <InfluencerCard
-                    influencer={influencer}
-                    isActive={selectedInfluencerId === influencer.id}
-                    onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-                    onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
-                  />
+        {/* URL / smart-search result — one-off card prepended above the shelves. */}
+        {generatedInfluencer && (
+          <div className="space-y-2">
+            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search result</h2>
+            <div className="relative w-full max-w-[18.5rem]">
+              <button
+                onClick={() => { setGeneratedInfluencer(null); setGeneratedInfluencerMeta(null); setUrlLookupStatus(null); if (selectedInfluencerId === generatedInfluencer.id) setSelectedInfluencerId(null); }}
+                className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-muted border border-border shadow-sm hover:bg-destructive hover:text-white transition-colors cursor-pointer"
+                title="Dismiss"
+              >
+                <XIcon className="h-3 w-3" />
+              </button>
+              {generatedInfluencer.syncStatus === 'SYNCING' && (
+                <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm gap-2 pointer-events-none">
+                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <span className="text-xs font-medium text-muted-foreground">Fetching profile…</span>
                 </div>
-              );
-            })}
-            
-            {discoverCards.length === 0 && (
-              <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
-                <CardContent>
-                  <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
-                    <RotateCcw className="h-6 w-6 text-muted-foreground" />
-                  </div>
-                  <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>
-                  <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
-                    Try adjusting your filters or search terms to find more creators.
-                  </p>
-                  <Button variant="outline" onClick={resetFilters} className="mt-6 rounded-xl font-bold">
-                    Clear all filters
-                  </Button>
-                </CardContent>
-              </Card>
-            )}
+              )}
+              <InfluencerCard
+                influencer={generatedInfluencer}
+                isActive={selectedInfluencerId === generatedInfluencer.id}
+                onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+                onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+              />
+            </div>
           </div>
         )}
+
+        {/* Hero shelves — three Netflix-style rows over the filter-aware pool. */}
+        {poolLoading ? (
+          <div className="flex min-h-[300px] items-center justify-center">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : poolInfluencers.length > 0 ? (
+          <div className="space-y-8 rounded-2xl bg-muted/30 p-4 sm:p-5">
+            <InfluencerShelf
+              title="Top Ten Trending"
+              subtitle="Highest-performing creators by reach and campaign score"
+              influencers={trendingInfluencers}
+              selectedId={selectedInfluencerId}
+              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+              showRank
+              emptyMessage="No influencers matched these filters. Try broadening your criteria."
+            />
+            <InfluencerShelf
+              title="Recommended For You"
+              subtitle="Curated picks balancing performance and engagement"
+              influencers={recommendedInfluencers}
+              selectedId={selectedInfluencerId}
+              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+              emptyMessage="No recommendations for the current filters."
+            />
+            <InfluencerShelf
+              title="Top Performers"
+              subtitle="Creators ranked by overall campaign performance score"
+              influencers={topPerformers}
+              selectedId={selectedInfluencerId}
+              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+              emptyMessage="No top performers match these filters."
+            />
+          </div>
+        ) : null}
+
+        {/* All matches — the full, paginated browse grid (kept). */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-lg font-bold font-serif text-foreground">All matches</h2>
+            {!loading && <span className="text-xs font-medium text-muted-foreground">{totalCount} creators</span>}
+          </div>
+          {loading ? (
+            <div className="flex min-h-[300px] items-center justify-center">
+              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            </div>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+              {influencers.map((influencer) => (
+                <InfluencerCard
+                  key={influencer.id}
+                  influencer={influencer}
+                  isActive={selectedInfluencerId === influencer.id}
+                  onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+                  onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+                />
+              ))}
+              {influencers.length === 0 && (
+                <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
+                  <CardContent>
+                    <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+                      <RotateCcw className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <h3 className="mt-4 text-lg font-bold font-serif">No results found</h3>
+                    <p className="mt-2 text-sm text-muted-foreground max-w-xs mx-auto">
+                      Try adjusting your filters or search terms to find more creators.
+                    </p>
+                    <Button variant="outline" onClick={resetFilters} className="mt-6 rounded-xl font-bold">
+                      Clear all filters
+                    </Button>
+                  </CardContent>
+                </Card>
+              )}
+            </div>
+          )}
+        </div>
 
         {/* Pagination — page-number controls (15 per page) */}
         {!loading && totalPages > 1 && (
