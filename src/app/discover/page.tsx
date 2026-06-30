@@ -16,7 +16,6 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Separator } from "@/components/ui/separator";
 import {
   Search,
   Filter,
@@ -1096,9 +1095,9 @@ function DiscoverPageContent() {
           </div>
         )}
 
-        {/* Section 1 — hero: the single Top Ten Trending shelf over the pool. */}
+        {/* Section 1 — hero grey box: the single Top Ten Trending shelf. */}
         {poolLoading ? (
-          <div className="flex min-h-[300px] items-center justify-center">
+          <div className="flex min-h-[200px] items-center justify-center rounded-2xl bg-muted/30">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : poolInfluencers.length > 0 ? (
@@ -1109,17 +1108,15 @@ function DiscoverPageContent() {
               influencers={trendingInfluencers}
               selectedId={selectedInfluencerId}
               onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+              onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
               showRank
               emptyMessage="No influencers matched these filters. Try broadening your criteria."
             />
           </div>
         ) : null}
 
-        {/* Visual break between the hero shelf and the browse grid. */}
-        <Separator className="my-2" />
-
-        {/* Section 2 — All matches: the full, paginated browse grid (kept). */}
-        <div className="space-y-4">
+        {/* Section 2 — All matches grey box: paginated browse grid (5-up on wide). */}
+        <div className="space-y-4 rounded-2xl bg-muted/30 p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold font-serif text-foreground">All matches</h2>
             {!loading && <span className="text-xs font-medium text-muted-foreground">{totalCount} creators</span>}
@@ -1129,7 +1126,7 @@ function DiscoverPageContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
               {influencers.map((influencer) => (
                 <InfluencerCard
                   key={influencer.id}
@@ -1140,7 +1137,7 @@ function DiscoverPageContent() {
                 />
               ))}
               {influencers.length === 0 && (
-                <Card className="col-span-full border-2 border-dashed bg-muted/50 py-20 text-center">
+                <Card className="col-span-full border-2 border-dashed bg-card py-20 text-center">
                   <CardContent>
                     <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
                       <RotateCcw className="h-6 w-6 text-muted-foreground" />
@@ -1157,50 +1154,50 @@ function DiscoverPageContent() {
               )}
             </div>
           )}
-        </div>
 
-        {/* Pagination — page-number controls (15 per page) */}
-        {!loading && totalPages > 1 && (
-          <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg font-semibold"
-              disabled={page === 1}
-              onClick={() => goToPage(page - 1)}
-            >
-              <ChevronLeft className="h-4 w-4" />
-              Prev
-            </Button>
-            {getPageList(page, totalPages).map((p, i) =>
-              p === "ellipsis" ? (
-                <span key={`ellipsis-${i}`} className="px-2 text-sm text-muted-foreground select-none">
-                  …
-                </span>
-              ) : (
-                <Button
-                  key={p}
-                  variant={p === page ? "default" : "outline"}
-                  size="sm"
-                  className="min-w-9 rounded-lg font-semibold"
-                  onClick={() => goToPage(p)}
-                >
-                  {p}
-                </Button>
-              )
-            )}
-            <Button
-              variant="outline"
-              size="sm"
-              className="rounded-lg font-semibold"
-              disabled={page === totalPages}
-              onClick={() => goToPage(page + 1)}
-            >
-              Next
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        )}
+          {/* Pagination — page-number controls (15 per page) */}
+          {!loading && totalPages > 1 && (
+            <div className="flex flex-wrap items-center justify-center gap-1.5 pt-2">
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-semibold"
+                disabled={page === 1}
+                onClick={() => goToPage(page - 1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+                Prev
+              </Button>
+              {getPageList(page, totalPages).map((p, i) =>
+                p === "ellipsis" ? (
+                  <span key={`ellipsis-${i}`} className="px-2 text-sm text-muted-foreground select-none">
+                    …
+                  </span>
+                ) : (
+                  <Button
+                    key={p}
+                    variant={p === page ? "default" : "outline"}
+                    size="sm"
+                    className="min-w-9 rounded-lg font-semibold"
+                    onClick={() => goToPage(p)}
+                  >
+                    {p}
+                  </Button>
+                )
+              )}
+              <Button
+                variant="outline"
+                size="sm"
+                className="rounded-lg font-semibold"
+                disabled={page === totalPages}
+                onClick={() => goToPage(page + 1)}
+              >
+                Next
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          )}
+        </div>
       </div>
 
       {selectedInfluencer && selectedInfluencerMeta && (

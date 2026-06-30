@@ -12,6 +12,7 @@ interface InfluencerShelfProps {
   influencers: Influencer[];
   selectedId?: string | null;
   onSelect?: (influencer: Influencer) => void;
+  onAddToCampaign?: (influencer: Influencer) => void;
   showRank?: boolean;
   emptyMessage?: string;
   className?: string;
@@ -23,6 +24,7 @@ export function InfluencerShelf({
   influencers,
   selectedId = null,
   onSelect,
+  onAddToCampaign,
   showRank = false,
   emptyMessage = "No creators in this row yet.",
   className,
@@ -141,7 +143,7 @@ export function InfluencerShelf({
                 )}
                 <div
                   className={cn(
-                    "w-[17.5rem] origin-bottom transition duration-300 ease-out sm:w-[18.5rem]",
+                    "w-[14rem] origin-bottom transition duration-300 ease-out sm:w-[15rem]",
                     "group-hover/shelf-item:z-20 group-hover/shelf-item:scale-[1.03]"
                   )}
                 >
@@ -149,6 +151,7 @@ export function InfluencerShelf({
                     influencer={influencer}
                     isActive={selectedId === influencer.id}
                     onSelect={onSelect}
+                    onAddToCampaign={onAddToCampaign}
                   />
                 </div>
               </div>

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
 import { Influencer } from "@/lib/types";
 import { useShortlistStore } from "@/store/useShortlistStore";
 import type { IconType } from "react-icons";
@@ -14,7 +13,7 @@ import {
   SiXiaohongshu,
   SiYoutube,
 } from "react-icons/si";
-import { Heart, PlusCircle, RefreshCw } from "lucide-react";
+import { Heart, PlusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -52,6 +51,12 @@ interface InfluencerCardProps {
   onAddToCampaign?: (influencer: Influencer) => void;
 }
 
+/**
+ * Compact creator card — one shape used everywhere (Discover shelf + grid,
+ * shortlist). Small avatar (real photo, or a brand-tinted gradient fallback at
+ * avatar size), identity, score + shortlist heart, per-platform switcher, and
+ * REACH / ENGAGE only. No cover band, no avg-views cell, no "data as of" line.
+ */
 export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign }: InfluencerCardProps) {
   // Canonical order: youtube → tiktok → instagram → rest
   const orderedPlatforms = [
@@ -62,17 +67,11 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
   const activeFollowers = influencer.followersByPlatform?.[activePlatform] ?? influencer.followers;
   const activeEngagement = influencer.engagementByPlatform?.[activePlatform] ?? influencer.engagementRate;
-  const activeAvgViews = influencer.avgViewsByPlatform?.[activePlatform] ?? null;
   const activeHandle = influencer.handleByPlatform?.[activePlatform] ?? null;
-  const activeSyncedAt = influencer.syncedAtByPlatform?.[activePlatform] ?? influencer.lastDataPulledAt;
   const activeAvatar = influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl;
+  const [avatarFailed, setAvatarFailed] = useState(false);
+  const showAvatarImg = Boolean(activeAvatar) && !avatarFailed;
 
-  const fallbackAvatar = `https://api.dicebear.com/9.x/thumbs/svg?seed=${encodeURIComponent(influencer.name)}`;
-  const cardBg = activeAvatar ?? fallbackAvatar;
-
-  const presentationTags = Array.from(
-    new Set([influencer.category, ...(influencer.stylePresent ?? [])].filter(Boolean)),
-  );
   const { toggle, has } = useShortlistStore();
   const saved = has(influencer.id);
 
@@ -80,73 +79,70 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
     <Card
       onClick={() => onSelect?.(influencer)}
       className={cn(
-        "group cursor-pointer overflow-hidden border-none shadow-sm transition-all hover:shadow-xl hover:translate-y-[-4px]",
+        "group cursor-pointer overflow-hidden border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
         isActive ? "ring-2 ring-primary ring-offset-2" : "",
       )}
     >
-      <div className="relative aspect-[4/5] overflow-hidden">
-        <img
-          src={cardBg}
-          alt={`${influencer.name} profile`}
-          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-110"
-          onError={(e) => { (e.target as HTMLImageElement).src = fallbackAvatar; }}
-        />
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-950/90 via-slate-900/20 to-transparent" />
-
-        {/* Active-platform badge — mirrors the platform whose stats are currently shown
-            (updates when the user switches platforms via the pills below). */}
-        {activePlatform && (() => {
-          const { Icon, iconClassName } = platformPresentation(activePlatform);
-          return (
-            <div className="absolute top-3 left-3">
-              <span
-                title={activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)}
-                className="flex h-7 w-7 items-center justify-center rounded-full bg-card/90 shadow-sm backdrop-blur-sm"
-              >
-                <Icon className={cn("size-3.5 shrink-0", iconClassName)} />
-              </span>
-            </div>
-          );
-        })()}
-
-        <div className="absolute top-3 right-3 flex items-center gap-2">
-          <button
-            onClick={(e) => { e.stopPropagation(); toggle(influencer.id, influencer); }}
-            className={cn(
-              "flex h-8 w-8 items-center justify-center rounded-full backdrop-blur-sm transition-colors cursor-pointer",
-              saved ? "bg-rose-500/90 text-white" : "bg-card/80 text-muted-foreground hover:text-rose-500",
+      <CardContent className="p-4 space-y-3">
+        {/* Identity row: small avatar + name/handle/category + score & heart */}
+        <div className="flex items-start gap-3">
+          <div className="relative h-12 w-12 shrink-0">
+            {showAvatarImg ? (
+              <img
+                src={activeAvatar as string}
+                alt={`${influencer.name} avatar`}
+                className="h-12 w-12 rounded-xl object-cover"
+                onError={() => setAvatarFailed(true)}
+              />
+            ) : (
+              <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-base font-bold text-white">
+                {influencer.name.charAt(0).toUpperCase()}
+              </div>
             )}
-            aria-label={saved ? "Remove from shortlist" : "Save to shortlist"}
-          >
-            <Heart className={cn("h-4 w-4", saved && "fill-current")} />
-          </button>
-          <Badge className="bg-card/90 text-primary font-bold backdrop-blur-sm border-none shadow-sm hover:bg-card">
-            Score {influencer.performanceScore}
-          </Badge>
-        </div>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4">
-          <h3 className="truncate text-lg font-bold text-white tracking-tight font-serif">{influencer.name}</h3>
-          {activeHandle && (
-            <p className="truncate text-[11px] font-medium text-white/60">@{activeHandle.replace(/^@/, "")}</p>
-          )}
-          <div className="mt-2 flex flex-wrap gap-1">
-            {presentationTags.slice(0, 2).map((tag) => (
-              <span key={tag} className="text-[10px] font-bold uppercase tracking-wider text-slate-300">
-                {tag}
-              </span>
-            ))}
+            {activePlatform && (() => {
+              const { Icon, iconClassName } = platformPresentation(activePlatform);
+              return (
+                <span
+                  title={activePlatform.charAt(0).toUpperCase() + activePlatform.slice(1)}
+                  className="absolute -bottom-1 -right-1 flex h-5 w-5 items-center justify-center rounded-full bg-card shadow-sm ring-1 ring-border"
+                >
+                  <Icon className={cn("size-3 shrink-0", iconClassName)} />
+                </span>
+              );
+            })()}
           </div>
-          <p className="mt-1 truncate text-xs font-semibold text-emerald-400">
-            {activePlatform} · {activeFollowers.toLocaleString()}
-          </p>
-        </div>
-      </div>
 
-      <CardContent className="p-4 space-y-3 bg-background">
-        {/* Platform switcher pills — always shown so a connected platform is visible
-            even when the influencer has only one. */}
-        {orderedPlatforms.length > 0 && (
+          <div className="min-w-0 flex-1">
+            <h3 className="truncate text-sm font-bold tracking-tight text-foreground font-serif">{influencer.name}</h3>
+            {activeHandle && (
+              <p className="truncate text-xs font-medium text-muted-foreground">@{activeHandle.replace(/^@/, "")}</p>
+            )}
+            {influencer.category && (
+              <p className="mt-0.5 truncate text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+                {influencer.category}
+              </p>
+            )}
+          </div>
+
+          <div className="flex shrink-0 flex-col items-end gap-1.5">
+            <button
+              onClick={(e) => { e.stopPropagation(); toggle(influencer.id, influencer); }}
+              className={cn(
+                "flex h-7 w-7 items-center justify-center rounded-full transition-colors cursor-pointer",
+                saved ? "bg-rose-500/90 text-white" : "bg-muted text-muted-foreground hover:text-rose-500",
+              )}
+              aria-label={saved ? "Remove from shortlist" : "Save to shortlist"}
+            >
+              <Heart className={cn("h-3.5 w-3.5", saved && "fill-current")} />
+            </button>
+            <Badge className="border-none bg-primary/10 text-primary font-bold text-[10px] hover:bg-primary/10">
+              Score {influencer.performanceScore}
+            </Badge>
+          </div>
+        </div>
+
+        {/* Platform switcher — drives the per-platform Reach/Engage below */}
+        {orderedPlatforms.length > 1 && (
           <div
             className="flex gap-1.5"
             role="tablist"
@@ -164,21 +160,21 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
                   title={platform.charAt(0).toUpperCase() + platform.slice(1)}
                   onClick={(e) => { e.stopPropagation(); setActivePlatform(platform); }}
                   className={cn(
-                    "flex h-7 w-7 items-center justify-center rounded-full border transition-all cursor-pointer",
+                    "flex h-6 w-6 items-center justify-center rounded-full border transition-all cursor-pointer",
                     isActiveTab
                       ? `${activeBg} border-transparent text-white shadow-sm`
                       : "border-border bg-muted/50 hover:bg-muted",
                   )}
                 >
-                  <Icon className={cn("size-3.5 shrink-0", isActiveTab ? "text-white" : iconClassName)} />
+                  <Icon className={cn("size-3 shrink-0", isActiveTab ? "text-white" : iconClassName)} />
                 </button>
               );
             })}
           </div>
         )}
 
-        {/* Stats for active platform */}
-        <div className={cn("grid gap-2", activeAvgViews ? "grid-cols-3" : "grid-cols-2")}>
+        {/* Stats — REACH + ENGAGE only */}
+        <div className="grid grid-cols-2 gap-2">
           <div className="rounded-xl bg-muted/80 p-2.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Reach</p>
             <p className="text-sm font-bold text-foreground">{activeFollowers.toLocaleString()}</p>
@@ -187,35 +183,15 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engage</p>
             <p className="text-sm font-bold text-foreground">{activeEngagement}%</p>
           </div>
-          {activeAvgViews && (
-            <div className="rounded-xl bg-muted/80 p-2.5">
-              <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Avg Views</p>
-              <p className="text-sm font-bold text-foreground">{activeAvgViews.toLocaleString()}</p>
-            </div>
-          )}
         </div>
 
         <Button
-          className="w-full rounded-xl font-bold text-xs h-10 shadow-sm"
+          className="w-full rounded-xl font-bold text-xs h-9 shadow-sm"
           onClick={(e) => { e.stopPropagation(); onAddToCampaign?.(influencer); }}
         >
           <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
           Add to Campaign
         </Button>
-
-        {activeSyncedAt && (
-          <p className="flex items-center gap-1 text-[10px] text-muted-foreground">
-            <RefreshCw className="h-2.5 w-2.5 shrink-0" />
-            Data as of{" "}
-            {new Date(activeSyncedAt).toLocaleDateString("en-GB", {
-              day: "numeric",
-              month: "short",
-              year: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
-        )}
       </CardContent>
     </Card>
   );
