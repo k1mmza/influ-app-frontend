@@ -55,10 +55,6 @@ jest.mock('@/lib/excel', () => ({
   exportRowsToExcel: jest.fn(),
 }));
 
-jest.mock('@/mock/influencers', () => ({
-  influencers: [],
-}));
-
 // ─── API mocks ────────────────────────────────────────────────────────────────
 const mockApiGetCampaign = jest.fn();
 const mockApiGetCampaignApplications = jest.fn();
@@ -98,7 +94,20 @@ const mockCampaign = {
   applications: [],
 };
 
-const acceptedApplication = {
+// conversationId is nullable in the real type — only ACCEPTED rows with a
+// conversation get one; PENDING/REJECTED rows carry null. platformAccounts may
+// be empty. Typing the fixtures this way keeps them aligned with the app types.
+type MockApplication = {
+  id: string;
+  status: string;
+  conversationId: string | null;
+  influencer: {
+    user: { name: string; email: string };
+    platformAccounts: { platform: string; handle: string }[];
+  };
+};
+
+const acceptedApplication: MockApplication = {
   id: 'app-001',
   status: 'ACCEPTED',
   conversationId: 'conv-abc',
@@ -108,7 +117,7 @@ const acceptedApplication = {
   },
 };
 
-const pendingApplication = {
+const pendingApplication: MockApplication = {
   id: 'app-002',
   status: 'PENDING',
   conversationId: null,
@@ -118,7 +127,7 @@ const pendingApplication = {
   },
 };
 
-const rejectedApplication = {
+const rejectedApplication: MockApplication = {
   id: 'app-003',
   status: 'REJECTED',
   conversationId: null,
@@ -129,7 +138,7 @@ const rejectedApplication = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function renderCampaignPage(applications = [acceptedApplication]) {
+async function renderCampaignPage(applications: MockApplication[] = [acceptedApplication]) {
   mockApiGetCampaign.mockResolvedValue(mockCampaign);
   mockApiGetCampaignApplications.mockResolvedValue(applications);
 

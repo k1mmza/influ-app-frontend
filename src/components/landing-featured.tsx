@@ -1,10 +1,12 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { LandingAnimate } from "@/components/landing-motion";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { influencers } from "@/mock/influencers";
+import { apiGetInfluencers } from "@/lib/influencers";
+import { Influencer } from "@/lib/types";
 import { cn } from "@/lib/utils";
 
 const CATEGORY_GRADIENT: Record<string, string> = {
@@ -27,6 +29,31 @@ function getInitials(name: string): string {
 }
 
 export function LandingFeatured() {
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    // Public endpoint — backend sorts by performanceScore desc, so the first
+    // page is effectively the "featured" set.
+    apiGetInfluencers({ limit: 8 })
+      .then((res) => {
+        if (!cancelled) setInfluencers(res.data);
+      })
+      .catch(() => {
+        if (!cancelled) setInfluencers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Hide the whole section when there's nothing real to show.
+  if (!loading && influencers.length === 0) return null;
+
   return (
     <section className="bg-background w-full py-20 px-4">
       <div className="mx-auto max-w-6xl">
@@ -43,7 +70,14 @@ export function LandingFeatured() {
 
         <LandingAnimate delay={100}>
           <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory -mx-4 px-4">
-            {influencers.map((influencer, index) => (
+            {loading &&
+              Array.from({ length: 4 }).map((_, i) => (
+                <div
+                  key={`skeleton-${i}`}
+                  className="snap-start shrink-0 w-[260px] h-[260px] rounded-2xl border border-border bg-card shadow-sm animate-pulse"
+                />
+              ))}
+            {!loading && influencers.map((influencer, index) => (
               <LandingAnimate key={influencer.id} delay={index * 75} direction="none">
                 <Link href="/discover" className="block">
                   <div className="snap-start shrink-0 w-[260px] rounded-2xl border border-border bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all p-5 cursor-pointer">

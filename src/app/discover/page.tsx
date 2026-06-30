@@ -110,6 +110,7 @@ function DiscoverPageContent() {
   const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
+  const [campaignPickerPage, setCampaignPickerPage] = useState(0);
   const [addConfirmed, setAddConfirmed] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -128,6 +129,28 @@ function DiscoverPageContent() {
       .then(setCampaigns)
       .catch((err) => console.error("Failed to fetch campaigns:", err));
   }, [role, token]);
+
+  // The "Add to Campaign" picker invites a creator, so only ACTIVE campaigns are
+  // valid targets (drafts/completed aren't recruiting). Paginate so the list
+  // can't overflow the modal.
+  const CAMPAIGN_PICKER_PAGE_SIZE = 4;
+  const activeCampaigns = useMemo(
+    () => campaigns.filter((c) => c.status === "ACTIVE"),
+    [campaigns],
+  );
+  const campaignPageCount = Math.max(
+    1,
+    Math.ceil(activeCampaigns.length / CAMPAIGN_PICKER_PAGE_SIZE),
+  );
+  const pagedCampaigns = activeCampaigns.slice(
+    campaignPickerPage * CAMPAIGN_PICKER_PAGE_SIZE,
+    campaignPickerPage * CAMPAIGN_PICKER_PAGE_SIZE + CAMPAIGN_PICKER_PAGE_SIZE,
+  );
+
+  // Reset to the first page each time the picker opens for a new creator.
+  useEffect(() => {
+    setCampaignPickerPage(0);
+  }, [campaignPickerInfluencer]);
 
   const handleConfirmInvite = async () => {
     if (!token || !campaignPickerInfluencer || !pickedCampaignId) return;
@@ -1146,30 +1169,57 @@ function DiscoverPageContent() {
               </p>
             </CardHeader>
             <CardContent className="space-y-2 pb-4">
-              {campaigns.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
+              {activeCampaigns.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">No active campaigns. Activate or create one first.</p>
               ) : (
-                campaigns.map((campaign) => (
-                  <button
-                    key={campaign.id}
-                    onClick={() => setPickedCampaignId(campaign.id)}
-                    className={cn(
-                      "w-full rounded-xl border p-3 text-left transition-all cursor-pointer",
-                      pickedCampaignId === campaign.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/50"
-                    )}
-                  >
-                    <p className="text-sm font-semibold">{campaign.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {campaign.budget != null ? `THB ${Number(campaign.budget).toLocaleString()}` : "Budget TBD"}
+                <>
+                  {pagedCampaigns.map((campaign) => (
+                    <button
+                      key={campaign.id}
+                      onClick={() => setPickedCampaignId(campaign.id)}
+                      className={cn(
+                        "w-full rounded-xl border p-3 text-left transition-all cursor-pointer",
+                        pickedCampaignId === campaign.id
+                          ? "border-primary bg-primary/5"
+                          : "border-border hover:border-primary/40 hover:bg-muted/50"
+                      )}
+                    >
+                      <p className="text-sm font-semibold">{campaign.name}</p>
+                      <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
+                      <div className="flex items-center gap-2 mt-1.5">
+                        <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
+                        <span className="text-[10px] text-muted-foreground">
+                          {campaign.budget != null ? `THB ${Number(campaign.budget).toLocaleString()}` : "Budget TBD"}
+                        </span>
+                      </div>
+                    </button>
+                  ))}
+                  {campaignPageCount > 1 && (
+                    <div className="flex items-center justify-between pt-1">
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-lg px-3"
+                        disabled={campaignPickerPage === 0}
+                        onClick={() => setCampaignPickerPage((p) => Math.max(0, p - 1))}
+                      >
+                        <ChevronLeft className="mr-1 h-4 w-4" /> Prev
+                      </Button>
+                      <span className="text-[11px] text-muted-foreground">
+                        Page {campaignPickerPage + 1} of {campaignPageCount}
                       </span>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 rounded-lg px-3"
+                        disabled={campaignPickerPage >= campaignPageCount - 1}
+                        onClick={() => setCampaignPickerPage((p) => Math.min(campaignPageCount - 1, p + 1))}
+                      >
+                        Next <ChevronRight className="ml-1 h-4 w-4" />
+                      </Button>
                     </div>
-                  </button>
-                ))
+                  )}
+                </>
               )}
               {campaignPickerInfluencer.id.startsWith("url-derived-") && (
                 <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">

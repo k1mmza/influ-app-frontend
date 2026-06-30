@@ -90,6 +90,11 @@ const requirementFields: { key: keyof RequirementData; label: string; fullWidth?
 // Fields the user must fill before generating a Smart Plan from the form.
 const REQUIRED_FORM_FIELDS: (keyof RequirementData)[] = ["campaignName", "objective", "productInfo"];
 
+// A required field needs real content — at least one letter or number (Unicode
+// aware, so Thai/other scripts count). A lone space, "-", or other punctuation
+// does NOT count as filled.
+const hasMeaningfulContent = (v: string): boolean => /[\p{L}\p{N}]/u.test(v ?? "");
+
 type BriefSubSection = "strategy" | "concept" | "briefBody";
 type StartMode = "none" | "prompt" | "form";
 
@@ -493,17 +498,39 @@ export default function SmartPlanPage() {
     setBriefText("");
   };
 
-  // Option A: attach the CURRENT (already-generated) brief to an existing campaign so the
-  // next save sets campaignId — without wiping the strategy/concept/brief text the user has.
-  const attachCampaignToBrief = (campaign: Campaign | null) => {
-    if (!campaign) return;
+  // Picking a campaign in the brief panel starts a FRESH brief for it: wipe the
+  // current brief + review state and drop back to the generate entry (form
+  // prefilled with the campaign's requirement), so each campaign gets its own
+  // brief instead of reusing the first one that was generated/restored. Picking
+  // the already-selected campaign is a no-op so a brief isn't wiped by accident.
+  const resetBriefForCampaign = (campaign: Campaign | null) => {
+    if (!campaign || campaign.id === selectedCampaign?.id) return;
     setSelectedCampaign(campaign);
+    setRequirements(campaign.requirement);
+    setFormDraft(campaign.requirement);
+    // wipe the previous brief / review state
+    setStrategyText("");
+    setConceptText("");
+    setBriefText("");
+    setCampaignFields(null);
+    setProvenance({ userProvided: [], aiSuggested: [] });
+    setCreateError(null);
+    setGenerateError(null);
+    setFormErrors({});
+    setSaveStatus("idle");
+    // return to the generate entry so the "Generate" CTA is available again
+    setFlowPhase("input");
+    setIsPlannerVisible(false);
+    setViewMode("create");
+    setStartMode("form");
+    setActiveStep("requirement");
+    setHasStarted(false);
   };
 
   const updateFormDraft = (field: keyof RequirementData, value: string) => {
     setFormDraft((prev) => ({ ...prev, [field]: value }));
-    // Clear this field's error as soon as it has non-empty content.
-    if (formErrors[field] && value.trim()) {
+    // Clear this field's error as soon as it has real content.
+    if (formErrors[field] && hasMeaningfulContent(value)) {
       setFormErrors((prev) => {
         const next = { ...prev };
         delete next[field];
@@ -516,9 +543,9 @@ export default function SmartPlanPage() {
     // Block submit if any required field is empty (trimmed); show inline errors.
     const errors: Partial<Record<keyof RequirementData, string>> = {};
     for (const key of REQUIRED_FORM_FIELDS) {
-      if (!formDraft[key].trim()) {
+      if (!hasMeaningfulContent(formDraft[key])) {
         const label = requirementFields.find((f) => f.key === key)?.label ?? key;
-        errors[key] = `${label} is required`;
+        errors[key] = `${label} must include letters or numbers`;
       }
     }
     if (Object.keys(errors).length > 0) {
@@ -537,6 +564,39 @@ export default function SmartPlanPage() {
       setHasStarted(true);
       setIsPlannerVisible(true);
       setActiveStep("requirement");
+    } finally {
+      setIsGenerating(false);
+    }
+  };
+
+  // Generate (or regenerate) the brief from the planner's requirement fields.
+  // The planner requirement step is reached for an existing/selected campaign
+  // (e.g. via "View Details" or the step bar), so on success we land in the
+  // brief tabs rather than the create-campaign review flow. This is what lets a
+  // new campaign get its own brief instead of being stuck on the old one.
+  const generateFromRequirements = async () => {
+    if (!token) return;
+    const missing = REQUIRED_FORM_FIELDS.filter(
+      (k) => !hasMeaningfulContent(requirements[k]),
+    );
+    if (missing.length > 0) {
+      const labels = missing.map(
+        (k) => requirementFields.find((f) => f.key === k)?.label ?? k,
+      );
+      setGenerateError(`Please fill in: ${labels.join(", ")}.`);
+      return;
+    }
+    setIsGenerating(true);
+    setGenerateError(null);
+    try {
+      const result = await apiGenerateSmartPlan(token, requirements);
+      applyGeneratedBrief({
+        strategy: result.strategy,
+        concept: result.concept,
+        briefBody: result.briefBody,
+      });
+    } catch (err: any) {
+      setGenerateError(err.message || "Generation failed. Please try again.");
     } finally {
       setIsGenerating(false);
     }
@@ -1093,14 +1153,29 @@ export default function SmartPlanPage() {
                     </label>
                   ))}
                 </div>
+                {generateError && (
+                  <p className="text-sm text-destructive">{generateError}</p>
+                )}
                 <div className="flex justify-between border-t border-border pt-4">
-                  <div />
                   <Button
                     type="button"
+                    variant="outline"
                     onClick={() => setActiveStep("brief")}
+                    className="rounded-xl"
+                  >
+                    View Current Brief <ChevronRight className="ml-2 h-4 w-4" />
+                  </Button>
+                  <Button
+                    type="button"
+                    onClick={generateFromRequirements}
+                    disabled={isGenerating}
                     className="rounded-xl shadow-sm"
                   >
-                    Next: Brief <ChevronRight className="ml-2 h-4 w-4" />
+                    {isGenerating ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Generating…</>
+                    ) : (
+                      <><Zap className="mr-2 h-4 w-4" /> Generate Brief</>
+                    )}
                   </Button>
                 </div>
               </CardContent>
@@ -1157,7 +1232,7 @@ export default function SmartPlanPage() {
                             key={campaign.id}
                             type="button"
                             onClick={() => {
-                              attachCampaignToBrief(campaign);
+                              resetBriefForCampaign(campaign);
                               setIsBriefCampaignPickerOpen(false);
                             }}
                             className="flex w-full items-center justify-between rounded-xl border border-border px-4 py-3 text-left text-sm transition hover:border-primary/30 hover:bg-primary/5"

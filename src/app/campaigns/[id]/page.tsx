@@ -174,7 +174,7 @@ export default function CampaignDetailPage() {
           }
         } else {
           const publicCampaigns = await apiGetPublicCampaigns(token);
-          const publicCampaign = publicCampaigns.find((item) => item.id === id) ?? null;
+          const publicCampaign = publicCampaigns.data.find((item) => item.id === id) ?? null;
           if (!cancelled) setCampaign(publicCampaign);
         }
       } catch (err) {
@@ -400,7 +400,7 @@ export default function CampaignDetailPage() {
         `${row.engagementRate}%`,
       ]),
     });
-    setMessage("Influencer list exported to Excel.");
+    setMessage("Influencer list exported as CSV (opens in Excel & Numbers).");
   };
 
   const startEdit = () => {
@@ -1145,7 +1145,7 @@ export default function CampaignDetailPage() {
               </Button>
               <Button onClick={exportInfluencersExcel} className="rounded-xl">
                 <Download className="mr-2 h-4 w-4" />
-                Export Excel
+                Export CSV
               </Button>
             </div>
           </CardContent>

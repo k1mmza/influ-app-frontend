@@ -89,40 +89,33 @@ function InfluencerInvitations() {
     }
   };
 
-  if (loading) return null;
-
-  if (!invitations.length) {
-    return (
-      <Card className="border-none shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Inbox className="h-4 w-4" /> Campaign Invitations
-          </CardTitle>
-          <CardDescription>Brands that invite you to campaigns will appear here.</CardDescription>
-        </CardHeader>
-        <CardContent>
-          {error ? (
-            <p className="text-sm font-medium text-destructive">{error}</p>
-          ) : (
-            <p className="text-sm text-muted-foreground">No pending invitations right now.</p>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
+  const hasInvitations = invitations.length > 0;
 
   return (
     <Card className="border-none shadow-sm">
       <CardHeader>
         <CardTitle className="text-lg flex items-center gap-2">
           <Inbox className="h-4 w-4" /> Campaign Invitations
-          <Badge className="bg-primary text-primary-foreground">{invitations.length}</Badge>
+          {hasInvitations && (
+            <Badge className="bg-primary text-primary-foreground">{invitations.length}</Badge>
+          )}
         </CardTitle>
-        <CardDescription>Brands have invited you to these campaigns.</CardDescription>
+        <CardDescription>
+          {hasInvitations
+            ? "Brands have invited you to these campaigns."
+            : "Brands that invite you to campaigns will appear here."}
+        </CardDescription>
       </CardHeader>
       <CardContent className="space-y-3">
         {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-        {invitations.map((inv) => (
+        {loading ? (
+          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" /> Loading invitations…
+          </div>
+        ) : !hasInvitations && !error ? (
+          <p className="text-sm text-muted-foreground">No pending invitations right now.</p>
+        ) : null}
+        {!loading && invitations.map((inv) => (
           <div key={inv.id} className="rounded-xl border border-border p-4">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div className="min-w-0">
@@ -176,12 +169,13 @@ function InfluencerDashboard({ data }: { data: any }) {
     activeCampaigns: data?.stats?.activeCampaigns ?? 0,
     pendingApplications: data?.stats?.pendingApplications ?? 0,
     unreadMessages: data?.stats?.unreadMessages ?? 0,
+    growthRate: data?.stats?.growthRate ?? null,
+    engagementRate: data?.stats?.engagementRate ?? null,
+    totalEarned: data?.stats?.totalEarned ?? 0,
+    pendingPayout: data?.stats?.pendingPayout ?? 0,
   };
 
-  const recommended = data?.recommendedCampaigns || [
-    { name: "Summer Skincare Launch", brand: "GlowLab", budget: "THB 8,000", platform: "TikTok", deadline: "30 May 2026", icon: "✨" },
-    { name: "Healthy Snack Challenge", brand: "FitBites", budget: "THB 6,500", platform: "Instagram", deadline: "05 Jun 2026", icon: "🍎" }
-  ];
+  const recommended = data?.recommendedCampaigns ?? [];
 
   return (
     <div className="space-y-8">
@@ -224,9 +218,16 @@ function InfluencerDashboard({ data }: { data: any }) {
           <h2 className="text-xl font-bold tracking-tight text-foreground font-serif">Recommended Campaigns</h2>
           <Button variant="link" className="text-primary font-bold">View all</Button>
         </div>
+        {recommended.length === 0 ? (
+          <Card className="border-none shadow-sm">
+            <CardContent className="p-6">
+              <p className="text-sm text-muted-foreground">No recommended campaigns right now. Check back soon.</p>
+            </CardContent>
+          </Card>
+        ) : (
         <div className="grid gap-6 md:grid-cols-2">
           {recommended.map((c: any) => (
-            <Card key={c.name} className="border-none shadow-sm transition-all hover:shadow-md">
+            <Card key={c.id ?? c.name} className="border-none shadow-sm transition-all hover:shadow-md">
               <CardContent className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex items-center gap-4">
@@ -258,6 +259,7 @@ function InfluencerDashboard({ data }: { data: any }) {
             </Card>
           ))}
         </div>
+        )}
       </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
@@ -291,14 +293,18 @@ function InfluencerDashboard({ data }: { data: any }) {
                 <TrendingUp className="h-4 w-4 text-emerald-500" />
                 <span className="text-sm font-medium">Growth Rate</span>
               </div>
-              <span className="text-sm font-bold text-emerald-600">+9.2%</span>
+              <span className="text-sm font-bold text-emerald-600">
+                {stats.growthRate != null ? `${stats.growthRate > 0 ? "+" : ""}${stats.growthRate.toFixed(1)}%` : "—"}
+              </span>
             </div>
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
                 <span className="text-sm font-medium">Engagement</span>
               </div>
-              <span className="text-sm font-bold text-foreground">4.8%</span>
+              <span className="text-sm font-bold text-foreground">
+                {stats.engagementRate != null ? `${stats.engagementRate.toFixed(1)}%` : "—"}
+              </span>
             </div>
           </CardContent>
         </Card>
@@ -311,8 +317,13 @@ function InfluencerDashboard({ data }: { data: any }) {
           <CardContent className="space-y-4">
             <div className="space-y-1">
               <p className="text-xs text-muted-foreground font-medium">Total Earned</p>
-              <p className="text-xl font-bold text-foreground">THB 58,200</p>
+              <p className="text-xl font-bold text-foreground">THB {stats.totalEarned.toLocaleString()}</p>
             </div>
+            {stats.pendingPayout > 0 && (
+              <p className="text-xs text-muted-foreground">
+                Pending payout: <span className="font-semibold text-foreground">THB {stats.pendingPayout.toLocaleString()}</span>
+              </p>
+            )}
             <Button variant="ghost" className="w-full justify-start px-0 text-primary font-bold">
               View payouts <ExternalLink className="ml-2 h-4 w-4" />
             </Button>
@@ -403,10 +414,13 @@ export default function DashboardPage() {
       router.replace("/login");
       return;
     }
+    // Guard above guarantees token is non-null here; capture the narrowed value
+    // so it stays typed as string inside the async closure below.
+    const authToken = token;
     async function fetchDashboard() {
       try {
         setLoading(true);
-        const dashboardData = await apiGetDashboard(token);
+        const dashboardData = await apiGetDashboard(authToken);
         setData(dashboardData);
       } catch (err: any) {
         // Expired/invalid token (1d TTL) → clear the dead session and re-login.

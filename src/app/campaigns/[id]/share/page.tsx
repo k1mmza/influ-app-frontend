@@ -4,9 +4,8 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "next/navigation";
 import { getMainFollowerPlatform } from "@/lib/influencer-platforms";
-import { brandCampaigns } from "@/mock/brand-campaigns";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetShortlist } from "@/lib/api";
+import { apiGetShortlist, apiGetCampaign, CampaignResponse } from "@/lib/api";
 import { Influencer } from "@/lib/types";
 
 // TODO: The Shortlist schema has no campaignId field, so this page shows the user's FULL
@@ -54,8 +53,9 @@ const initialThread: ThreadMessage[] = [
 
 export default function CampaignSharePreviewPage() {
   const { id } = useParams<{ id: string }>();
-  const campaign = brandCampaigns.find((c) => c.id === id);
   const { token } = useUserStore();
+  const [campaign, setCampaign] = useState<CampaignResponse | null>(null);
+  const [loadingCampaign, setLoadingCampaign] = useState(true);
   const [messages, setMessages] = useState<ThreadMessage[]>(initialThread);
   const [clientDraft, setClientDraft] = useState("");
   const [agencyDraft, setAgencyDraft] = useState("");
@@ -67,6 +67,20 @@ export default function CampaignSharePreviewPage() {
     setClientDraft("");
     setAgencyDraft("");
   }, [id]);
+
+  useEffect(() => {
+    if (!token || !id) { setLoadingCampaign(false); return; }
+    let cancelled = false;
+    apiGetCampaign(token, id)
+      .then((data) => { if (!cancelled) setCampaign(data); })
+      .catch(() => { if (!cancelled) setCampaign(null); })
+      .finally(() => { if (!cancelled) setLoadingCampaign(false); });
+    return () => { cancelled = true; };
+  }, [token, id]);
+
+  // Campaigns store platforms inside their requirement, not as a single field.
+  const platformFocus =
+    campaign?.requirements?.[0]?.platforms?.join(", ") || "Any";
 
   useEffect(() => {
     if (!token) { setLoadingList(false); return; }
@@ -124,11 +138,20 @@ export default function CampaignSharePreviewPage() {
     clear();
   };
 
+  if (loadingCampaign) {
+    return (
+      <section className="mx-auto max-w-3xl space-y-4 p-6">
+        <div className="h-7 w-64 animate-pulse rounded-lg bg-muted" />
+        <div className="h-4 w-full max-w-md animate-pulse rounded bg-muted" />
+      </section>
+    );
+  }
+
   if (!campaign) {
     return (
       <section className="mx-auto max-w-3xl space-y-4 p-6">
         <h1 className="text-2xl font-bold text-foreground font-serif">Shared list unavailable</h1>
-        <p className="text-muted-foreground">This link does not match a demo campaign.</p>
+        <p className="text-muted-foreground">This link does not match a campaign you can access.</p>
         <Link href="/campaigns" className="font-semibold text-primary hover:underline">
           Back to campaigns
         </Link>
@@ -148,10 +171,10 @@ export default function CampaignSharePreviewPage() {
           to populate this list.
         </p>
         <div className="mt-4 flex flex-wrap gap-2 text-xs">
-          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Objective: {campaign.objective}</span>
-          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Platform focus: {campaign.platform}</span>
+          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Objective: {campaign.objective ?? "—"}</span>
+          <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">Platform focus: {platformFocus}</span>
           <span className="rounded-full bg-card px-2.5 py-1 font-medium text-foreground shadow-sm">
-            Budget: THB {campaign.budget.toLocaleString()}
+            Budget: THB {(campaign.budget ?? 0).toLocaleString()}
           </span>
         </div>
       </header>

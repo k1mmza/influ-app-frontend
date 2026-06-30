@@ -81,7 +81,23 @@ jest.mock('@/lib/api', () => ({
 }));
 
 // ─── Test data ────────────────────────────────────────────────────────────────
-const convWithCampaign = {
+// campaignId/campaignName are nullable in the real type — direct (non-campaign)
+// conversations carry null. Typing the fixtures this way keeps them aligned with
+// the app types.
+type MockConversation = {
+  id: string;
+  partnerName: string;
+  campaignId: string | null;
+  campaignName: string | null;
+  lastMessage: string;
+  lastMessageAt: string;
+  unreadCount: number;
+  workPhase: string;
+  brandPhaseReady: boolean;
+  influencerPhaseReady: boolean;
+};
+
+const convWithCampaign: MockConversation = {
   id: 'conv-001',
   partnerName: 'Alice Influencer',
   campaignId: 'campaign-456',
@@ -94,7 +110,7 @@ const convWithCampaign = {
   influencerPhaseReady: false,
 };
 
-const convWithoutCampaign = {
+const convWithoutCampaign: MockConversation = {
   id: 'conv-002',
   partnerName: 'Bob Creator',
   campaignId: null,
@@ -108,7 +124,7 @@ const convWithoutCampaign = {
 };
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
-async function renderMessagesPage(conversations = [convWithCampaign]) {
+async function renderMessagesPage(conversations: MockConversation[] = [convWithCampaign]) {
   mockApiGetConversations.mockResolvedValue(conversations);
   mockApiGetMessages.mockResolvedValue([]);
   mockApiGetConversation.mockResolvedValue({

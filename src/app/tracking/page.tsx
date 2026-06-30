@@ -5,6 +5,7 @@ import { Suspense } from "react";
 import { useEffect } from "react";
 import { useMemo, useState } from "react";
 import { useSearchParams } from "next/navigation";
+import { ExternalLink } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import {
   apiGetTracking,
@@ -113,7 +114,7 @@ function TrackingPageContent() {
         r.growthRate
       ])
     });
-    setShareMessage("Tracking result exported to Excel.");
+    setShareMessage("Tracking result exported as CSV (opens in Excel & Numbers).");
   };
 
   return (
@@ -196,7 +197,7 @@ function TrackingPageContent() {
                 disabled={detailRows.length === 0}
                 className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white disabled:cursor-not-allowed disabled:opacity-50"
               >
-                Export Excel
+                Export CSV
               </button>
               <button
                 type="button"
@@ -229,7 +230,22 @@ function TrackingPageContent() {
                   {detailRows.map((r) => (
                     <tr key={r.id} className="border-t border-border">
                       <td className="px-4 py-2 font-medium text-foreground">{r.influencerName}</td>
-                      <td className="px-4 py-2 text-muted-foreground">{contentLabel(r)}</td>
+                      <td className="px-4 py-2">
+                        {r.contentUrl ? (
+                          <a
+                            href={r.contentUrl}
+                            target="_blank"
+                            rel="noreferrer"
+                            className="inline-flex items-center gap-1 font-medium text-primary hover:underline"
+                            title={r.contentUrl}
+                          >
+                            {contentLabel(r)}
+                            <ExternalLink className="h-3 w-3 shrink-0" />
+                          </a>
+                        ) : (
+                          <span className="text-muted-foreground">{contentLabel(r)}</span>
+                        )}
+                      </td>
                       <td className="px-4 py-2 text-muted-foreground capitalize">{r.contentType ?? "—"}</td>
                       <td className="px-4 py-2 text-muted-foreground">{r.views.toLocaleString()}</td>
                       <td className="px-4 py-2 text-muted-foreground">{r.engagementRate}%</td>

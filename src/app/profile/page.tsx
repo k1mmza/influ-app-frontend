@@ -3,10 +3,7 @@
 import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
-import {
-  buildMediaKitExportPayload,
-  useMediaKitStore,
-} from "@/store/useMediaKitStore";
+import { useMediaKitStore } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
 import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar, apiSetAvatarUrl } from "@/lib/api";
@@ -478,15 +475,43 @@ function InfluencerProfileView() {
   const parseListInput = (s: string) =>
     s.split(/[,，\n]/g).map((x) => x.trim()).filter(Boolean);
 
-  const downloadMediaKitJson = () => {
-    const state = useMediaKitStore.getState();
-    const payload = buildMediaKitExportPayload(state);
-    const blob = new Blob([JSON.stringify(payload, null, 2)], { type: "application/json" });
+  // Download a fill-in-the-blanks TEXT template (no JSON knowledge needed),
+  // pre-filled with the creator's current basic info so they only edit what's
+  // missing. Re-uploading it runs the same review-before-save import.
+  const downloadMediaKitTemplate = () => {
+    const s = useMediaKitStore.getState();
+    const num = (n: number) => (n && n > 0 ? String(n) : "");
+    const template = `# InfluApp Media Kit — fill in the value after each ":" then upload this file.
+# Lines starting with "#" are notes and are ignored. Leave a line blank to skip it.
+# (Name and Handle below are just for your reference.)
+# Name: ${s.displayName || ""}
+# Handle: ${s.handle || ""}
+
+Bio: ${s.bio || ""}
+Categories: ${s.categories.join(", ")}
+Style tags:
+Keywords:
+Hashtags:
+Availability: ${s.availability || ""}
+
+# Rate card — numbers only, no currency symbol
+Price per post: ${num(s.pricing.post)}
+Price per video: ${num(s.pricing.video)}
+Price per story:
+Package price: ${num(s.pricing.bundle)}
+Package description:
+
+# Claimed stats — shown to brands as "claimed", NOT used as your verified numbers
+Followers:
+Average views:
+Engagement rate:
+`;
+    const blob = new Blob([template], { type: "text/plain;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     const slug = kit.handle.replace(/^@/, "").replace(/\s+/g, "-") || "creator";
     a.href = url;
-    a.download = `media-kit-${slug}.json`;
+    a.download = `media-kit-template-${slug}.txt`;
     document.body.appendChild(a);
     a.click();
     a.remove();
@@ -523,22 +548,22 @@ function InfluencerProfileView() {
             </p>
           </div>
           <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <input ref={uploadRef} type="file" accept=".json,application/json,.pdf,application/pdf" className="hidden" onChange={onUploadFiles} />
+            <input ref={uploadRef} type="file" accept=".txt,text/plain,.pdf,application/pdf,.json,application/json" className="hidden" onChange={onUploadFiles} />
             <button
               type="button"
               onClick={() => uploadRef.current?.click()}
               className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20"
             >
               <Upload className="h-4 w-4" aria-hidden />
-              Upload JSON / PDF
+              Upload Text / PDF
             </button>
             <button
               type="button"
-              onClick={downloadMediaKitJson}
+              onClick={downloadMediaKitTemplate}
               className="inline-flex items-center gap-2 rounded-xl bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30"
             >
               <Download className="h-4 w-4" aria-hidden />
-              Download JSON
+              Download Template
             </button>
           </div>
         </div>

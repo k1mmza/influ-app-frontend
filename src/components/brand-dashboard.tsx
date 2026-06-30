@@ -20,6 +20,12 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
+function formatCompact(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}K`;
+  return n.toLocaleString();
+}
+
 const kpis_template = [
   { label: "Active Campaigns", key: "activeCampaigns", icon: Rocket, color: "text-blue-600" },
   { label: "Influencers Hired", key: "influencersHired", icon: Users, color: "text-primary" },
@@ -29,15 +35,25 @@ const kpis_template = [
 ];
 
 export function BrandDashboard({ data }: { data: any }) {
-  const stats = {
-    activeCampaigns: data?.stats?.activeCampaigns ?? 0,
-    influencersHired: data?.stats?.influencersHired ?? 0,
-    budgetSpent: data?.stats?.budgetSpent ?? 0,
-    avgEngagement: data?.stats?.avgEngagement ?? "0%",
-    totalReach: data?.stats?.totalReach ?? "0",
+  const rawStats = data?.stats ?? {};
+  const stats: Record<string, string | number> = {
+    activeCampaigns: rawStats.activeCampaigns ?? 0,
+    influencersHired: rawStats.influencersHired ?? 0,
+    budgetSpent: rawStats.budgetSpent ?? 0,
+    avgEngagement: rawStats.avgEngagement != null ? `${Number(rawStats.avgEngagement).toFixed(1)}%` : "—",
+    totalReach: formatCompact(rawStats.totalReach ?? 0),
   };
 
   const active: any[] = data?.activeCampaigns ?? [];
+  const performance = { impressions: data?.performance?.impressions ?? 0, engagements: data?.performance?.engagements ?? 0 };
+  const payments = {
+    paidCount: data?.payments?.paidCount ?? 0,
+    pendingCount: data?.payments?.pendingCount ?? 0,
+    activeBudget: data?.payments?.activeBudget ?? 0,
+    budgetSpent: data?.payments?.budgetSpent ?? 0,
+  };
+  const recentActivity: any[] = data?.recentActivity ?? [];
+  const spentPct = payments.activeBudget > 0 ? Math.min(100, Math.round((payments.budgetSpent / payments.activeBudget) * 100)) : 0;
 
   return (
     <div className="space-y-8">
@@ -74,35 +90,24 @@ export function BrandDashboard({ data }: { data: any }) {
               <BarChart3 className="h-5 w-5 text-primary" />
               Campaign Performance
             </CardTitle>
-            <CardDescription>Aggregate metrics across all active channels</CardDescription>
+            <CardDescription>Aggregate metrics from live tracking snapshots</CardDescription>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 gap-6">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Impressions</p>
-                <p className="text-xl font-bold">4.2M</p>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
-                  +12% vs last week
-                </Badge>
+                <p className="text-xl font-bold">{formatCompact(performance.impressions)}</p>
               </div>
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagements</p>
-                <p className="text-xl font-bold">62K</p>
-                <Badge variant="secondary" className="bg-emerald-50 text-emerald-600 border-none font-bold text-[10px]">
-                  +8% vs last week
-                </Badge>
+                <p className="text-xl font-bold">{formatCompact(performance.engagements)}</p>
               </div>
             </div>
-            <div className="mt-8 h-2 w-full rounded-full bg-muted overflow-hidden flex">
-              <div className="h-full bg-primary w-[65%]" />
-              <div className="h-full bg-secondary w-[25%]" />
-              <div className="h-full bg-slate-300 w-[10%]" />
-            </div>
-            <div className="mt-4 flex gap-4 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-primary" /> TikTok</span>
-              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-secondary" /> Instagram</span>
-              <span className="flex items-center gap-1.5"><div className="h-2 w-2 rounded-full bg-slate-300" /> Others</span>
-            </div>
+            {performance.impressions === 0 && performance.engagements === 0 && (
+              <p className="mt-6 text-sm text-muted-foreground">
+                No tracking data yet — metrics appear once creators submit and we sync their posts.
+              </p>
+            )}
           </CardContent>
         </Card>
 
@@ -115,6 +120,9 @@ export function BrandDashboard({ data }: { data: any }) {
             <CardDescription>Manage your current collaborations</CardDescription>
           </CardHeader>
           <CardContent className="space-y-3">
+            {active.length === 0 && (
+              <p className="text-sm text-muted-foreground">No active campaigns yet. Publish a campaign to start collaborating.</p>
+            )}
             {active.map((c: any) => (
               <div key={c.id} className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted">
                 <div className="flex items-center gap-3">
@@ -191,15 +199,17 @@ export function BrandDashboard({ data }: { data: any }) {
           <CardContent className="space-y-4 text-sm font-medium">
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Total Budget (Active)</span>
-              <span className="font-bold">THB {stats.budgetSpent?.toLocaleString() || "0"}</span>
+              <span className="font-bold">THB {payments.activeBudget.toLocaleString()}</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Spent vs Remaining</span>
-              <span className="font-bold">62% / 38%</span>
+              <span className="font-bold">{spentPct}% / {100 - spentPct}%</span>
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Status</span>
-              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none font-bold">9 Paid / 1 Pending</Badge>
+              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none font-bold">
+                {payments.paidCount} Paid / {payments.pendingCount} Pending
+              </Badge>
             </div>
           </CardContent>
         </Card>
@@ -212,14 +222,16 @@ export function BrandDashboard({ data }: { data: any }) {
             </CardTitle>
           </CardHeader>
           <CardContent className="space-y-4">
-            {[
-              "New application for Summer Skincare",
-              "Content approved for Healthy Snack campaign",
-              "Unread messages from 2 creators"
-            ].map((act, i) => (
-              <div key={i} className="flex items-center gap-3 text-sm font-medium">
-                <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                <span className="text-foreground">{act}</span>
+            {recentActivity.length === 0 && (
+              <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+            )}
+            {recentActivity.map((act: any) => (
+              <div key={act.id} className="flex items-start gap-3 text-sm font-medium">
+                <div className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0", act.isRead ? "bg-muted-foreground/40" : "bg-primary")} />
+                <div className="min-w-0">
+                  <span className="text-foreground">{act.title}</span>
+                  {act.body ? <p className="text-xs text-muted-foreground line-clamp-1">{act.body}</p> : null}
+                </div>
               </div>
             ))}
           </CardContent>
