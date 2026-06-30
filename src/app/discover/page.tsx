@@ -573,26 +573,12 @@ function DiscoverPageContent() {
     mainPlatformFilter !== "All" ? `Main audience: ${mainPlatformFilter}` : ""
   ].filter(Boolean);
 
-  // Three shelves: each re-sorts the filter-aware pool by REAL, always-present
-  // fields (performanceScore, followers, engagementRate). No proxies, no fallbacks.
+  // Single hero shelf: re-sorts the filter-aware pool by REAL, always-present
+  // fields (performanceScore, followers). No proxies, no fallbacks.
   const trendingInfluencers = useMemo(
     () =>
       [...poolInfluencers]
         .sort((a, b) => (b.performanceScore * 1000 + b.followers) - (a.performanceScore * 1000 + a.followers))
-        .slice(0, 10),
-    [poolInfluencers]
-  );
-  const recommendedInfluencers = useMemo(
-    () =>
-      [...poolInfluencers]
-        .sort((a, b) => (b.performanceScore + b.engagementRate * 10) - (a.performanceScore + a.engagementRate * 10))
-        .slice(0, 10),
-    [poolInfluencers]
-  );
-  const topPerformers = useMemo(
-    () =>
-      [...poolInfluencers]
-        .sort((a, b) => b.performanceScore - a.performanceScore || b.followers - a.followers)
         .slice(0, 10),
     [poolInfluencers]
   );
@@ -1110,13 +1096,13 @@ function DiscoverPageContent() {
           </div>
         )}
 
-        {/* Hero shelves — three Netflix-style rows over the filter-aware pool. */}
+        {/* Section 1 — hero: the single Top Ten Trending shelf over the pool. */}
         {poolLoading ? (
           <div className="flex min-h-[300px] items-center justify-center">
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : poolInfluencers.length > 0 ? (
-          <div className="space-y-8 rounded-2xl bg-muted/30 p-4 sm:p-5">
+          <div className="rounded-2xl bg-muted/30 p-4 sm:p-5">
             <InfluencerShelf
               title="Top Ten Trending"
               subtitle="Highest-performing creators by reach and campaign score"
@@ -1126,26 +1112,13 @@ function DiscoverPageContent() {
               showRank
               emptyMessage="No influencers matched these filters. Try broadening your criteria."
             />
-            <InfluencerShelf
-              title="Recommended For You"
-              subtitle="Curated picks balancing performance and engagement"
-              influencers={recommendedInfluencers}
-              selectedId={selectedInfluencerId}
-              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-              emptyMessage="No recommendations for the current filters."
-            />
-            <InfluencerShelf
-              title="Top Performers"
-              subtitle="Creators ranked by overall campaign performance score"
-              influencers={topPerformers}
-              selectedId={selectedInfluencerId}
-              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-              emptyMessage="No top performers match these filters."
-            />
           </div>
         ) : null}
 
-        {/* All matches — the full, paginated browse grid (kept). */}
+        {/* Visual break between the hero shelf and the browse grid. */}
+        <Separator className="my-2" />
+
+        {/* Section 2 — All matches: the full, paginated browse grid (kept). */}
         <div className="space-y-4">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold font-serif text-foreground">All matches</h2>
