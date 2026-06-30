@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { DashboardHeaderAction, DashboardPageHeader } from "@/components/dashboard-page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -57,13 +58,16 @@ export function BrandDashboard({ data }: { data: any }) {
 
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl bg-gradient-to-r from-[#1e3a8a] to-[#1e1b4b] p-7 text-white shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Brand</span>
-        </div>
-        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Brand Dashboard</h1>
-        <p className="mt-1 text-white/70 font-medium">Monitor your campaign performance and collaborate with creators.</p>
-      </div>
+      <DashboardPageHeader
+        title="Brand Dashboard"
+        subtitle="Monitor your campaign performance and collaborate with creators."
+        badge={`${active.length} active campaign${active.length === 1 ? "" : "s"}`}
+        action={
+          <Link href="/campaigns/create">
+            <DashboardHeaderAction>Create campaign</DashboardHeaderAction>
+          </Link>
+        }
+      />
 
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
         {kpis_template.map((item) => (
@@ -142,9 +146,9 @@ export function BrandDashboard({ data }: { data: any }) {
 
       <div className="grid gap-6 md:grid-cols-3">
         {[
-          { title: "Discover", desc: "Find new creators for your next campaign.", link: "/discover", icon: Search, color: "bg-blue-100 text-blue-600" },
+          { title: "Discover", desc: "Find new creators for your next campaign.", link: "/discover", icon: Search, color: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300" },
           { title: "Messages", desc: "Collaborate and share briefs in real-time.", link: "/messages", icon: MessageSquare, color: "bg-primary/10 text-primary" },
-          { title: "Tracking", desc: "Live post-level metrics and exportable reports.", link: "/tracking", icon: BarChart2, color: "bg-purple-100 text-purple-600" }
+          { title: "Tracking", desc: "Live post-level metrics and exportable reports.", link: "/tracking", icon: BarChart2, color: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300" }
         ].map((tool) => (
           <Card key={tool.title} className="border-none shadow-sm transition-all hover:shadow-md group">
             <CardContent className="p-6">
@@ -207,7 +211,7 @@ export function BrandDashboard({ data }: { data: any }) {
             </div>
             <div className="flex justify-between items-center">
               <span className="text-muted-foreground">Status</span>
-              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 border-none font-bold">
+              <Badge className="bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/15 border-none font-bold">
                 {payments.paidCount} Paid / {payments.pendingCount} Pending
               </Badge>
             </div>
