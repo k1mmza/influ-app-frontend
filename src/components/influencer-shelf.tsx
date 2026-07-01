@@ -143,7 +143,7 @@ export function InfluencerShelf({
                 )}
                 <div
                   className={cn(
-                    "w-[14rem] origin-bottom transition duration-300 ease-out sm:w-[15rem]",
+                    "w-[18rem] origin-bottom transition duration-300 ease-out lg:w-[20rem] xl:w-[22rem]",
                     "group-hover/shelf-item:z-20 group-hover/shelf-item:scale-[1.03]"
                   )}
                 >

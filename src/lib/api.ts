@@ -11,7 +11,7 @@ const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
  */
 export function fileUrl(path?: string | null): string | null {
   if (!path) return null;
-  if (/^https?:\/\//i.test(path)) return path;
+  if (/^(https?:\/\/|data:)/i.test(path)) return path;
   return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
 }
 
@@ -482,6 +482,7 @@ export interface CampaignInput {
 export interface CampaignResponse extends CampaignInput {
   id: string;
   status: CampaignStatus;
+  coverImageUrl?: string | null;
   budgetSpent?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -547,6 +548,22 @@ export async function apiUpdateCampaign(
     body: JSON.stringify(data),
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to update campaign"));
+  return res.json();
+}
+
+export async function apiUploadCampaignCover(
+  token: string,
+  id: string,
+  file: File,
+): Promise<CampaignResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/campaigns/${id}/cover`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to upload cover image"));
   return res.json();
 }
 

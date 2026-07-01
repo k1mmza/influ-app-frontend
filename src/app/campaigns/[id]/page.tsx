@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -13,8 +13,10 @@ import {
   apiGetShortlist,
   apiInviteToCampaign,
   apiUpdateCampaign,
+  apiUploadCampaignCover,
   apiUpdateCampaignApplicationStatus,
   apiFetchInfluencer,
+  fileUrl,
   CampaignApplicationResponse,
   CampaignResponse,
   CampaignStatus,
@@ -104,6 +106,8 @@ export default function CampaignDetailPage() {
   const [error, setError] = useState<string | null>(null);
   const [isEditing, setIsEditing] = useState(false);
   const [editFormData, setEditFormData] = useState<any>(null);
+  const [uploadingCover, setUploadingCover] = useState(false);
+  const coverInputRef = useRef<HTMLInputElement>(null);
   const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
   const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
 
@@ -435,6 +439,23 @@ export default function CampaignDetailPage() {
     setEditFormData(null);
   };
 
+  const handleCoverUpload = async (file: File | undefined) => {
+    if (!token || !campaign || !file) return;
+    setUploadingCover(true);
+    setError(null);
+    setMessage("");
+    try {
+      const updated = await apiUploadCampaignCover(token, campaign.id, file);
+      setCampaign(updated);
+      setMessage("Cover image updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload cover image");
+    } finally {
+      setUploadingCover(false);
+      if (coverInputRef.current) coverInputRef.current.value = "";
+    }
+  };
+
   const saveChanges = async () => {
     if (!token || !campaign || !editFormData) return;
     setBusyAction("save");
@@ -502,6 +523,48 @@ export default function CampaignDetailPage() {
     <section className="space-y-6">
       <Card className="border-none shadow-sm">
         <CardContent className="p-6">
+          {(campaign.coverImageUrl || (isEditing && canManageCampaign)) && (
+            <div className="relative mb-5 h-40 w-full overflow-hidden rounded-2xl bg-muted sm:h-56">
+              {campaign.coverImageUrl ? (
+                <img
+                  src={fileUrl(campaign.coverImageUrl) ?? ""}
+                  alt={`${campaign.name} cover`}
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <ImageIcon className="h-8 w-8" />
+                  <span className="text-xs font-medium">No cover image yet</span>
+                </div>
+              )}
+              {isEditing && canManageCampaign && (
+                <>
+                  <input
+                    ref={coverInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => handleCoverUpload(e.target.files?.[0])}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={uploadingCover}
+                    onClick={() => coverInputRef.current?.click()}
+                    className="absolute bottom-3 right-3 rounded-xl font-bold shadow-md"
+                  >
+                    {uploadingCover ? (
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="mr-1.5 h-4 w-4" />
+                    )}
+                    {campaign.coverImageUrl ? "Change cover" : "Upload cover"}
+                  </Button>
+                </>
+              )}
+            </div>
+          )}
           <div className="flex flex-wrap items-start justify-between gap-3">
             {isEditing && editFormData ? (
               <div className="flex-1 min-w-0 space-y-3">

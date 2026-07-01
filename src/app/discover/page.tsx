@@ -615,7 +615,7 @@ function DiscoverPageContent() {
   }, [selectedInfluencer, selectedInfluencerId]);
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 rounded-3xl bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 p-4 lg:p-6 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950">
       <Card className="border-none shadow-sm bg-gradient-to-r from-[#0284c7] to-[#075985] text-white overflow-hidden">
         <CardContent className="p-8 relative">
           <div className="absolute top-0 right-0 p-8 opacity-10">
@@ -1126,7 +1126,7 @@ function DiscoverPageContent() {
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
               {influencers.map((influencer) => (
                 <InfluencerCard
                   key={influencer.id}

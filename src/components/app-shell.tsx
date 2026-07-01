@@ -58,7 +58,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
-  const isSmartPlanPage = pathname === "/smart-plan" || pathname.startsWith("/smart-plan/");
   const pageBg = getPageBgClass(pathname);
   const { isLoggedIn, token, role } = useUserStore();
   const { error, clearError, syncFromServer } = useShortlistStore();
@@ -95,16 +94,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
         <div className="mx-auto w-full max-w-6xl px-4 pb-6">
           <SiteFooter />
         </div>
-        <ShortlistErrorToast error={error} onDismiss={clearError} />
-      </main>
-    );
-  }
-
-  // A5 / D3: smart-plan keeps its own full-bleed layout (no sidebar shell).
-  if (isSmartPlanPage) {
-    return (
-      <main className="min-h-screen bg-background px-4 py-6 lg:px-6">
-        {children}
         <ShortlistErrorToast error={error} onDismiss={clearError} />
       </main>
     );
