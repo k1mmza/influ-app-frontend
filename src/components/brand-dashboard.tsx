@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import { DashboardHeaderAction, DashboardPageHeader } from "@/components/dashboard-page-header";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -7,18 +8,18 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
   Rocket,
-  Users,
   Wallet,
   TrendingUp,
   BarChart3,
-  Search,
   MessageSquare,
-  BarChart2,
   Bell,
   ChevronRight,
-  Target,
-  Sparkles,
+  CheckCircle2,
+  Loader2,
+  type LucideIcon,
 } from "lucide-react";
+import { apiGetConversations } from "@/lib/api";
+import { useUserStore } from "@/store/useUserStore";
 import { cn } from "@/lib/utils";
 
 function formatCompact(n: number): string {
@@ -27,22 +28,63 @@ function formatCompact(n: number): string {
   return n.toLocaleString();
 }
 
+// Status band trimmed to the two numbers that back a brand decision.
+// (Total Reach + Influencers Hired were vanity; Avg Engagement moved into the
+// Campaign Performance card where it has context.)
 const kpis_template = [
   { label: "Active Campaigns", key: "activeCampaigns", icon: Rocket, color: "text-blue-600" },
-  { label: "Influencers Hired", key: "influencersHired", icon: Users, color: "text-primary" },
   { label: "Budget Spent", key: "budgetSpent", icon: Wallet, color: "text-emerald-600" },
-  { label: "Avg. Engagement", key: "avgEngagement", icon: TrendingUp, color: "text-primary" },
-  { label: "Total Reach", key: "totalReach", icon: Target, color: "text-amber-600" }
 ];
 
+// One actionable row in the "Needs your attention" section. Keeping every item
+// in this single shape means new item types slot in without touching render.
+type AttentionItem = {
+  key: string;
+  icon: LucideIcon;
+  title: string;
+  description?: string;
+  href: string;
+  cta: string;
+};
+
 export function BrandDashboard({ data }: { data: any }) {
+  const { token } = useUserStore();
+  const [waitingConvos, setWaitingConvos] = useState<any[]>([]);
+  const [loadingConvos, setLoadingConvos] = useState(true);
+
+  // "Waiting on you" = creator marked their phase ready, brand hasn't → brand's turn.
+  useEffect(() => {
+    if (!token) {
+      setLoadingConvos(false);
+      return;
+    }
+    let cancelled = false;
+    (async () => {
+      try {
+        const convos = await apiGetConversations(token);
+        if (!cancelled) {
+          setWaitingConvos(
+            (Array.isArray(convos) ? convos : []).filter(
+              (c: any) => c.influencerPhaseReady === true && c.brandPhaseReady === false,
+            ),
+          );
+        }
+      } catch {
+        // Degrade gracefully — the payments attention item still renders.
+      } finally {
+        if (!cancelled) setLoadingConvos(false);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [token]);
+
   const rawStats = data?.stats ?? {};
   const stats: Record<string, string | number> = {
     activeCampaigns: rawStats.activeCampaigns ?? 0,
-    influencersHired: rawStats.influencersHired ?? 0,
     budgetSpent: rawStats.budgetSpent ?? 0,
     avgEngagement: rawStats.avgEngagement != null ? `${Number(rawStats.avgEngagement).toFixed(1)}%` : "—",
-    totalReach: formatCompact(rawStats.totalReach ?? 0),
   };
 
   const active: any[] = data?.activeCampaigns ?? [];
@@ -55,6 +97,41 @@ export function BrandDashboard({ data }: { data: any }) {
   };
   const recentActivity: any[] = data?.recentActivity ?? [];
   const spentPct = payments.activeBudget > 0 ? Math.min(100, Math.round((payments.budgetSpent / payments.activeBudget) * 100)) : 0;
+
+  // Build the attention list. Order = most-actionable first. New item types are
+  // added by pushing more entries here — the render below is agnostic to them.
+  const attentionItems: AttentionItem[] = [];
+
+  // a) Conversations where the creator is waiting on the brand.
+  for (const conv of waitingConvos) {
+    const partner = conv.partnerName ?? "A creator";
+    attentionItems.push({
+      key: `conv-${conv.id}`,
+      icon: MessageSquare,
+      title: conv.campaignName ? `${partner} · ${conv.campaignName}` : partner,
+      description: "Marked their phase ready — your turn to review",
+      href: `/messages?convId=${conv.id}`,
+      cta: "Open",
+    });
+  }
+
+  // b) Payments awaiting the brand's confirmation (count is in the dashboard payload).
+  if (payments.pendingCount > 0) {
+    attentionItems.push({
+      key: "payments-pending",
+      icon: Wallet,
+      title: `${payments.pendingCount} payment${payments.pendingCount === 1 ? "" : "s"} need attention`,
+      description: "Awaiting your confirmation",
+      href: "/messages",
+      cta: "Review",
+    });
+  }
+
+  // EXTENSION POINT — future attention items, blocked on a P'Nut backend aggregate:
+  //   • "Drafts to approve"      → Draft.status === "SUBMITTED" across the brand's campaigns
+  //   • "Applications to review" → CampaignApplication PENDING across the brand's campaigns
+  // Push them here once an aggregate endpoint exists. Do NOT N+1 fan-out per
+  // conversation/campaign to synthesize them from the current per-scope endpoints.
 
   return (
     <div className="space-y-8">
@@ -69,7 +146,58 @@ export function BrandDashboard({ data }: { data: any }) {
         }
       />
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5">
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Bell className="h-5 w-5 text-amber-500" />
+            Needs your attention
+            {attentionItems.length > 0 && (
+              <Badge className="bg-primary text-primary-foreground">{attentionItems.length}</Badge>
+            )}
+          </CardTitle>
+          <CardDescription>Items waiting on a decision or action from you</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {loadingConvos && attentionItems.length === 0 ? (
+            <div className="flex items-center gap-2 text-sm text-muted-foreground">
+              <Loader2 className="h-4 w-4 animate-spin" /> Checking for items…
+            </div>
+          ) : attentionItems.length === 0 ? (
+            <div className="flex items-center gap-3 rounded-xl border border-border bg-muted/50 px-4 py-6">
+              <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
+              <div>
+                <p className="font-bold text-sm text-foreground">You&apos;re all caught up</p>
+                <p className="text-xs text-muted-foreground">Nothing needs your attention right now.</p>
+              </div>
+            </div>
+          ) : (
+            attentionItems.map((item) => (
+              <Link
+                key={item.key}
+                href={item.href}
+                className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted"
+              >
+                <div className="flex min-w-0 items-center gap-3">
+                  <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                    <item.icon className="h-4 w-4" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="truncate text-sm font-bold text-foreground">{item.title}</p>
+                    {item.description && (
+                      <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                    )}
+                  </div>
+                </div>
+                <span className="flex shrink-0 items-center gap-1 text-sm font-bold text-primary">
+                  {item.cta} <ChevronRight className="h-4 w-4" />
+                </span>
+              </Link>
+            ))
+          )}
+        </CardContent>
+      </Card>
+
+      <div className="grid gap-4 sm:grid-cols-2">
         {kpis_template.map((item) => (
           <Card key={item.label} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-5">
@@ -97,7 +225,7 @@ export function BrandDashboard({ data }: { data: any }) {
             <CardDescription>Aggregate metrics from live tracking snapshots</CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-2 gap-6">
+            <div className="grid grid-cols-3 gap-6">
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Impressions</p>
                 <p className="text-xl font-bold">{formatCompact(performance.impressions)}</p>
@@ -105,6 +233,12 @@ export function BrandDashboard({ data }: { data: any }) {
               <div className="space-y-1">
                 <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagements</p>
                 <p className="text-xl font-bold">{formatCompact(performance.engagements)}</p>
+              </div>
+              <div className="space-y-1">
+                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                  <TrendingUp className="h-3 w-3 text-primary" /> Avg. Eng.
+                </p>
+                <p className="text-xl font-bold">{stats.avgEngagement}</p>
               </div>
             </div>
             {performance.impressions === 0 && performance.engagements === 0 && (
@@ -143,54 +277,6 @@ export function BrandDashboard({ data }: { data: any }) {
           </CardContent>
         </Card>
       </div>
-
-      <div className="grid gap-6 md:grid-cols-3">
-        {[
-          { title: "Discover", desc: "Find new creators for your next campaign.", link: "/discover", icon: Search, color: "bg-blue-100 text-blue-600 dark:bg-blue-500/15 dark:text-blue-300" },
-          { title: "Messages", desc: "Collaborate and share briefs in real-time.", link: "/messages", icon: MessageSquare, color: "bg-primary/10 text-primary" },
-          { title: "Tracking", desc: "Live post-level metrics and exportable reports.", link: "/tracking", icon: BarChart2, color: "bg-purple-100 text-purple-600 dark:bg-purple-500/15 dark:text-purple-300" }
-        ].map((tool) => (
-          <Card key={tool.title} className="border-none shadow-sm transition-all hover:shadow-md group">
-            <CardContent className="p-6">
-              <div className={cn("mb-4 flex h-10 w-10 items-center justify-center rounded-xl transition-all group-hover:scale-110", tool.color)}>
-                <tool.icon className="h-5 w-5" />
-              </div>
-              <h3 className="font-bold text-foreground font-serif">{tool.title}</h3>
-              <p className="mt-2 text-xs text-muted-foreground leading-relaxed">{tool.desc}</p>
-              <Button variant="link" asChild className="mt-4 px-0 h-auto font-bold text-primary">
-                <Link href={tool.link}>Open {tool.title} <ChevronRight className="ml-1 h-3 w-3" /></Link>
-              </Button>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="border-none shadow-sm bg-gradient-to-br from-primary to-secondary">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Sparkles className="h-5 w-5 text-white/80" />
-            Strategy Assistant
-          </CardTitle>
-          <CardDescription className="text-white/60">AI-driven campaign brief and planning</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-4">
-            {[
-              "Generate strategy, concept, and creative brief with AI",
-              "Turn campaign requirements into a ready-to-send creator brief",
-              "Refine plans in real-time with the AI prompt interface",
-            ].map((text) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-white/80 font-medium">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
-                {text}
-              </li>
-            ))}
-          </ul>
-          <Button asChild className="mt-8 w-full rounded-xl bg-white/15 text-white border border-white/20 hover:bg-white/25">
-            <Link href="/smart-plan">Generate New Strategy</Link>
-          </Button>
-        </CardContent>
-      </Card>
 
       <div className="grid gap-6 md:grid-cols-2">
         <Card className="border-none shadow-sm">

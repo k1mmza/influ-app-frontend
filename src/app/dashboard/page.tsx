@@ -10,6 +10,7 @@ import {
   apiGetInvitations,
   apiAcceptInvitation,
   apiDeclineInvitation,
+  apiApplyToCampaign,
   Invitation,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -164,6 +165,28 @@ function InfluencerInvitations() {
 }
 
 function InfluencerDashboard({ data }: { data: any }) {
+  const { token } = useUserStore();
+  const [applyingId, setApplyingId] = useState<string | null>(null);
+  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
+  const [applyError, setApplyError] = useState<string | null>(null);
+
+  const applyToCampaign = async (campaignId: string) => {
+    if (!token) {
+      setApplyError("Please log in again before applying.");
+      return;
+    }
+    setApplyingId(campaignId);
+    setApplyError(null);
+    try {
+      await apiApplyToCampaign(token, campaignId);
+      setAppliedIds((prev) => new Set(prev).add(campaignId));
+    } catch (err) {
+      setApplyError(err instanceof Error ? err.message : "Failed to apply to campaign");
+    } finally {
+      setApplyingId(null);
+    }
+  };
+
   const stats = {
     walletBalance: data?.stats?.walletBalance ?? 0,
     activeCampaigns: data?.stats?.activeCampaigns ?? 0,
@@ -207,8 +230,12 @@ function InfluencerDashboard({ data }: { data: any }) {
       </div>
 
       <div className="flex flex-wrap gap-3">
-        <Button className="rounded-xl shadow-lg shadow-primary/20">Find Campaigns</Button>
-        <Button variant="outline" className="rounded-xl bg-background">View Messages</Button>
+        <Button asChild className="rounded-xl shadow-lg shadow-primary/20">
+          <Link href="/campaigns">Find Campaigns</Link>
+        </Button>
+        <Button asChild variant="outline" className="rounded-xl bg-background">
+          <Link href="/messages">View Messages</Link>
+        </Button>
       </div>
 
       <InfluencerInvitations />
@@ -218,6 +245,7 @@ function InfluencerDashboard({ data }: { data: any }) {
           <h2 className="text-xl font-bold tracking-tight text-foreground font-serif">Recommended Campaigns</h2>
           <Button variant="link" className="text-primary font-bold">View all</Button>
         </div>
+        {applyError && <p className="text-sm font-medium text-destructive">{applyError}</p>}
         {recommended.length === 0 ? (
           <Card className="border-none shadow-sm">
             <CardContent className="p-6">
@@ -252,8 +280,17 @@ function InfluencerDashboard({ data }: { data: any }) {
                   </div>
                 </div>
                 <div className="mt-6 flex gap-2">
-                  <Button className="flex-1 rounded-xl shadow-sm">Apply Now</Button>
-                  <Button variant="secondary" className="rounded-xl bg-muted">Details</Button>
+                  <Button
+                    className="flex-1 rounded-xl shadow-sm"
+                    disabled={!c.id || applyingId != null || appliedIds.has(c.id)}
+                    onClick={() => applyToCampaign(c.id)}
+                  >
+                    {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                    {appliedIds.has(c.id) ? "Applied" : "Apply Now"}
+                  </Button>
+                  <Button asChild variant="secondary" className="rounded-xl bg-muted">
+                    <Link href={`/campaigns/${c.id}`}>Details</Link>
+                  </Button>
                 </div>
               </CardContent>
             </Card>
