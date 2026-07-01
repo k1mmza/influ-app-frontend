@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   Rocket,
   Wallet,
+  Users,
   TrendingUp,
   BarChart3,
   MessageSquare,
@@ -18,7 +19,7 @@ import {
   Loader2,
   type LucideIcon,
 } from "lucide-react";
-import { apiGetConversations } from "@/lib/api";
+import { apiGetConversations, apiGetCampaigns } from "@/lib/api";
 import { useUserStore } from "@/store/useUserStore";
 import { cn } from "@/lib/utils";
 
@@ -50,30 +51,56 @@ type AttentionItem = {
 export function BrandDashboard({ data }: { data: any }) {
   const { token } = useUserStore();
   const [waitingConvos, setWaitingConvos] = useState<any[]>([]);
-  const [loadingConvos, setLoadingConvos] = useState(true);
+  const [pendingCampaigns, setPendingCampaigns] = useState<
+    { id: string; name: string; pendingCount: number }[]
+  >([]);
+  const [loadingAttention, setLoadingAttention] = useState(true);
 
-  // "Waiting on you" = creator marked their phase ready, brand hasn't → brand's turn.
+  // Attention-item data. Each source degrades independently (allSettled) so one
+  // failing endpoint never blanks the whole section.
+  //  • Waiting on you    = creator marked their phase ready, brand hasn't → brand's turn.
+  //  • Applications      = PENDING applications the influencer submitted (origin APPLICATION),
+  //                        read straight off the campaigns list (status/origin now selected).
   useEffect(() => {
     if (!token) {
-      setLoadingConvos(false);
+      setLoadingAttention(false);
       return;
     }
     let cancelled = false;
     (async () => {
-      try {
-        const convos = await apiGetConversations(token);
-        if (!cancelled) {
-          setWaitingConvos(
-            (Array.isArray(convos) ? convos : []).filter(
-              (c: any) => c.influencerPhaseReady === true && c.brandPhaseReady === false,
-            ),
-          );
-        }
-      } catch {
-        // Degrade gracefully — the payments attention item still renders.
-      } finally {
-        if (!cancelled) setLoadingConvos(false);
+      const [convosRes, campaignsRes] = await Promise.allSettled([
+        apiGetConversations(token),
+        apiGetCampaigns(token),
+      ]);
+      if (cancelled) return;
+
+      if (convosRes.status === "fulfilled") {
+        const convos = Array.isArray(convosRes.value) ? convosRes.value : [];
+        setWaitingConvos(
+          convos.filter(
+            (c: any) => c.influencerPhaseReady === true && c.brandPhaseReady === false,
+          ),
+        );
       }
+
+      if (campaignsRes.status === "fulfilled") {
+        const campaigns = Array.isArray(campaignsRes.value) ? campaignsRes.value : [];
+        setPendingCampaigns(
+          campaigns
+            .map((c: any) => ({
+              id: c.id,
+              name: c.name,
+              pendingCount: Array.isArray(c.applications)
+                ? c.applications.filter(
+                    (a: any) => a.status === "PENDING" && a.origin === "APPLICATION",
+                  ).length
+                : 0,
+            }))
+            .filter((c: { pendingCount: number }) => c.pendingCount > 0),
+        );
+      }
+
+      setLoadingAttention(false);
     })();
     return () => {
       cancelled = true;
@@ -115,7 +142,19 @@ export function BrandDashboard({ data }: { data: any }) {
     });
   }
 
-  // b) Payments awaiting the brand's confirmation (count is in the dashboard payload).
+  // b) Applications awaiting the brand's review — one row per campaign with pending applicants.
+  for (const c of pendingCampaigns) {
+    attentionItems.push({
+      key: `apps-${c.id}`,
+      icon: Users,
+      title: `${c.pendingCount} application${c.pendingCount === 1 ? "" : "s"} to review`,
+      description: c.name,
+      href: `/campaigns/${c.id}`,
+      cta: "Review",
+    });
+  }
+
+  // c) Payments awaiting the brand's confirmation (count is in the dashboard payload).
   if (payments.pendingCount > 0) {
     attentionItems.push({
       key: "payments-pending",
@@ -127,11 +166,10 @@ export function BrandDashboard({ data }: { data: any }) {
     });
   }
 
-  // EXTENSION POINT — future attention items, blocked on a P'Nut backend aggregate:
-  //   • "Drafts to approve"      → Draft.status === "SUBMITTED" across the brand's campaigns
-  //   • "Applications to review" → CampaignApplication PENDING across the brand's campaigns
-  // Push them here once an aggregate endpoint exists. Do NOT N+1 fan-out per
-  // conversation/campaign to synthesize them from the current per-scope endpoints.
+  // EXTENSION POINT — next attention item, blocked on a P'Nut backend aggregate:
+  //   • "Drafts to approve" → Draft.status === "SUBMITTED" across the brand's campaigns
+  //     (only exposed per-conversation today; needs an aggregate endpoint first).
+  // Push it here once that endpoint exists. Do NOT N+1 fan-out per conversation.
 
   return (
     <div className="space-y-8">
@@ -158,7 +196,7 @@ export function BrandDashboard({ data }: { data: any }) {
           <CardDescription>Items waiting on a decision or action from you</CardDescription>
         </CardHeader>
         <CardContent className="space-y-3">
-          {loadingConvos && attentionItems.length === 0 ? (
+          {loadingAttention && attentionItems.length === 0 ? (
             <div className="flex items-center gap-2 text-sm text-muted-foreground">
               <Loader2 className="h-4 w-4 animate-spin" /> Checking for items…
             </div>
