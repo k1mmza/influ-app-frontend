@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { X } from "lucide-react";
 import { Navigation } from "@/components/navigation";
+import { NavFooter } from "@/components/nav-footer";
 import { SiteFooter } from "@/components/site-footer";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
 import { getPageBgClass, SIDEBAR_SURFACE_CLASS } from "@/lib/nav-theme";
@@ -20,11 +21,6 @@ import { useShortlistStore } from "@/store/useShortlistStore";
  */
 function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pageBg: string }) {
   const { collapsed } = useSidebar();
-  const pathname = usePathname() ?? "";
-  // A8: Discover portals its filter sidebar into #app-sidebar-slot. Keep the
-  // sidebar expanded (and the slot visible) on /discover so collapsing never
-  // makes the filters vanish.
-  const effectiveCollapsed = collapsed && pathname !== "/discover";
 
   return (
     <main className={cn("flex min-h-svh w-full flex-col transition-colors duration-300", pageBg)}>
@@ -33,17 +29,14 @@ function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pag
           className={cn(
             "flex w-full shrink-0 flex-col border-b border-border transition-[width] duration-300 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r",
             SIDEBAR_SURFACE_CLASS,
-            effectiveCollapsed ? "lg:w-16" : "lg:w-[calc(260px-1cm)]"
+            collapsed ? "lg:w-16" : "lg:w-[calc(260px-1cm)]"
           )}
         >
           <Navigation />
-          <div
-            id="app-sidebar-slot"
-            className={cn(
-              "min-h-0 flex-1 overflow-y-auto px-3 pb-4 lg:px-4",
-              effectiveCollapsed && "hidden lg:hidden"
-            )}
-          />
+          {/* Invisible flex-1 spacer between the nav links and the footer, so
+              NavFooter stays pinned to the bottom of the sidebar. */}
+          <div className="min-h-0 flex-1" aria-hidden />
+          <NavFooter />
         </aside>
         <section className="relative flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-6 pt-4 lg:px-6 lg:pt-5">
           {children}
@@ -99,18 +92,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // A6: logged-out Discover uses the public top-nav + a reachable filter slot,
-  // not the authed sidebar.
+  // A6: logged-out Discover uses the public top-nav + full-width content
+  // (filters now render inline at the search bar, not in a sidebar).
   if (pathname === "/discover" && !isLoggedIn) {
     return (
       <main className="flex min-h-screen flex-col bg-muted/50">
         <div className="mx-auto w-full max-w-7xl px-4 pt-6 lg:px-8">
           <Navigation />
         </div>
-        <div className="mx-auto grid w-full max-w-7xl flex-1 gap-8 px-4 py-6 lg:grid-cols-[240px_1fr] lg:px-8">
-          <aside className="sticky top-6 self-start">
-            <div id="app-sidebar-slot" />
-          </aside>
+        <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8">
           <section className="min-h-[calc(100vh-3rem)]">{children}</section>
         </div>
         <ShortlistErrorToast error={error} onDismiss={clearError} />

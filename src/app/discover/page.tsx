@@ -10,7 +10,6 @@ import { apiLookupInfluencerByUrl, apiFetchInfluencer, apiStartConversation, api
 import { useUserStore } from "@/store/useUserStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { createPortal } from "react-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -19,6 +18,7 @@ import { Label } from "@/components/ui/label";
 import {
   Search,
   Filter,
+  SlidersHorizontal,
   RotateCcw,
   ChevronDown,
   ChevronUp,
@@ -51,7 +51,15 @@ type InfluencerMeta = {
   responseRate: number;
 };
 
-const categories = ["All", "Beauty", "Fashion", "Fitness", "Food", "Gaming", "Travel", "Tech", "Lifestyle"];
+// Keep in sync with the backend's CATEGORY_TAGS (ai-analysis.service.ts) — the
+// niche/topic list the AI assigns `category` from. Content-format styles (Vlog,
+// Tutorial, …) live in the separate Content Style filter, not here.
+const categories = [
+  "All",
+  "Beauty", "Fashion", "Fitness", "Food", "Gaming", "Travel", "Tech", "Lifestyle",
+  "Education", "Entertainment", "Business", "Music", "Sports", "Comedy", "DIY",
+  "Cooking", "Health",
+];
 const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", "LinkedIn", "Red Note (Xiaohongshu)"];
 const campaignIntents = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
@@ -104,7 +112,7 @@ function DiscoverPageContent() {
   const searchFromQuery = searchParams.get("search");
   const processedUrlRef = useRef<string | null>(null);
   const processedSearchRef = useRef<string | null>(null);
-  const [sidebarSlot, setSidebarSlot] = useState<HTMLElement | null>(null);
+  const [showFiltersPanel, setShowFiltersPanel] = useState(false);
 
   const { token, role } = useUserStore();
   const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
@@ -605,10 +613,6 @@ function DiscoverPageContent() {
   }, [generatedInfluencer, generatedInfluencerMeta, selectedInfluencer]);
 
   useEffect(() => {
-    setSidebarSlot(document.getElementById("app-sidebar-slot"));
-  }, []);
-
-  useEffect(() => {
     if (selectedInfluencerId && !selectedInfluencer) {
       setSelectedInfluencerId(null);
     }
@@ -633,8 +637,50 @@ function DiscoverPageContent() {
         </CardContent>
       </Card>
 
-      {sidebarSlot
-        ? createPortal(
+      {/* Search bar with inline filters (design parity: filters live at the
+          search bar, not in the sidebar). The SlidersHorizontal button toggles
+          the panel below and badges the active-filter count. */}
+      <div className="space-y-4">
+        <Card className="border-none shadow-sm overflow-hidden">
+          <CardContent className="p-1">
+            <div className="flex flex-col gap-1 md:flex-row">
+              <div className="relative flex-1">
+                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Input
+                  value={unifiedSearchInput}
+                  onChange={(e) => setUnifiedSearchInput(e.target.value)}
+                  placeholder="Enter creator URL or type keywords for Smart Search..."
+                  className="h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm"
+                />
+              </div>
+              <Button
+                onClick={handleUnifiedSearch}
+                disabled={isUrlSearching}
+                className="h-12 rounded-none px-8 font-bold text-sm shadow-none"
+              >
+                {isUrlSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+              </Button>
+              <Button
+                type="button"
+                variant={showFiltersPanel ? "default" : "outline"}
+                onClick={() => setShowFiltersPanel((v) => !v)}
+                aria-expanded={showFiltersPanel}
+                aria-label={showFiltersPanel ? "Hide filters" : "Show filters"}
+                className="h-12 rounded-none px-5 font-bold text-sm shadow-none"
+              >
+                <SlidersHorizontal className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Filters</span>
+                {activeChips.length > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-black/10 px-1 text-[10px] font-bold leading-none dark:bg-white/25">
+                    {activeChips.length}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+
+        {showFiltersPanel && (
             <Card className="border-none shadow-sm bg-background">
               <CardHeader className="pb-4">
                 <div className="flex items-center justify-between">
@@ -650,11 +696,13 @@ function DiscoverPageContent() {
               </CardHeader>
               <CardContent className="space-y-6">
 
+                {/* Primary filters — responsive columns */}
+                <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2">
                 {/* Platform */}
                 <div className="space-y-3">
                   <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform</Label>
                   <div className="space-y-2">
-                    {platforms.slice(0, 5).map((item) => (
+                    {platforms.slice(0, 5).filter((p) => p !== "X").map((item) => (
                       <div key={item} className="flex items-center space-x-2">
                         <input
                           type="checkbox"
@@ -667,28 +715,6 @@ function DiscoverPageContent() {
                           className="h-4 w-4 rounded border-input bg-background"
                         />
                         <Label htmlFor={`p-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Category */}
-                <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
-                  <div className="space-y-2">
-                    {categories.filter((c) => c !== "All").map((item) => (
-                      <div key={item} className="flex items-center space-x-2">
-                        <input
-                          type="checkbox"
-                          id={`cat-${item}`}
-                          checked={selectedCategories.includes(item)}
-                          onChange={(e) => {
-                            if (e.target.checked) setSelectedCategories((p) => [...p, item]);
-                            else setSelectedCategories((p) => p.filter((v) => v !== item));
-                          }}
-                          className="h-4 w-4 rounded border-input bg-background"
-                        />
-                        <Label htmlFor={`cat-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
                       </div>
                     ))}
                   </div>
@@ -711,6 +737,29 @@ function DiscoverPageContent() {
                     <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
                   </div>
                 </div>
+                </div>
+
+                {/* Category — full-width band, responsive columns (up to 4) */}
+                <div className="space-y-3">
+                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
+                  <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
+                    {categories.filter((c) => c !== "All").map((item) => (
+                      <div key={item} className="flex items-center space-x-2">
+                        <input
+                          type="checkbox"
+                          id={`cat-${item}`}
+                          checked={selectedCategories.includes(item)}
+                          onChange={(e) => {
+                            if (e.target.checked) setSelectedCategories((p) => [...p, item]);
+                            else setSelectedCategories((p) => p.filter((v) => v !== item));
+                          }}
+                          className="h-4 w-4 rounded border-input bg-background"
+                        />
+                        <Label htmlFor={`cat-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
+                      </div>
+                    ))}
+                  </div>
+                </div>
 
                 <Button
                   variant="outline"
@@ -723,10 +772,10 @@ function DiscoverPageContent() {
                 </Button>
 
                 {showAdvancedFilters && (
-                  <div className="space-y-6">
+                  <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2 lg:grid-cols-3">
 
                     {/* ── FOLLOWER SIZE ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Follower Size</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -761,7 +810,7 @@ function DiscoverPageContent() {
                     </div>
 
                     {/* ── LOCATION ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Location</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -780,7 +829,7 @@ function DiscoverPageContent() {
                     </div>
 
                     {/* ── AUDIENCE ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Audience</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -812,7 +861,7 @@ function DiscoverPageContent() {
                     </div>
 
                     {/* ── PERFORMANCE ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Performance</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -880,7 +929,7 @@ function DiscoverPageContent() {
                     </div>
 
                     {/* ── CREATOR PROFILE ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Creator Profile</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -950,7 +999,7 @@ function DiscoverPageContent() {
                     </div>
 
                     {/* ── BUDGET ── */}
-                    <div className="flex items-center gap-2">
+                    <div className="col-span-full flex items-center gap-2">
                       <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Budget</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
@@ -990,37 +1039,11 @@ function DiscoverPageContent() {
                   </div>
                 )}
               </CardContent>
-            </Card>,
-            sidebarSlot
-          )
-        : null}
+            </Card>
+        )}
+      </div>
 
       <div className="space-y-6">
-        <Card className="border-none shadow-sm overflow-hidden">
-          <CardContent className="p-1">
-            <div className="flex flex-col gap-1 md:flex-row">
-              <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={unifiedSearchInput}
-                  onChange={(e) => setUnifiedSearchInput(e.target.value)}
-                  placeholder="Enter creator URL or type keywords for Smart Search..."
-                  className="h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm"
-                />
-              </div>
-              <Button
-                onClick={handleUnifiedSearch}
-                disabled={isUrlSearching}
-                className="h-12 rounded-none px-8 font-bold text-sm shadow-none"
-              >
-                {isUrlSearching
-                  ? <Loader2 className="h-4 w-4 animate-spin" />
-                  : "Search"}
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-2">Active:</span>
@@ -1118,7 +1141,7 @@ function DiscoverPageContent() {
         {/* Section 2 — All matches grey box: paginated browse grid (5-up on wide). */}
         <div className="space-y-4 rounded-2xl bg-muted/30 p-4 sm:p-5">
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold font-serif text-foreground">All matches</h2>
+            <h2 className="text-lg font-bold font-serif text-foreground">All Influencers</h2>
             {!loading && <span className="text-xs font-medium text-muted-foreground">{totalCount} creators</span>}
           </div>
           {loading ? (

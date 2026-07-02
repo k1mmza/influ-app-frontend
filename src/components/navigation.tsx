@@ -1,17 +1,14 @@
 "use client";
 
 import Link from "next/link";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname } from "next/navigation";
 import {
   Activity,
   Compass,
   Heart,
   LayoutDashboard,
-  LogOut,
   Megaphone,
   MessageSquare,
-  PanelLeft,
-  PanelLeftClose,
   Sparkles,
   type LucideIcon,
 } from "lucide-react";
@@ -19,8 +16,6 @@ import { cn } from "@/lib/utils";
 import { getNavIconActiveClass, getNavIndicatorClass, getNavLinkClass } from "@/lib/nav-theme";
 import { getSidebarMenuHeading, getSidebarWorkspaceLabel } from "@/lib/role-labels";
 import { useSidebarOptional } from "@/components/sidebar-context";
-import { UserProfileChip } from "@/components/user-profile-chip";
-import { useProfileAvatar } from "@/lib/use-profile-avatar";
 import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -57,10 +52,8 @@ function isNavActive(pathname: string, href: string) {
 
 export function Navigation() {
   const pathname = usePathname();
-  const router = useRouter();
-  const { role, logout, isLoggedIn, name } = useUserStore();
+  const { role, isLoggedIn, name } = useUserStore();
   const sidebar = useSidebarOptional();
-  const avatarUrl = useProfileAvatar();
 
   const isLandingPage = pathname === "/";
   const isPublicPage =
@@ -71,15 +64,7 @@ export function Navigation() {
     (pathname === "/discover" && !isLoggedIn);
   const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
 
-  // Discover keeps its filter rail mounted via #app-sidebar-slot; force the
-  // sidebar expanded there so collapse never hides those filters (A8).
-  const collapsed = (sidebar?.collapsed ?? false) && pathname !== "/discover";
-  const toggleCollapsed = sidebar?.toggleCollapsed;
-
-  const handleLogout = () => {
-    logout();
-    router.push("/login");
-  };
+  const collapsed = sidebar?.collapsed ?? false;
 
   // N1: nav renders nothing on auth routes.
   if (isAuthPage) {
@@ -158,7 +143,7 @@ export function Navigation() {
   const links = role ? navLinksByRole[role] : [];
 
   return (
-    <nav className="flex h-full min-h-0 flex-col">
+    <nav className="flex shrink-0 flex-col">
       <div
         className={cn(
           "flex items-center border-b border-border transition hover:bg-accent/40",
@@ -182,7 +167,7 @@ export function Navigation() {
         </Link>
       </div>
 
-      <div className={cn("flex flex-1 flex-col gap-0.5 overflow-y-auto py-4", collapsed ? "px-2" : "px-3")}>
+      <div className={cn("flex flex-col gap-0.5 py-4", collapsed ? "px-2" : "px-3")}>
         {!collapsed ? (
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {getSidebarMenuHeading(role)}
@@ -224,56 +209,6 @@ export function Navigation() {
             </Link>
           );
         })}
-      </div>
-
-      <div className={cn("mt-auto", collapsed ? "p-2" : "p-3")}>
-        {toggleCollapsed ? (
-          <button
-            type="button"
-            onClick={toggleCollapsed}
-            title={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            aria-label={collapsed ? "Expand sidebar" : "Collapse sidebar"}
-            className={cn(
-              "group mb-2 hidden w-full items-center rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-accent hover:text-foreground lg:flex",
-              collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
-            )}
-          >
-            {collapsed ? (
-              <PanelLeft className="h-[18px] w-[18px] shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-            ) : (
-              <PanelLeftClose className="h-[18px] w-[18px] shrink-0 text-muted-foreground transition-colors group-hover:text-foreground" />
-            )}
-            {!collapsed ? <span>Collapse</span> : null}
-          </button>
-        ) : null}
-
-        {/* N3: ThemeToggle / dark mode preserved in the authed sidebar. */}
-        <div className={cn("mb-2 flex items-center", collapsed ? "justify-center" : "gap-3 px-1")}>
-          <ThemeToggle />
-          {!collapsed ? <span className="text-sm font-medium text-muted-foreground">Theme</span> : null}
-        </div>
-
-        <button
-          type="button"
-          onClick={handleLogout}
-          title={collapsed ? "Log out" : undefined}
-          aria-label="Log out"
-          className={cn(
-            "group mb-2 flex w-full items-center rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive",
-            collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
-          )}
-        >
-          <LogOut className="h-[18px] w-[18px] shrink-0 transition-colors" />
-          {!collapsed ? "Log out" : null}
-        </button>
-
-        <div className={cn(collapsed ? "flex justify-center" : "w-full")}>
-          <UserProfileChip
-            collapsed={collapsed}
-            avatarUrl={avatarUrl}
-            className={cn(!collapsed && "flex w-full gap-3 px-3 py-2.5")}
-          />
-        </div>
       </div>
     </nav>
   );

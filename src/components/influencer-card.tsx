@@ -75,9 +75,10 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
   const [avatarFailed, setAvatarFailed] = useState(false);
   const showAvatarImg = Boolean(activeAvatar) && !avatarFailed;
 
-  const tags = Array.from(
-    new Set([influencer.category, ...(influencer.stylePresent ?? [])].filter(Boolean)),
-  ).slice(0, 3);
+  // Show the category only, so the card matches what the primary Category
+  // filter filters on. (stylePresent / content-style is an advanced filter and
+  // deliberately isn't surfaced on the compact card.)
+  const tags = [influencer.category].filter(Boolean);
 
   const { toggle, has } = useShortlistStore();
   const saved = has(influencer.id);

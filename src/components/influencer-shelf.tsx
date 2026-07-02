@@ -75,7 +75,7 @@ export function InfluencerShelf({
     >
       <div className="mb-3 flex items-end justify-between gap-3 px-1">
         <div>
-          <h2 className="text-lg font-bold tracking-tight text-foreground sm:text-xl">{title}</h2>
+          <h2 className="text-lg font-bold font-serif text-foreground">{title}</h2>
           {subtitle && <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{subtitle}</p>}
         </div>
       </div>
