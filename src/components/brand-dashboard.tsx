@@ -35,6 +35,7 @@ function formatCompact(n: number): string {
 const kpis_template = [
   { label: "Active Campaigns", key: "activeCampaigns", icon: Rocket, color: "text-blue-600" },
   { label: "Budget Spent", key: "budgetSpent", icon: Wallet, color: "text-emerald-600" },
+  { label: "Unread Messages", key: "unreadMessages", icon: MessageSquare, color: "text-amber-600" },
 ];
 
 // One actionable row in the "Needs your attention" section. Keeping every item
@@ -48,7 +49,13 @@ type AttentionItem = {
   cta: string;
 };
 
-export function BrandDashboard({ data }: { data: any }) {
+export function BrandDashboard({
+  data,
+  variant = "brand",
+}: {
+  data: any;
+  variant?: "brand" | "agency";
+}) {
   const { token } = useUserStore();
   const [waitingConvos, setWaitingConvos] = useState<any[]>([]);
   const [pendingCampaigns, setPendingCampaigns] = useState<
@@ -111,6 +118,7 @@ export function BrandDashboard({ data }: { data: any }) {
   const stats: Record<string, string | number> = {
     activeCampaigns: rawStats.activeCampaigns ?? 0,
     budgetSpent: rawStats.budgetSpent ?? 0,
+    unreadMessages: rawStats.unreadMessages ?? 0,
     avgEngagement: rawStats.avgEngagement != null ? `${Number(rawStats.avgEngagement).toFixed(1)}%` : "—",
   };
 
@@ -178,8 +186,12 @@ export function BrandDashboard({ data }: { data: any }) {
   return (
     <div className="space-y-8">
       <DashboardPageHeader
-        title="Brand Dashboard"
-        subtitle="Monitor your campaign performance and collaborate with creators."
+        title={variant === "agency" ? "Agency Dashboard" : "Brand Dashboard"}
+        subtitle={
+          variant === "agency"
+            ? "Monitor your portfolio's campaign performance and collaborate with creators."
+            : "Monitor your campaign performance and collaborate with creators."
+        }
         badge={`${activeCampaignCount} active campaign${activeCampaignCount === 1 ? "" : "s"}`}
         action={
           <Link href="/campaigns/create">
@@ -239,7 +251,7 @@ export function BrandDashboard({ data }: { data: any }) {
         </CardContent>
       </Card>
 
-      <div className="grid gap-4 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {kpis_template.map((item) => (
           <Card key={item.label} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-5">

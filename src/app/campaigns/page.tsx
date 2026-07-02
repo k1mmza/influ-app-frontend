@@ -34,16 +34,16 @@ const PAGE_SIZE = 12;
 // ─── Read-only view-model adapters (our CampaignResponse → design row shape) ───
 // Mirrors the apiCampaignToLocal precedent in smart-plan/page.tsx. No API change.
 
-type BrandCampaignStatus = "active" | "pending" | "completed";
+type BrandCampaignStatus = "active" | "draft" | "completed";
 
 /** Our uppercase status → the design's lowercase set. CANCELLED is intentionally
- *  mapped to "pending" only as a fallback; cancelled rows are excluded at the
+ *  mapped to "draft" only as a fallback; cancelled rows are excluded at the
  *  RENDER layer (never from counts/totals). */
 function mapBrandStatus(raw?: string): BrandCampaignStatus {
   const s = (raw ?? "").toUpperCase();
   if (s === "ACTIVE") return "active";
   if (s === "COMPLETED") return "completed";
-  return "pending"; // DRAFT (and CANCELLED, which is filtered out before render)
+  return "draft"; // DRAFT (and CANCELLED, which is filtered out before render)
 }
 
 /** Budget: we hold a single value, design wants a range → render max-only. */
@@ -161,6 +161,66 @@ function PaginationRow({
         <ChevronRight className="h-4 w-4" />
       </Button>
     </div>
+  );
+}
+
+/** One brand-side campaign card. Shared by the brand list and the agency
+ *  brand→campaign view. */
+function BrandCampaignCard({ raw, role }: { raw: any; role: string | null }) {
+  const c = toBrandCampaignVM(raw);
+  return (
+    <Link
+      href={`/campaigns/${c.id}`}
+      className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+    >
+      {/* Role-tinted gradient cover (no image source in our API). */}
+      <div className={cn("relative h-24 w-full", roleCoverGradient(role))}>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        <span
+          className={cn(
+            "absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
+            c.status === "active"
+              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
+              : c.status === "draft"
+                ? "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
+                : "bg-card/90 text-muted-foreground"
+          )}
+        >
+          {c.status}
+        </span>
+        <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-bold text-white font-serif drop-shadow">
+          {c.name}
+        </h3>
+      </div>
+
+      <div className="p-5">
+        <div className="flex flex-wrap gap-2">
+          {c.visibility && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
+              {c.visibility}
+            </span>
+          )}
+          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+            {c.platform}
+          </span>
+          {c.brandName && (
+            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
+              {c.brandName}
+            </span>
+          )}
+        </div>
+        <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
+          <li>Budget: {budgetLabel(c.budget)} · Spent: THB {c.spent.toLocaleString()}</li>
+          <li className="flex items-center gap-1.5">
+            <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
+          </li>
+          <li>Influencers: {c.influencersJoined}</li>
+        </ul>
+        <p className="mt-3 inline-flex items-center text-sm font-bold text-primary transition-transform group-hover:translate-x-1">
+          View management <ChevronRight className="ml-1 h-4 w-4" />
+        </p>
+      </div>
+    </Link>
   );
 }
 
@@ -319,64 +379,9 @@ function BrandCampaignsView() {
       )}
 
       <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
-        {pageItems.map((raw) => {
-          const c = toBrandCampaignVM(raw);
-          return (
-            <Link
-              key={c.id}
-              href={`/campaigns/${c.id}`}
-              className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
-            >
-              {/* Role-tinted gradient cover (no image source in our API). */}
-              <div className={cn("relative h-24 w-full", roleCoverGradient(role))}>
-                <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                <span
-                  className={cn(
-                    "absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
-                    c.status === "active"
-                      ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
-                      : c.status === "pending"
-                        ? "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
-                        : "bg-card/90 text-muted-foreground"
-                  )}
-                >
-                  {c.status}
-                </span>
-                <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-bold text-white font-serif drop-shadow">
-                  {c.name}
-                </h3>
-              </div>
-
-              <div className="p-5">
-                <div className="flex flex-wrap gap-2">
-                  {c.visibility && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
-                      {c.visibility}
-                    </span>
-                  )}
-                  <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                    {c.platform}
-                  </span>
-                  {c.brandName && (
-                    <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-                      {c.brandName}
-                    </span>
-                  )}
-                </div>
-                <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                  <li>Budget: {budgetLabel(c.budget)} · Spent: THB {c.spent.toLocaleString()}</li>
-                  <li className="flex items-center gap-1.5">
-                    <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
-                  </li>
-                  <li>Influencers: {c.influencersJoined}</li>
-                </ul>
-                <p className="mt-3 inline-flex items-center text-sm font-bold text-primary transition-transform group-hover:translate-x-1">
-                  View management <ChevronRight className="ml-1 h-4 w-4" />
-                </p>
-              </div>
-            </Link>
-          );
-        })}
+        {pageItems.map((raw) => (
+          <BrandCampaignCard key={raw.id} raw={raw} role={role} />
+        ))}
       </div>
 
       {!loading && filtered.length === 0 && (
@@ -621,9 +626,171 @@ function InfluencerDiscoverCampaignsView() {
   );
 }
 
+// Agency flow: brand → campaign. The agency's campaigns are fetched flat, then
+// grouped by their clientBrand so the agency picks a brand before drilling into
+// its campaigns (rather than seeing every brand's campaigns flattened together).
+function AgencyCampaignsView() {
+  const { token, role } = useUserStore();
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const pathname = usePathname();
+  const [campaigns, setCampaigns] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const selectedBrandId = searchParams.get("brand");
+
+  const setBrand = (id: string | null) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (id) params.set("brand", id);
+    else params.delete("brand");
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+
+  useEffect(() => {
+    if (!token) return;
+    apiGetCampaigns(token)
+      .then(setCampaigns)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token]);
+
+  // Group campaigns by client brand (excluding CANCELLED from the counts/cards,
+  // mirroring BrandCampaignsView's render-layer rule).
+  const brands = useMemo(() => {
+    const map = new Map<string, { id: string; name: string; count: number }>();
+    for (const c of campaigns) {
+      if ((c.status ?? "").toUpperCase() === "CANCELLED") continue;
+      const id = c.clientBrand?.id;
+      if (!id) continue;
+      const entry = map.get(id) ?? { id, name: c.clientBrand?.brandName ?? "Brand", count: 0 };
+      entry.count += 1;
+      map.set(id, entry);
+    }
+    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [campaigns]);
+
+  const selectedBrand = brands.find((b) => b.id === selectedBrandId) ?? null;
+  const brandCampaigns = useMemo(
+    () =>
+      selectedBrandId
+        ? campaigns.filter(
+            (c) =>
+              c.clientBrand?.id === selectedBrandId &&
+              (c.status ?? "").toUpperCase() !== "CANCELLED"
+          )
+        : [],
+    [campaigns, selectedBrandId]
+  );
+
+  if (loading) {
+    return (
+      <div className="flex h-[50vh] items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="space-y-6">
+      <Card className="border-none shadow-sm bg-gradient-to-r from-[#059669] to-[#064e3b] text-white">
+        <CardContent className="p-8">
+          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+            <div className="space-y-1">
+              <h1 className="text-3xl font-extrabold tracking-tight font-serif">
+                {selectedBrand ? selectedBrand.name : "Campaigns by Brand"}
+              </h1>
+              <p className="text-white/80 font-medium">
+                {selectedBrand
+                  ? "Campaigns for this brand."
+                  : "Pick a brand to view and manage its campaigns."}
+              </p>
+              <div className="pt-2">
+                <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
+                  {selectedBrand ? `${brandCampaigns.length} campaigns` : `${brands.length} brands`}
+                </Badge>
+              </div>
+            </div>
+            <Button size="lg" asChild className="rounded-xl bg-card text-emerald-700 font-bold shadow-xl hover:bg-card/90">
+              <Link href="/campaigns/create">
+                <Plus className="mr-2 h-5 w-5" />
+                Create Campaign
+              </Link>
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+
+      {error && (
+        <Card className="border-destructive/30 bg-destructive/5">
+          <CardContent className="p-4 text-sm text-destructive">{error}</CardContent>
+        </Card>
+      )}
+
+      {selectedBrand ? (
+        <>
+          <Button variant="ghost" size="sm" onClick={() => setBrand(null)} className="h-8 px-2 font-bold text-primary">
+            <ChevronLeft className="mr-1 h-4 w-4" /> Back to brands
+          </Button>
+          {brandCampaigns.length === 0 ? (
+            <Card className="border-2 border-dashed bg-muted/50 py-20 text-center">
+              <CardContent>
+                <h3 className="text-lg font-bold font-serif">No campaigns yet</h3>
+                <p className="mt-2 text-sm text-muted-foreground">This brand has no active campaigns.</p>
+              </CardContent>
+            </Card>
+          ) : (
+            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+              {brandCampaigns.map((raw) => (
+                <BrandCampaignCard key={raw.id} raw={raw} role={role} />
+              ))}
+            </div>
+          )}
+        </>
+      ) : brands.length === 0 ? (
+        <Card className="border-2 border-dashed bg-muted/50 py-20 text-center">
+          <CardContent>
+            <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-muted">
+              <LayoutGrid className="h-6 w-6 text-muted-foreground" />
+            </div>
+            <h3 className="mt-4 text-lg font-bold font-serif">No brands yet</h3>
+            <p className="mt-2 text-sm text-muted-foreground">
+              Create a campaign for a client brand to get started.
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {brands.map((b) => (
+            <button
+              key={b.id}
+              onClick={() => setBrand(b.id)}
+              className="group flex items-center justify-between rounded-2xl border border-border bg-card p-6 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+            >
+              <div className="flex items-center gap-4">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                  {b.name.charAt(0).toUpperCase()}
+                </div>
+                <div className="min-w-0">
+                  <p className="truncate font-bold text-foreground font-serif">{b.name}</p>
+                  <p className="text-sm text-muted-foreground">
+                    {b.count} campaign{b.count === 1 ? "" : "s"}
+                  </p>
+                </div>
+              </div>
+              <ChevronRight className="h-5 w-5 text-primary transition-transform group-hover:translate-x-1" />
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CampaignsPageInner() {
   const { role } = useUserStore();
-  if (role === "brand" || role === "agency") return <BrandCampaignsView />;
+  if (role === "agency") return <AgencyCampaignsView />;
+  if (role === "brand") return <BrandCampaignsView />;
   return <InfluencerDiscoverCampaignsView />;
 }
 

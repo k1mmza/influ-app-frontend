@@ -22,11 +22,9 @@ import {
   FileText,
   MessageSquare,
   TrendingUp,
-  UserCircle,
   Bell,
   CheckCircle2,
   ExternalLink,
-  Sparkles,
   Loader2,
   Inbox,
   Check,
@@ -371,73 +369,6 @@ function InfluencerDashboard({ data }: { data: any }) {
   );
 }
 
-function AgencyDashboard({ data }: { data: any }) {
-  const stats = {
-    activeBriefs: data?.stats?.activeBriefs ?? 0,
-    creatorsAssigned: data?.stats?.creatorsAssigned ?? 0,
-    spendMTD: data?.stats?.spendMTD ?? "THB 0",
-    slaOnTrack: data?.stats?.slaOnTrack ?? "N/A",
-  };
-
-  return (
-    <div className="space-y-8">
-      <div className="rounded-2xl bg-gradient-to-r from-[#059669] to-[#064e3b] p-7 text-white shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Agency</span>
-        </div>
-        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Agency Dashboard</h1>
-        <p className="mt-1 text-white/70 font-medium">High-level view of your portfolio and active campaign metrics.</p>
-      </div>
-      
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        {[
-          ["Active briefs", stats.activeBriefs.toString(), Rocket],
-          ["Creators assigned", stats.creatorsAssigned.toString(), UserCircle],
-          ["Spend (MTD)", stats.spendMTD.toString(), Wallet],
-          ["SLA on track", stats.slaOnTrack, CheckCircle2]
-        ].map(([label, value, Icon]: any) => (
-          <Card key={label} className="border-none shadow-sm">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">{label}</p>
-                <Icon className="h-4 w-4 text-primary" />
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground font-serif">{value}</p>
-            </CardContent>
-          </Card>
-        ))}
-      </div>
-
-      <Card className="border-none shadow-sm bg-gradient-to-br from-[#059669] to-[#064e3b]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-white">
-            <Sparkles className="h-5 w-5 text-white/80" />
-            Strategy Assistant
-          </CardTitle>
-          <CardDescription className="text-white/60">AI-driven insights for your next campaign</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ul className="space-y-4">
-            {[
-              "Recommend budget split by campaign objective",
-              "Suggest platform mix per audience and KPI target",
-              "Build week-by-week campaign structure plan"
-            ].map((text) => (
-              <li key={text} className="flex items-start gap-3 text-sm text-white/80 font-medium">
-                <div className="mt-1 h-1.5 w-1.5 rounded-full bg-white/60 shrink-0" />
-                {text}
-              </li>
-            ))}
-          </ul>
-          <Button asChild className="mt-8 w-full rounded-xl bg-white/15 text-white border border-white/20 hover:bg-white/25">
-            <Link href="/smart-plan">Generate New Strategy</Link>
-          </Button>
-        </CardContent>
-      </Card>
-    </div>
-  );
-}
-
 export default function DashboardPage() {
   const { role, token, logout, hasHydrated } = useUserStore();
   const router = useRouter();
@@ -489,5 +420,5 @@ export default function DashboardPage() {
 
   if (role === "brand") return <BrandDashboard data={data} />;
   if (role === "influencer") return <InfluencerDashboard data={data} />;
-  return <AgencyDashboard data={data} />;
+  return <BrandDashboard data={data} variant="agency" />;
 }

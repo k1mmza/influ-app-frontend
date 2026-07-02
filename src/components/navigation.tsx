@@ -2,14 +2,17 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect, useState } from "react";
 import {
   Activity,
   Compass,
   Heart,
   LayoutDashboard,
   Megaphone,
+  Menu,
   MessageSquare,
   Sparkles,
+  X,
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -54,6 +57,14 @@ export function Navigation() {
   const pathname = usePathname();
   const { role, isLoggedIn, name } = useUserStore();
   const sidebar = useSidebarOptional();
+
+  // Mobile: below lg the sidebar stacks above content, so its full vertical menu
+  // would fill a small screen ("only menu" bug). Collapse it behind a top-bar
+  // hamburger — closed by default — and auto-close on navigation.
+  const [mobileOpen, setMobileOpen] = useState(false);
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
 
   const isLandingPage = pathname === "/";
   const isPublicPage =
@@ -147,7 +158,7 @@ export function Navigation() {
       <div
         className={cn(
           "flex items-center border-b border-border transition hover:bg-accent/40",
-          collapsed ? "justify-center px-2 py-4 lg:px-2" : "gap-3 px-5 py-5"
+          collapsed ? "justify-center px-2 py-4 lg:px-2" : "justify-between gap-3 px-5 py-5"
         )}
       >
         <Link
@@ -165,9 +176,26 @@ export function Navigation() {
             </div>
           ) : null}
         </Link>
+
+        {/* Mobile-only menu toggle. Hidden at lg where the full sidebar is shown. */}
+        <button
+          type="button"
+          onClick={() => setMobileOpen((open) => !open)}
+          aria-label={mobileOpen ? "Close menu" : "Open menu"}
+          aria-expanded={mobileOpen}
+          className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground lg:hidden"
+        >
+          {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+        </button>
       </div>
 
-      <div className={cn("flex flex-col gap-0.5 py-4", collapsed ? "px-2" : "px-3")}>
+      <div
+        className={cn(
+          "flex-col gap-0.5 py-4 lg:flex",
+          collapsed ? "px-2" : "px-3",
+          mobileOpen ? "flex" : "hidden"
+        )}
+      >
         {!collapsed ? (
           <p className="mb-2 px-3 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
             {getSidebarMenuHeading(role)}

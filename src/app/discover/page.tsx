@@ -198,8 +198,9 @@ function DiscoverPageContent() {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
 
-  // Pagination — 15 per page (5 rows × 3 cols)
-  const PAGE_SIZE = 15;
+  // Pagination — 12 per page. 12 divides 2/3/4 so the responsive grid
+  // (sm:2, lg:3, xl:4 cols) has a full last row at every breakpoint.
+  const PAGE_SIZE = 12;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);

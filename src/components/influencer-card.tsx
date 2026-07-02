@@ -87,12 +87,12 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
     <Card
       onClick={() => onSelect?.(influencer)}
       className={cn(
-        "group flex aspect-[5/7] h-full cursor-pointer flex-col overflow-hidden border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
+        "group flex h-full cursor-pointer flex-col overflow-hidden border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
         isActive ? "ring-2 ring-primary ring-offset-2" : "",
       )}
     >
-      {/* Top half — picture (60%) */}
-      <div className="relative w-full shrink-0 basis-[60%] overflow-hidden">
+      {/* Top — picture (fixed aspect so all cards' image regions match) */}
+      <div className="relative aspect-[6/5] w-full shrink-0 overflow-hidden">
         {showAvatarImg ? (
           <img
             src={activeAvatar as string}
@@ -138,8 +138,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         </div>
       </div>
 
-      {/* Bottom half — info (40%) */}
-      <CardContent className="flex basis-[40%] flex-col gap-2.5 overflow-hidden p-4">
+      {/* Bottom — info. flex-1 so it sizes to its content (button never clipped)
+          and stretches to keep grid rows uniform. */}
+      <CardContent className="flex flex-1 flex-col gap-2.5 p-4">
         {orderedPlatforms.length > 0 && (
           <div
             className="flex gap-1.5"
