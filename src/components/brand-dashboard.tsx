@@ -115,6 +115,10 @@ export function BrandDashboard({ data }: { data: any }) {
   };
 
   const active: any[] = data?.activeCampaigns ?? [];
+  // Authoritative total from stats — NOT active.length, which is the card's
+  // display list capped at 5 on the backend (take: 5). Using the list length
+  // undercounts the header badge for brands with >5 active campaigns.
+  const activeCampaignCount = Number(stats.activeCampaigns) || 0;
   const performance = { impressions: data?.performance?.impressions ?? 0, engagements: data?.performance?.engagements ?? 0 };
   const payments = {
     paidCount: data?.payments?.paidCount ?? 0,
@@ -176,7 +180,7 @@ export function BrandDashboard({ data }: { data: any }) {
       <DashboardPageHeader
         title="Brand Dashboard"
         subtitle="Monitor your campaign performance and collaborate with creators."
-        badge={`${active.length} active campaign${active.length === 1 ? "" : "s"}`}
+        badge={`${activeCampaignCount} active campaign${activeCampaignCount === 1 ? "" : "s"}`}
         action={
           <Link href="/campaigns/create">
             <DashboardHeaderAction>Create campaign</DashboardHeaderAction>
@@ -299,19 +303,62 @@ export function BrandDashboard({ data }: { data: any }) {
             {active.length === 0 && (
               <p className="text-sm text-muted-foreground">No active campaigns yet. Publish a campaign to start collaborating.</p>
             )}
-            {active.map((c: any) => (
-              <div key={c.id} className="group flex items-center justify-between rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted">
-                <div className="flex items-center gap-3">
-                  <div className="h-2 w-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="font-bold text-sm text-foreground">{c.name}</span>
+            {active.map((c: any) => {
+              const applicants = c._count?.applications ?? 0;
+              const budget = c.budget ?? 0;
+              const spent = c.budgetSpent ?? 0;
+              const pct = budget > 0 ? Math.min(100, Math.round((spent / budget) * 100)) : 0;
+              // PUBLIC = open for applications; ACTIVE = running with creators.
+              const isOpen = c.status === "PUBLIC";
+              return (
+                <div key={c.id} className="rounded-xl border border-border bg-muted/50 px-4 py-3 transition-all hover:bg-muted">
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex min-w-0 items-center gap-2.5">
+                      <Badge
+                        className={cn(
+                          "border-none text-[10px] font-bold uppercase tracking-wide",
+                          isOpen
+                            ? "bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/15"
+                            : "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/15"
+                        )}
+                      >
+                        {isOpen ? "Open" : "Active"}
+                      </Badge>
+                      <span className="truncate text-sm font-bold text-foreground">{c.name}</span>
+                    </div>
+                    <Button variant="ghost" size="sm" asChild className="h-8 shrink-0 px-2 font-bold text-primary hover:text-primary/80">
+                      <Link href={`/campaigns/${c.id}`}>
+                        Manage <ChevronRight className="ml-1 h-4 w-4" />
+                      </Link>
+                    </Button>
+                  </div>
+                  <div className="mt-2.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                    <Users className="h-3.5 w-3.5 shrink-0" />
+                    <span>{applicants} applicant{applicants === 1 ? "" : "s"}</span>
+                    {budget > 0 && (
+                      <>
+                        <span className="text-muted-foreground/40">·</span>
+                        <span>THB {spent.toLocaleString()} / {budget.toLocaleString()}</span>
+                      </>
+                    )}
+                  </div>
+                  {budget > 0 && (
+                    <div className="mt-2 h-1.5 w-full overflow-hidden rounded-full bg-muted-foreground/15">
+                      <div className="h-full rounded-full bg-primary transition-all duration-300" style={{ width: `${pct}%` }} />
+                    </div>
+                  )}
                 </div>
-                <Button variant="ghost" size="sm" asChild className="h-8 px-2 font-bold text-primary hover:text-primary/80">
-                  <Link href={`/campaigns/${c.id}`}>
-                    Manage <ChevronRight className="ml-1 h-4 w-4" />
-                  </Link>
-                </Button>
-              </div>
-            ))}
+              );
+            })}
+            {activeCampaignCount > active.length && (
+              <Link
+                href="/campaigns"
+                className="flex items-center justify-center gap-1 rounded-xl border border-border bg-muted/30 px-4 py-2.5 text-sm font-bold text-primary transition-all hover:bg-muted"
+              >
+                View all {activeCampaignCount} campaigns
+                <ChevronRight className="h-4 w-4" />
+              </Link>
+            )}
           </CardContent>
         </Card>
       </div>
