@@ -327,10 +327,12 @@ export async function apiGetSmartPlanBrief(
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
-  const data = await res.json();
-  // Backend returns null when no brief exists
-  if (!data) return null;
-  return data as GeneratedBrief;
+  // Backend returns null when no brief exists → NestJS sends a 200 with an EMPTY
+  // body (not "null"), so res.json() would throw "unexpected end of data". Read as
+  // text and only parse when there's actually content.
+  const text = await res.text();
+  if (!text) return null;
+  return JSON.parse(text) as GeneratedBrief;
 }
 
 export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {

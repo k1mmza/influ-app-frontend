@@ -82,6 +82,6 @@ export const useUserStore = create<UserState>()(
         }
       }
     }),
-    { name: "influapp-user" }
+    { name: "influapp-user", skipHydration: true }
   )
 );
