@@ -24,6 +24,9 @@ export function NavFooter() {
 
   const collapsed = sidebar?.collapsed ?? false;
   const toggleCollapsed = sidebar?.toggleCollapsed;
+  // Mobile: part of the collapsible hamburger menu (hidden until opened);
+  // always shown at lg. Shares SidebarContext state with Navigation's toggle.
+  const mobileOpen = sidebar?.mobileOpen ?? false;
 
   const handleLogout = () => {
     logout();
@@ -31,7 +34,7 @@ export function NavFooter() {
   };
 
   return (
-    <div className={cn("shrink-0", collapsed ? "p-2" : "p-3")}>
+    <div className={cn("shrink-0 lg:block", collapsed ? "p-2" : "p-3", mobileOpen ? "block" : "hidden")}>
       {toggleCollapsed ? (
         <button
           type="button"

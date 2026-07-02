@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import {
   Activity,
   Compass,
@@ -60,11 +60,13 @@ export function Navigation() {
 
   // Mobile: below lg the sidebar stacks above content, so its full vertical menu
   // would fill a small screen ("only menu" bug). Collapse it behind a top-bar
-  // hamburger — closed by default — and auto-close on navigation.
-  const [mobileOpen, setMobileOpen] = useState(false);
+  // hamburger — closed by default. State lives in SidebarContext so NavFooter
+  // (a sibling) hides/shows in lockstep. Auto-close on navigation.
+  const mobileOpen = sidebar?.mobileOpen ?? false;
+  const setMobileOpen = sidebar?.setMobileOpen;
   useEffect(() => {
-    setMobileOpen(false);
-  }, [pathname]);
+    setMobileOpen?.(false);
+  }, [pathname, setMobileOpen]);
 
   const isLandingPage = pathname === "/";
   const isPublicPage =
@@ -180,7 +182,7 @@ export function Navigation() {
         {/* Mobile-only menu toggle. Hidden at lg where the full sidebar is shown. */}
         <button
           type="button"
-          onClick={() => setMobileOpen((open) => !open)}
+          onClick={() => setMobileOpen?.(!mobileOpen)}
           aria-label={mobileOpen ? "Close menu" : "Open menu"}
           aria-expanded={mobileOpen}
           className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-muted-foreground transition hover:bg-accent hover:text-foreground lg:hidden"
