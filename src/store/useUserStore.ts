@@ -21,6 +21,10 @@ interface UserState {
   token: string | null;
   isRoleSelected: boolean;
   isLoggedIn: boolean;
+  // True once persist has finished reading localStorage. Guards must wait for
+  // this before treating an empty token as "logged out" — see skipHydration.
+  hasHydrated: boolean;
+  setHasHydrated: (value: boolean) => void;
   login: (email: string, password: string) => Promise<void>;
   register: (name: string, email: string, password: string, role: Role) => Promise<void>;
   setOAuthSession: (session: OAuthSession) => void;
@@ -37,6 +41,8 @@ export const useUserStore = create<UserState>()(
       token: null,
       isRoleSelected: false,
       isLoggedIn: false,
+      hasHydrated: false,
+      setHasHydrated: (value: boolean) => set({ hasHydrated: value }),
       login: async (email: string, password: string) => {
         const data = await apiLogin(email, password);
         set({
@@ -82,6 +88,14 @@ export const useUserStore = create<UserState>()(
         }
       }
     }),
-    { name: "influapp-user", skipHydration: true }
+    {
+      name: "influapp-user",
+      skipHydration: true,
+      onRehydrateStorage: () => (state) => {
+        // Runs when persist.rehydrate() completes (success or not); flip the flag
+        // so guards know the persisted token has been read from localStorage.
+        state?.setHasHydrated(true);
+      },
+    }
   )
 );

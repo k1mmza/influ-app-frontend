@@ -439,13 +439,17 @@ function AgencyDashboard({ data }: { data: any }) {
 }
 
 export default function DashboardPage() {
-  const { role, token, logout } = useUserStore();
+  const { role, token, logout, hasHydrated } = useUserStore();
   const router = useRouter();
   const [data, setData] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Wait until persist has read localStorage. Before rehydrate, token is the
+    // empty default even for a logged-in user, so redirecting here would bounce
+    // them to /login on every fresh load/refresh.
+    if (!hasHydrated) return;
     // No token at all → not logged in. Send to login rather than fetching with "Bearer null".
     if (!token) {
       router.replace("/login");
@@ -473,7 +477,7 @@ export default function DashboardPage() {
       }
     }
     fetchDashboard();
-  }, [token, logout, router]);
+  }, [hasHydrated, token, logout, router]);
 
   if (loading) {
     return (
