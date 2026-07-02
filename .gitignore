@@ -6,3 +6,5 @@ tsconfig.tsbuildinfo
 .gemini/
 # Claude Code local state
 .claude/
+handoff.md
+
