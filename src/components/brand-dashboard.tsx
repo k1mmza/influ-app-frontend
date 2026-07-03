@@ -133,9 +133,13 @@ export function BrandDashboard({
     pendingCount: data?.payments?.pendingCount ?? 0,
     activeBudget: data?.payments?.activeBudget ?? 0,
     budgetSpent: data?.payments?.budgetSpent ?? 0,
+    // Spend scoped to active campaigns only — shares activeBudget's scope, so the
+    // two divide into a meaningful %. Do NOT use budgetSpent here: that's all-time
+    // spend across every campaign status, a different set than activeBudget.
+    activeBudgetSpent: data?.payments?.activeBudgetSpent ?? 0,
   };
   const recentActivity: any[] = data?.recentActivity ?? [];
-  const spentPct = payments.activeBudget > 0 ? Math.min(100, Math.round((payments.budgetSpent / payments.activeBudget) * 100)) : 0;
+  const spentPct = payments.activeBudget > 0 ? Math.min(100, Math.round((payments.activeBudgetSpent / payments.activeBudget) * 100)) : 0;
 
   // Build the attention list. Order = most-actionable first. New item types are
   // added by pushing more entries here — the render below is agnostic to them.

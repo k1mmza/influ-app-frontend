@@ -521,6 +521,49 @@ export interface CampaignApplicationResponse {
   };
 }
 
+export interface ClientBrandResponse {
+  id: string;
+  brandName: string;
+  brandEmail?: string | null;
+  brandWebsite?: string | null;
+  logoUrl?: string | null;
+  origin?: "SELF_REGISTERED" | "AGENCY_MANAGED" | string;
+}
+
+/**
+ * Client brands the caller can create campaigns for (agency: all managed brands; brand: its own).
+ * `search` narrows by brand name; it is always applied on top of the server's
+ * owner-scoping, so it can only ever filter the caller's own brands.
+ */
+export async function apiGetClientBrands(token: string, search?: string): Promise<ClientBrandResponse[]> {
+  const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
+  const res = await fetch(`${API_URL}/client-brands${qs}`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch client brands"));
+  return res.json();
+}
+
+export interface CreateManagedBrandInput {
+  brandName: string;
+  brandEmail?: string;
+  logoUrl?: string;
+}
+
+/** Agency-only: create a managed (account-less) brand inline. Returns the new brand. */
+export async function apiCreateManagedBrand(
+  token: string,
+  data: CreateManagedBrandInput,
+): Promise<ClientBrandResponse> {
+  const res = await fetch(`${API_URL}/client-brands`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify(data),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create brand"));
+  return res.json();
+}
+
 export async function apiCreateCampaign(token: string, data: CampaignInput): Promise<CampaignResponse> {
   const res = await fetch(`${API_URL}/campaigns`, {
     method: "POST",
@@ -714,18 +757,9 @@ export async function apiMarkPhaseReady(token: string, conversationId: string) {
   return res.json() as Promise<{ workPhase: string; brandPhaseReady: boolean; influencerPhaseReady: boolean }>;
 }
 
-export async function apiUpdateConversationPhase(token: string, conversationId: string, workPhase: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/phase`, {
-    method: "PATCH",
-    headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
-    body: JSON.stringify({ workPhase }),
-  });
-  if (!res.ok) {
-    const error = await res.json();
-    throw new Error(error.message || "Failed to update phase");
-  }
-  return res.json();
-}
+// Removed apiUpdateConversationPhase — the backend PATCH /conversations/:id/phase
+// endpoint was deleted (unguarded phase-set with no consumer). Phase progression
+// goes through apiMarkPhaseReady (POST /:id/phase-ready).
 
 export async function apiMarkConversationRead(token: string, conversationId: string) {
   const res = await fetch(`${API_URL}/conversations/${conversationId}/read`, {

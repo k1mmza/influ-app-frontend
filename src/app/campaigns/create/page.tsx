@@ -53,16 +53,25 @@
 
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { FormEvent, useState } from "react";
+import { FormEvent, useEffect, useState } from "react";
 import {
   ArrowLeft,
   Calendar,
   Check,
   Loader2,
+  Plus,
+  Search,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { apiCreateCampaign, apiUpdateCampaign, CampaignVisibility } from "@/lib/api";
+import {
+  apiCreateCampaign,
+  apiUpdateCampaign,
+  apiGetClientBrands,
+  apiCreateManagedBrand,
+  CampaignVisibility,
+  ClientBrandResponse,
+} from "@/lib/api";
 import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
@@ -291,13 +300,6 @@ const textareaCls = cn(
   "resize-none leading-relaxed",
 );
 
-const selectCls = cn(
-  "mt-1 w-full cursor-pointer rounded-lg border border-border bg-card px-3 py-2",
-  "font-sans text-sm text-foreground shadow-sm",
-  "transition-all duration-150",
-  "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15",
-);
-
 /* ── Page component ──────────────────────────────────────────────────────── */
 
 export default function CreateCampaignPage() {
@@ -318,6 +320,18 @@ export default function CreateCampaignPage() {
   const [reviewDate, setReviewDate] = useState("");
   const [paymentDate, setPaymentDate] = useState("");
   const [clientBrandId, setClientBrandId] = useState("");
+  const [clientBrands, setClientBrands] = useState<ClientBrandResponse[]>([]);
+  const [brandsLoading, setBrandsLoading] = useState(false);
+  const [brandsError, setBrandsError] = useState<string | null>(null);
+  // Combobox (agency brand picker) local UI state.
+  const [brandQuery, setBrandQuery] = useState("");
+  const [brandMenuOpen, setBrandMenuOpen] = useState(false);
+  const [creatingBrand, setCreatingBrand] = useState(false);
+  const [newBrandName, setNewBrandName] = useState("");
+  const [newBrandEmail, setNewBrandEmail] = useState("");
+  const [newBrandLogo, setNewBrandLogo] = useState("");
+  const [brandCreateSubmitting, setBrandCreateSubmitting] = useState(false);
+  const [brandCreateError, setBrandCreateError] = useState<string | null>(null);
   const [platforms, setPlatforms] = useState("");
   const [locations, setLocations] = useState("");
   const [categories, setCategories] = useState("");
@@ -327,6 +341,31 @@ export default function CreateCampaignPage() {
   const [minAvgViews, setMinAvgViews] = useState("");
   const [submitting, setSubmitting] = useState<"draft" | "publish" | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  /* ── Load client brands for agency picker ──────────────────────────────── */
+  useEffect(() => {
+    if (role !== "agency" || !token) return;
+    let cancelled = false;
+    setBrandsLoading(true);
+    setBrandsError(null);
+    apiGetClientBrands(token)
+      .then((brands) => {
+        if (cancelled) return;
+        setClientBrands(brands);
+        // Auto-select when the agency manages exactly one brand.
+        if (brands.length === 1) setClientBrandId(brands[0].id);
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setBrandsError(err instanceof Error ? err.message : "Failed to load client brands");
+      })
+      .finally(() => {
+        if (!cancelled) setBrandsLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [role, token]);
 
   /* ── Access guard ──────────────────────────────────────────────────────── */
   if (role !== "brand" && role !== "agency") {
@@ -341,11 +380,73 @@ export default function CreateCampaignPage() {
     );
   }
 
+  /* ── Brand combobox helpers ────────────────────────────────────────────── */
+  const selectedBrand = clientBrands.find((b) => b.id === clientBrandId) ?? null;
+  const filteredBrands = clientBrands.filter((b) =>
+    b.brandName.toLowerCase().includes(brandQuery.trim().toLowerCase()),
+  );
+  const queryMatchesExisting = clientBrands.some(
+    (b) => b.brandName.trim().toLowerCase() === brandQuery.trim().toLowerCase(),
+  );
+
+  const selectBrand = (brand: ClientBrandResponse) => {
+    setClientBrandId(brand.id);
+    setBrandMenuOpen(false);
+    setBrandQuery("");
+    setError(null);
+  };
+
+  const clearBrand = () => {
+    setClientBrandId("");
+    setBrandQuery("");
+    setBrandMenuOpen(true);
+  };
+
+  const openCreateBrand = () => {
+    setNewBrandName(brandQuery.trim());
+    setNewBrandEmail("");
+    setNewBrandLogo("");
+    setBrandCreateError(null);
+    setCreatingBrand(true);
+    setBrandMenuOpen(false);
+  };
+
+  const handleCreateBrand = async () => {
+    if (!token) return;
+    if (!newBrandName.trim()) {
+      setBrandCreateError("Brand name is required.");
+      return;
+    }
+    setBrandCreateSubmitting(true);
+    setBrandCreateError(null);
+    try {
+      // Blank email must be omitted, not sent as "" — the backend @IsEmail would reject "".
+      const created = await apiCreateManagedBrand(token, {
+        brandName: newBrandName.trim(),
+        brandEmail: newBrandEmail.trim() || undefined,
+        logoUrl: newBrandLogo.trim() || undefined,
+      });
+      setClientBrands((prev) => [...prev, created]);
+      setClientBrandId(created.id);
+      setCreatingBrand(false);
+      setBrandQuery("");
+      setError(null);
+    } catch (err) {
+      setBrandCreateError(err instanceof Error ? err.message : "Failed to create brand");
+    } finally {
+      setBrandCreateSubmitting(false);
+    }
+  };
+
   /* ── Submit handler (unchanged) ────────────────────────────────────────── */
   const handleSubmit = async (event: FormEvent<HTMLFormElement>, publish: boolean) => {
     event.preventDefault();
     if (!token) {
       setError("Please log in again before creating a campaign.");
+      return;
+    }
+    if (role === "agency" && !clientBrandId) {
+      setError("Please select or create a client brand for this campaign.");
       return;
     }
 
@@ -514,18 +615,164 @@ export default function CreateCampaignPage() {
                     </div>
                   </div>
 
-                  {/* Agency: client brand ID */}
+                  {/* Agency: client brand picker (searchable combobox + inline create) */}
                   {role === "agency" ? (
                     <div>
-                      <Label htmlFor="clientBrandId" className={labelCls}>Client brand ID</Label>
-                      <Input
-                        id="clientBrandId"
-                        value={clientBrandId}
-                        onChange={(e) => setClientBrandId(e.target.value)}
-                        required
-                        className={inputCls}
-                        placeholder="Required for agency campaign creation"
-                      />
+                      <Label htmlFor="brandQuery" className={labelCls}>Client brand</Label>
+                      {brandsLoading ? (
+                        <p className="mt-1 flex items-center gap-2 font-sans text-sm text-muted-foreground">
+                          <Loader2 className="h-4 w-4 animate-spin" /> Loading client brands…
+                        </p>
+                      ) : brandsError ? (
+                        <p className="mt-1 font-sans text-sm text-destructive">{brandsError}</p>
+                      ) : selectedBrand ? (
+                        // Selected state — chip with a "Change" affordance.
+                        <div className="mt-1 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
+                          <span className="flex items-center gap-2 font-sans text-sm text-foreground">
+                            {selectedBrand.brandName}
+                            {selectedBrand.origin === "AGENCY_MANAGED" ? (
+                              <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                Managed
+                              </span>
+                            ) : null}
+                          </span>
+                          <button
+                            type="button"
+                            onClick={clearBrand}
+                            className="cursor-pointer font-sans text-xs font-medium text-primary hover:underline"
+                          >
+                            Change
+                          </button>
+                        </div>
+                      ) : (
+                        <div className="relative mt-1">
+                          {/* Backdrop closes the menu on outside click. */}
+                          {brandMenuOpen ? (
+                            <button
+                              type="button"
+                              aria-hidden
+                              tabIndex={-1}
+                              className="fixed inset-0 z-40 cursor-default"
+                              onClick={() => setBrandMenuOpen(false)}
+                            />
+                          ) : null}
+                          <div className="relative z-50">
+                            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                            <input
+                              id="brandQuery"
+                              value={brandQuery}
+                              onChange={(e) => {
+                                setBrandQuery(e.target.value);
+                                setBrandMenuOpen(true);
+                              }}
+                              onFocus={() => setBrandMenuOpen(true)}
+                              placeholder={
+                                clientBrands.length === 0
+                                  ? "Type a name to add your first brand…"
+                                  : "Search brands or type to create…"
+                              }
+                              className={cn(inputCls, "mt-0 pl-9")}
+                              autoComplete="off"
+                            />
+                            {brandMenuOpen ? (
+                              <div className="absolute left-0 right-0 top-[calc(100%+4px)] z-50 max-h-64 overflow-auto rounded-lg border border-border bg-card p-1 shadow-lg">
+                                {filteredBrands.map((brand) => (
+                                  <button
+                                    key={brand.id}
+                                    type="button"
+                                    onClick={() => selectBrand(brand)}
+                                    className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-left font-sans text-sm text-foreground transition-colors duration-150 hover:bg-muted"
+                                  >
+                                    <span>{brand.brandName}</span>
+                                    {brand.origin === "AGENCY_MANAGED" ? (
+                                      <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
+                                        Managed
+                                      </span>
+                                    ) : null}
+                                  </button>
+                                ))}
+                                {filteredBrands.length === 0 ? (
+                                  <p className="px-3 py-2 font-sans text-sm text-muted-foreground">
+                                    {brandQuery.trim() ? "No matching brands." : "No brands yet."}
+                                  </p>
+                                ) : null}
+                                {brandQuery.trim() && !queryMatchesExisting ? (
+                                  <button
+                                    type="button"
+                                    onClick={openCreateBrand}
+                                    className="flex w-full cursor-pointer items-center gap-2 rounded-md border-t border-border px-3 py-2 text-left font-sans text-sm font-medium text-primary transition-colors duration-150 hover:bg-muted"
+                                  >
+                                    <Plus className="h-4 w-4" /> Create &ldquo;{brandQuery.trim()}&rdquo;
+                                  </button>
+                                ) : null}
+                              </div>
+                            ) : null}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Inline "create managed brand" form */}
+                      {creatingBrand ? (
+                        <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/40 p-3">
+                          <div className="flex items-center justify-between">
+                            <span className="font-sans text-sm font-medium text-foreground">New brand</span>
+                            <button
+                              type="button"
+                              onClick={() => setCreatingBrand(false)}
+                              className="cursor-pointer text-muted-foreground hover:text-foreground"
+                              aria-label="Cancel new brand"
+                            >
+                              <X className="h-4 w-4" />
+                            </button>
+                          </div>
+                          <div>
+                            <Label htmlFor="newBrandName" className={labelCls}>Brand name *</Label>
+                            <Input
+                              id="newBrandName"
+                              value={newBrandName}
+                              onChange={(e) => setNewBrandName(e.target.value)}
+                              className={inputCls}
+                              placeholder="e.g. Acme Cosmetics"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="newBrandEmail" className={labelCls}>Contact email (optional)</Label>
+                            <Input
+                              id="newBrandEmail"
+                              type="email"
+                              value={newBrandEmail}
+                              onChange={(e) => setNewBrandEmail(e.target.value)}
+                              className={inputCls}
+                              placeholder="contact@brand.com"
+                            />
+                          </div>
+                          <div>
+                            <Label htmlFor="newBrandLogo" className={labelCls}>Logo URL (optional)</Label>
+                            <Input
+                              id="newBrandLogo"
+                              value={newBrandLogo}
+                              onChange={(e) => setNewBrandLogo(e.target.value)}
+                              className={inputCls}
+                              placeholder="https://…"
+                            />
+                          </div>
+                          {brandCreateError ? (
+                            <p className="font-sans text-sm text-destructive">{brandCreateError}</p>
+                          ) : null}
+                          <Button
+                            type="button"
+                            onClick={handleCreateBrand}
+                            disabled={brandCreateSubmitting}
+                            className="cursor-pointer"
+                          >
+                            {brandCreateSubmitting ? (
+                              <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Creating…</>
+                            ) : (
+                              <><Check className="mr-2 h-4 w-4" /> Create &amp; select</>
+                            )}
+                          </Button>
+                        </div>
+                      ) : null}
                     </div>
                   ) : null}
 

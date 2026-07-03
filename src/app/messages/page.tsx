@@ -42,14 +42,18 @@ function MessagesView({ role }: { role: string }) {
   const socketRef = useRef<Socket | null>(null);
   const activeConvIdRef = useRef<string | null>(null);
 
-  // Connect socket once on mount
+  // Connect socket once we have a token. The gateway authenticates the JWT on
+  // the handshake and rejects unauthenticated sockets, so the token must be sent
+  // via `auth`. Reconnects if the token changes (login/logout).
   useEffect(() => {
-    const socket = io(API_URL, { transports: ["websocket"] });
+    if (!token) return;
+    const socket = io(API_URL, { transports: ["websocket"], auth: { token } });
     socketRef.current = socket;
     return () => {
       socket.disconnect();
+      socketRef.current = null;
     };
-  }, []);
+  }, [token]);
 
   // Join/leave conversation room and listen for new messages
   useEffect(() => {
