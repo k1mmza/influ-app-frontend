@@ -21,10 +21,8 @@ import {
   Rocket,
   FileText,
   MessageSquare,
-  TrendingUp,
   Bell,
   CheckCircle2,
-  ExternalLink,
   Loader2,
   Inbox,
   Check,
@@ -197,6 +195,7 @@ function InfluencerDashboard({ data }: { data: any }) {
   };
 
   const recommended = data?.recommendedCampaigns ?? [];
+  const recentActivity = data?.recentActivity ?? [];
 
   return (
     <div className="space-y-8">
@@ -262,10 +261,12 @@ function InfluencerDashboard({ data }: { data: any }) {
                     </div>
                     <div>
                       <h3 className="font-bold text-foreground font-serif">{c.name}</h3>
-                      <p className="text-sm text-muted-foreground">{c.brand || c.clientBrand?.brandName || "Unknown Brand"}</p>
+                      <p className="text-sm text-muted-foreground">{c.clientBrand?.brandName || "Unknown Brand"}</p>
                     </div>
                   </div>
-                  <Badge variant="secondary" className="rounded-full bg-muted font-bold">{c.platform || "Any"}</Badge>
+                  {c.platform ? (
+                    <Badge variant="secondary" className="rounded-full bg-muted font-bold capitalize">{c.platform}</Badge>
+                  ) : null}
                 </div>
                 <div className="mt-6 grid grid-cols-2 gap-4">
                   <div className="space-y-1">
@@ -274,7 +275,7 @@ function InfluencerDashboard({ data }: { data: any }) {
                   </div>
                   <div className="space-y-1 text-right">
                     <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deadline</p>
-                    <p className="text-sm font-semibold text-foreground">{c.deadline || (c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD")}</p>
+                    <p className="text-sm font-semibold text-foreground">{c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD"}</p>
                   </div>
                 </div>
                 <div className="mt-6 flex gap-2">
@@ -310,28 +311,25 @@ function InfluencerDashboard({ data }: { data: any }) {
                 <span className="font-bold text-primary">{stats.activeCampaigns}</span>
               </div>
             </div>
-            <div className="flex gap-2">
-              <Button size="sm" className="flex-1 rounded-lg">Submit Work</Button>
-              <Button size="sm" variant="outline" className="flex-1 rounded-lg">Brief</Button>
-            </div>
+            {/* Brief + Submit Work both live in the campaign conversation's
+                workPhase flow (contact→brief→draft→work→payment). Rather than
+                rebuild standalone actions here, send the influencer to Messages. */}
+            <Button asChild size="sm" className="w-full rounded-lg">
+              <Link href="/messages">
+                <MessageSquare className="mr-2 h-3.5 w-3.5" /> Go to Messages
+              </Link>
+            </Button>
           </CardContent>
         </Card>
 
         <Card className="border-none shadow-sm">
           <CardHeader>
             <CardTitle className="text-lg">Performance</CardTitle>
-            <CardDescription>Engagement & Growth</CardDescription>
+            <CardDescription>Engagement</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-4 w-4 text-emerald-500" />
-                <span className="text-sm font-medium">Growth Rate</span>
-              </div>
-              <span className="text-sm font-bold text-emerald-600">
-                {stats.growthRate != null ? `${stats.growthRate > 0 ? "+" : ""}${stats.growthRate.toFixed(1)}%` : "—"}
-              </span>
-            </div>
+            {/* Growth Rate hidden until sync populates it — the platform adapters
+                are still stubs (growthRate always 0), so showing it is misleading. */}
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <CheckCircle2 className="h-4 w-4 text-primary" />
@@ -359,12 +357,33 @@ function InfluencerDashboard({ data }: { data: any }) {
                 Pending payout: <span className="font-semibold text-foreground">THB {stats.pendingPayout.toLocaleString()}</span>
               </p>
             )}
-            <Button variant="ghost" className="w-full justify-start px-0 text-primary font-bold">
-              View payouts <ExternalLink className="ml-2 h-4 w-4" />
-            </Button>
           </CardContent>
         </Card>
       </div>
+
+      {/* Recent Activity — reads data.recentActivity (Notification rows written by
+          notify() on draft review, invitation, and application-accept). */}
+      <Card className="border-none shadow-sm">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center gap-2">
+            <Bell className="h-5 w-5 text-amber-500" /> Recent Activity
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          {recentActivity.length === 0 && (
+            <p className="text-sm text-muted-foreground">No recent activity yet.</p>
+          )}
+          {recentActivity.map((act: any) => (
+            <div key={act.id} className="flex items-start gap-3 text-sm font-medium">
+              <div className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0", act.isRead ? "bg-muted-foreground/40" : "bg-primary")} />
+              <div className="min-w-0">
+                <span className="text-foreground">{act.title}</span>
+                {act.body ? <p className="text-xs text-muted-foreground line-clamp-1">{act.body}</p> : null}
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
     </div>
   );
 }
