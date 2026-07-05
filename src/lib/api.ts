@@ -686,11 +686,69 @@ export async function apiGetTracking(token: string): Promise<TrackingSummaryRow[
   return res.json();
 }
 
+// ── Tracking Report (client-facing presentation page) ────────────────────────
+// Growth % is intentionally absent from this contract: no real growth
+// computation exists in the backend (see the tracking data audit). Do not add
+// a growth field here or render one — Phase 2 item pending follower-history.
+
+export interface TrackingReportContent {
+  id: string;
+  influencerName: string;
+  platform: string | null;
+  contentType: string | null;
+  contentUrl: string | null;
+  // Raw workflow status: APPROVED | PENDING | REVISION_REQUESTED. Map to a
+  // display badge (Published / Reviewing / Draft) in the UI.
+  status: string;
+  // reviewedAt — when the brand APPROVED. Label this "Approved", NOT "Published"
+  // (no true on-platform publish date is captured yet — Phase 2).
+  approvedAt: string | null;
+  submittedAt: string;
+  // false => sync never ran for this content; render "Not yet synced", never a
+  // fabricated 0. All metric fields below are null when !synced.
+  synced: boolean;
+  views: number | null;
+  likes: number | null;
+  comments: number | null;
+  shares: number | null;
+  engagementRate: number | null;
+  recordedAt: string | null;
+  // 'trending' | 'high_engagement' | 'above_average'. Empty below 2 synced items.
+  badges: string[];
+}
+
+export interface TrackingReport {
+  campaign: {
+    id: string;
+    name: string;
+    status: string;
+    brandName: string | null;
+    brandLogoUrl: string | null; // may be null — fall back to brand initials
+    startedAt: string | null; // campaign createdAt (honest start)
+    submissionDate: string | null; // planned content due date; end of duration range
+  };
+  // target = accepted deliverable slots (no stored campaign target field).
+  progress: { totalDeliverables: number; published: number; remaining: number; pctComplete: number };
+  summary: { totalViews: number; avgEngagementRate: number; publishedPosts: number };
+  // Most recent recordedAt across the campaign's content, or null if nothing
+  // has ever synced (render an explicit empty state, not a stale date).
+  lastUpdated: string | null;
+  content: TrackingReportContent[];
+}
+
 export async function apiGetTrackingDetail(token: string, campaignId: string): Promise<TrackingDetailRow[]> {
   const res = await fetch(`${API_URL}/tracking/${campaignId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking detail"));
+  return res.json();
+}
+
+export async function apiGetTrackingReport(token: string, campaignId: string): Promise<TrackingReport> {
+  const res = await fetch(`${API_URL}/tracking/${campaignId}/report`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking report"));
   return res.json();
 }
 

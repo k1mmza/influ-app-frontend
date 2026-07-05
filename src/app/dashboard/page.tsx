@@ -10,7 +10,6 @@ import {
   apiGetInvitations,
   apiAcceptInvitation,
   apiDeclineInvitation,
-  apiApplyToCampaign,
   Invitation,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -161,28 +160,6 @@ function InfluencerInvitations() {
 }
 
 function InfluencerDashboard({ data }: { data: any }) {
-  const { token } = useUserStore();
-  const [applyingId, setApplyingId] = useState<string | null>(null);
-  const [appliedIds, setAppliedIds] = useState<Set<string>>(new Set());
-  const [applyError, setApplyError] = useState<string | null>(null);
-
-  const applyToCampaign = async (campaignId: string) => {
-    if (!token) {
-      setApplyError("Please log in again before applying.");
-      return;
-    }
-    setApplyingId(campaignId);
-    setApplyError(null);
-    try {
-      await apiApplyToCampaign(token, campaignId);
-      setAppliedIds((prev) => new Set(prev).add(campaignId));
-    } catch (err) {
-      setApplyError(err instanceof Error ? err.message : "Failed to apply to campaign");
-    } finally {
-      setApplyingId(null);
-    }
-  };
-
   const stats = {
     walletBalance: data?.stats?.walletBalance ?? 0,
     activeCampaigns: data?.stats?.activeCampaigns ?? 0,
@@ -194,7 +171,6 @@ function InfluencerDashboard({ data }: { data: any }) {
     pendingPayout: data?.stats?.pendingPayout ?? 0,
   };
 
-  const recommended = data?.recommendedCampaigns ?? [];
   const recentActivity = data?.recentActivity ?? [];
 
   return (
@@ -236,67 +212,6 @@ function InfluencerDashboard({ data }: { data: any }) {
       </div>
 
       <InfluencerInvitations />
-
-      <div className="space-y-6">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xl font-bold tracking-tight text-foreground font-serif">Recommended Campaigns</h2>
-          <Button variant="link" className="text-primary font-bold">View all</Button>
-        </div>
-        {applyError && <p className="text-sm font-medium text-destructive">{applyError}</p>}
-        {recommended.length === 0 ? (
-          <Card className="border-none shadow-sm">
-            <CardContent className="p-6">
-              <p className="text-sm text-muted-foreground">No recommended campaigns right now. Check back soon.</p>
-            </CardContent>
-          </Card>
-        ) : (
-        <div className="grid gap-6 md:grid-cols-2">
-          {recommended.map((c: any) => (
-            <Card key={c.id ?? c.name} className="border-none shadow-sm transition-all hover:shadow-md">
-              <CardContent className="p-6">
-                <div className="flex items-start justify-between">
-                  <div className="flex items-center gap-4">
-                    <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-muted text-2xl font-serif">
-                      {c.icon || "📢"}
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-foreground font-serif">{c.name}</h3>
-                      <p className="text-sm text-muted-foreground">{c.clientBrand?.brandName || "Unknown Brand"}</p>
-                    </div>
-                  </div>
-                  {c.platform ? (
-                    <Badge variant="secondary" className="rounded-full bg-muted font-bold capitalize">{c.platform}</Badge>
-                  ) : null}
-                </div>
-                <div className="mt-6 grid grid-cols-2 gap-4">
-                  <div className="space-y-1">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Budget</p>
-                    <p className="text-sm font-semibold text-foreground">THB {c.budget?.toLocaleString() || "0"}</p>
-                  </div>
-                  <div className="space-y-1 text-right">
-                    <p className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">Deadline</p>
-                    <p className="text-sm font-semibold text-foreground">{c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD"}</p>
-                  </div>
-                </div>
-                <div className="mt-6 flex gap-2">
-                  <Button
-                    className="flex-1 rounded-xl shadow-sm"
-                    disabled={!c.id || applyingId != null || appliedIds.has(c.id)}
-                    onClick={() => applyToCampaign(c.id)}
-                  >
-                    {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                    {appliedIds.has(c.id) ? "Applied" : "Apply Now"}
-                  </Button>
-                  <Button asChild variant="secondary" className="rounded-xl bg-muted">
-                    <Link href={`/campaigns/${c.id}`}>Details</Link>
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        )}
-      </div>
 
       <div className="grid gap-6 lg:grid-cols-3">
         <Card className="border-none shadow-sm">

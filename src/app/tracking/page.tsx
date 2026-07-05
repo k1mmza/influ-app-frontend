@@ -610,6 +610,15 @@ function TrackingPageContent() {
               <h2 className="truncate text-sm font-semibold text-foreground font-serif">{selectedCampaign.name}</h2>
             </div>
             <div className="flex shrink-0 items-center gap-1">
+              {/* Entry point to the client-facing presentation report. */}
+              <Link
+                href={`/tracking/${selectedCampaign.id}`}
+                title="Open client report"
+                className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-nav-forest-100 dark:hover:bg-nav-forest-900/30", pageAccent)}
+              >
+                <FileText className="h-4 w-4" />
+                <span className="hidden sm:inline">Open report</span>
+              </Link>
               <DetailViewToggle mode={detailViewMode} onChange={setDetailViewMode} disabled={detailRows.length === 0} />
               <button
                 type="button"
