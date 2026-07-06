@@ -119,6 +119,16 @@ export default function CampaignDetailPage() {
 
   const canManageCampaign = role === "brand" || role === "agency";
 
+  // Commercial-term lock: once ≥1 application is ACCEPTED (from either an
+  // APPLICATION or INVITATION origin — both converge on status 'ACCEPTED'), the
+  // campaign's commercial terms are frozen. This mirrors the backend enforcement
+  // in campaigns.service.updateCampaign; the UI just disables the inputs so the
+  // brand can't attempt an edit that the backend would 400 anyway.
+  const termsLocked = applications.some((a) => a.status === "ACCEPTED");
+  const lockedInputProps = termsLocked
+    ? { disabled: true, title: "Locked — campaign has accepted creators" }
+    : {};
+
   // Split the unified application list: brand-initiated invites vs. influencer-initiated applications.
   const invitations = applications.filter((a) => a.origin === "INVITATION");
   const inboundApplications = applications.filter((a) => (a.origin ?? "APPLICATION") === "APPLICATION");
@@ -473,19 +483,24 @@ export default function CampaignDetailPage() {
       };
       const hasRequirement = Object.values(requirement).some((value) => value != null && !(Array.isArray(value) && value.length === 0));
       const updatedFields: any = {
+        // Always-free fields
         name: editFormData.name?.trim() || undefined,
         objective: editFormData.objective || undefined,
-        budget: numberOrUndefined(editFormData.budget || ""),
         visibility: editFormData.visibility || undefined,
-        paymentType: editFormData.paymentType?.trim() || undefined,
         keyMessage: editFormData.keyMessage?.trim() || undefined,
-        deliverables: editFormData.deliverables?.trim() || undefined,
         doAndDont: editFormData.doAndDont?.trim() || undefined,
+        // Extend-only date fields (backend rejects a shorten regardless)
         applyDeadline: editFormData.applyDeadline || undefined,
         submissionDate: editFormData.submissionDate || undefined,
         reviewDate: editFormData.reviewDate || undefined,
         paymentDate: editFormData.paymentDate || undefined,
-        requirements: hasRequirement ? [requirement] : undefined,
+        // Commercial-term (LOCK-bucket) fields: omit entirely once locked so we
+        // never send an unchanged value that the backend's requirements[] guard
+        // (or a trim/format edge) would reject. Backend stays the source of truth.
+        budget: termsLocked ? undefined : numberOrUndefined(editFormData.budget || ""),
+        paymentType: termsLocked ? undefined : editFormData.paymentType?.trim() || undefined,
+        deliverables: termsLocked ? undefined : editFormData.deliverables?.trim() || undefined,
+        requirements: termsLocked ? undefined : hasRequirement ? [requirement] : undefined,
       };
       const updated = await apiUpdateCampaign(token, campaign.id, updatedFields);
       setCampaign(updated);
@@ -629,7 +644,9 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="Budget in THB"
+                    {...lockedInputProps}
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editVisibility">Visibility</Label>
@@ -651,7 +668,9 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, paymentType: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="Per post, package, affiliate"
+                    {...lockedInputProps}
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
               </>
             ) : (
@@ -705,6 +724,10 @@ export default function CampaignDetailPage() {
                 ) : null}
                 {canManageCampaign && campaign.status === "ACTIVE" ? (
                   <>
+                    <Button onClick={startEdit} variant="outline" className="rounded-xl">
+                      <Edit className="mr-2 h-4 w-4" />
+                      Edit
+                    </Button>
                     <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
                       {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
                       Mark complete
@@ -761,8 +784,10 @@ export default function CampaignDetailPage() {
                     value={editFormData.deliverables || ""}
                     onChange={(e) => setEditFormData({ ...editFormData, deliverables: e.target.value })}
                     placeholder="Enter deliverables"
-                    className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring"
+                    className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
+                    {...lockedInputProps}
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editDoAndDont" className="font-semibold text-foreground mb-1">Do and don't</Label>
@@ -810,9 +835,11 @@ export default function CampaignDetailPage() {
                     id="editApplyDeadline"
                     type="date"
                     value={editFormData.applyDeadline || ""}
+                    min={termsLocked ? campaign.applyDeadline?.substring(0, 10) : undefined}
                     onChange={(e) => setEditFormData({ ...editFormData, applyDeadline: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editSubmissionDate">Submission date</Label>
@@ -820,9 +847,11 @@ export default function CampaignDetailPage() {
                     id="editSubmissionDate"
                     type="date"
                     value={editFormData.submissionDate || ""}
+                    min={termsLocked ? campaign.submissionDate?.substring(0, 10) : undefined}
                     onChange={(e) => setEditFormData({ ...editFormData, submissionDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editReviewDate">Review date</Label>
@@ -830,9 +859,11 @@ export default function CampaignDetailPage() {
                     id="editReviewDate"
                     type="date"
                     value={editFormData.reviewDate || ""}
+                    min={termsLocked ? campaign.reviewDate?.substring(0, 10) : undefined}
                     onChange={(e) => setEditFormData({ ...editFormData, reviewDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editPaymentDate">Payment date</Label>
@@ -840,9 +871,11 @@ export default function CampaignDetailPage() {
                     id="editPaymentDate"
                     type="date"
                     value={editFormData.paymentDate || ""}
+                    min={termsLocked ? campaign.paymentDate?.substring(0, 10) : undefined}
                     onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
+                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
               </>
             ) : (
@@ -864,6 +897,12 @@ export default function CampaignDetailPage() {
           </CardHeader>
           <CardContent className="text-sm text-muted-foreground">
             {isEditing && editFormData ? (
+              <>
+              {termsLocked ? (
+                <p className="mb-3 text-xs text-muted-foreground">
+                  Creator requirements are locked — this campaign has accepted creators.
+                </p>
+              ) : null}
               <div className="grid gap-4 md:grid-cols-2 rounded-xl border border-border p-4">
                 <div>
                   <Label htmlFor="editMinFollowers">Min followers</Label>
@@ -875,6 +914,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, minFollowers: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="e.g. 10000"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div>
@@ -887,6 +927,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, minEngagementRate: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="e.g. 5"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div>
@@ -899,6 +940,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, minAvgViews: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="e.g. 15000"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div>
@@ -909,6 +951,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, platforms: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="TikTok, Instagram, YouTube"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div>
@@ -919,6 +962,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, locations: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="Bangkok, Thailand"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div>
@@ -929,6 +973,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, categories: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="Fashion, Lifestyle"
+                    {...lockedInputProps}
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -939,9 +984,11 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, contentType: e.target.value })}
                     className="mt-1 rounded-xl"
                     placeholder="Reels, Story, Short"
+                    {...lockedInputProps}
                   />
                 </div>
               </div>
+              </>
             ) : (
               <div className="grid gap-4 md:grid-cols-2">
                 {(campaign.requirements ?? []).map((requirement, index) => (
