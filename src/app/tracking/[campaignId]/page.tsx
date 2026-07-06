@@ -107,6 +107,27 @@ function contentLabel(c: Pick<TrackingReportContent, "platform" | "contentType">
   return [platform, type].filter(Boolean).join(" ") || "Content";
 }
 
+/** Real content title (Phase 2, bridged from Draft) when present; otherwise the
+ *  Phase 1 derived "Platform Type" label. */
+function contentName(c: TrackingReportContent): string {
+  return c.title?.trim() || contentLabel(c);
+}
+
+/** Prefer the true on-platform publish date ("Published"); fall back to the
+ *  approval date ("Approved") when publish date isn't captured (non-synced
+ *  content, Instagram, or TikTok thumbnails-excluded path). Null when neither. */
+function publishInfo(c: TrackingReportContent): { label: string; date: string } | null {
+  if (c.publishedAt) {
+    const d = formatDate(c.publishedAt);
+    if (d) return { label: "Published", date: d };
+  }
+  if (c.approvedAt) {
+    const d = formatDate(c.approvedAt);
+    if (d) return { label: "Approved", date: d };
+  }
+  return null;
+}
+
 function contentTypeIcon(type: string | null, className = "h-5 w-5") {
   const t = (type ?? "").toLowerCase();
   if (t.includes("video")) return <Video className={className} />;
@@ -191,8 +212,8 @@ function PlatformPill({ platform }: { platform: string | null }) {
   );
 }
 
-/** Thumbnail slot (Adjustment #3): a premium content-type icon placeholder —
- *  NOT an <img> that would 404 (thumbnailUrl is never populated today). */
+/** Icon placeholder for the thumbnail slot — used when no real thumbnail exists
+ *  (non-synced content, Instagram, TikTok) or if a stored URL fails to load. */
 function ThumbnailPlaceholder({ contentType }: { contentType: string | null }) {
   return (
     <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#F8F9FA] to-[#ECECEC] text-[#9CA3AF] dark:border-neutral-800 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-500">
@@ -203,6 +224,25 @@ function ThumbnailPlaceholder({ contentType }: { contentType: string | null }) {
         </span>
       </div>
     </div>
+  );
+}
+
+/** Phase 2: render the real captured thumbnail when present, falling back to the
+ *  icon placeholder if it's absent OR if the image fails to load (defensive —
+ *  e.g. a URL that later rots). */
+function ContentThumbnail({ content }: { content: TrackingReportContent }) {
+  const [failed, setFailed] = useState(false);
+  if (!content.thumbnailUrl || failed) {
+    return <ThumbnailPlaceholder contentType={content.contentType} />;
+  }
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- external CDN thumbs (i.ytimg.com); next/image remote config not set up for this
+    <img
+      src={content.thumbnailUrl}
+      alt={contentName(content)}
+      onError={() => setFailed(true)}
+      className="aspect-[4/3] w-full rounded-2xl border border-[#E5E7EB] object-cover dark:border-neutral-800"
+    />
   );
 }
 
@@ -449,7 +489,7 @@ function ContentTimeline({ report }: { report: TrackingReport }) {
       <div className={cn(CARD, "p-8")}>
         <ol className="relative">
           {items.map((c, i) => {
-            const approved = formatDate(c.approvedAt);
+            const info = publishInfo(c);
             return (
               <li key={c.id} className="relative flex gap-5 pb-8 last:pb-0">
                 {/* Rail */}
@@ -467,11 +507,12 @@ function ContentTimeline({ report }: { report: TrackingReport }) {
                 <div className="flex min-w-0 flex-1 flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
                   <div className="min-w-0">
                     <p className={cn("text-xs", T_MUTED)}>
-                      {/* Relabeled "Approved" — not "Published" (Adjustment #2). */}
-                      {approved ? `Approved ${approved}` : "Approval date not recorded"}
+                      {/* Real publish date ("Published") when captured, else the
+                          approval date ("Approved") as an honest fallback. */}
+                      {info ? `${info.label} ${info.date}` : "Publish date not recorded"}
                     </p>
                     <p className={cn("mt-0.5 font-medium", T_PRIMARY)}>
-                      {contentLabel(c)}
+                      {contentName(c)}
                     </p>
                     <p className={cn("text-sm", T_SECOND)}>
                       {c.influencerName}
@@ -516,13 +557,13 @@ function FeaturedShowcase({ report }: { report: TrackingReport }) {
       {/* Two-column masonry-ish grid (columns keep card heights independent). */}
       <div className="gap-6 sm:columns-2 [&>*]:mb-6 [&>*]:break-inside-avoid">
         {featured.map((c) => {
-          const approved = formatDate(c.approvedAt);
+          const info = publishInfo(c);
           const hasLink = !!c.contentUrl;
           return (
             <article key={c.id} className={cn(CARD, "overflow-hidden")}>
               <div className="p-5">
                 <div className="relative">
-                  <ThumbnailPlaceholder contentType={c.contentType} />
+                  <ContentThumbnail content={c} />
                   <Avatar className="absolute -bottom-3 left-3 h-9 w-9 border-2 border-white dark:border-neutral-900">
                     <AvatarFallback className="bg-[#F8F9FA] text-[11px] font-semibold text-[#6B7280] dark:bg-neutral-800 dark:text-neutral-400">
                       {getInitials(c.influencerName)}
@@ -533,7 +574,7 @@ function FeaturedShowcase({ report }: { report: TrackingReport }) {
                 <div className="mt-6 flex items-start justify-between gap-3">
                   <div className="min-w-0">
                     <p className={cn("font-medium", T_PRIMARY)}>{c.influencerName}</p>
-                    <p className={cn("text-sm", T_SECOND)}>{contentLabel(c)}</p>
+                    <p className={cn("text-sm", T_SECOND)}>{contentName(c)}</p>
                   </div>
                   {c.badges[0] ? <PerfBadge badge={c.badges[0]} /> : null}
                 </div>
@@ -546,7 +587,7 @@ function FeaturedShowcase({ report }: { report: TrackingReport }) {
                     </span>
                   ) : null}
                   <span className={cn("text-xs", T_MUTED)}>
-                    {approved ? `· Approved ${approved}` : "· Approval date not recorded"}
+                    {info ? `· ${info.label} ${info.date}` : "· Publish date not recorded"}
                   </span>
                 </div>
 
@@ -637,7 +678,7 @@ function InfluencerTable({ report }: { report: TrackingReport }) {
       list = list.filter(
         (c) =>
           c.influencerName.toLowerCase().includes(q) ||
-          contentLabel(c).toLowerCase().includes(q)
+          contentName(c).toLowerCase().includes(q)
       );
     if (platform !== "all") list = list.filter((c) => c.platform === platform);
     if (type !== "all") list = list.filter((c) => c.contentType === type);
@@ -729,7 +770,7 @@ function InfluencerTable({ report }: { report: TrackingReport }) {
                 <th className={cn(thCls, "text-right")}>Views</th>
                 <th className={cn(thCls, "text-right")}>ER</th>
                 <th className={thCls}>Status</th>
-                <th className={thCls}>Approved</th>
+                <th className={thCls}>Published</th>
                 <th className={thCls}>Last Synced</th>
                 <th className={cn(thCls, "text-right")}>Actions</th>
               </tr>
@@ -743,7 +784,7 @@ function InfluencerTable({ report }: { report: TrackingReport }) {
                 </tr>
               ) : (
                 rows.map((c) => {
-                  const approved = formatDate(c.approvedAt);
+                  const info = publishInfo(c);
                   const synced = formatDate(c.recordedAt);
                   return (
                     <tr
@@ -765,7 +806,7 @@ function InfluencerTable({ report }: { report: TrackingReport }) {
                           </span>
                         </div>
                       </td>
-                      <td className={tdCls}>{contentLabel(c)}</td>
+                      <td className={tdCls}>{contentName(c)}</td>
                       <td className={tdCls}>
                         {c.contentUrl ? (
                           <a
@@ -800,7 +841,25 @@ function InfluencerTable({ report }: { report: TrackingReport }) {
                       <td className={tdCls}>
                         <StatusBadge reviewStatus={c.status} />
                       </td>
-                      <td className={tdCls}>{approved ?? <span className={T_MUTED}>—</span>}</td>
+                      <td className={tdCls}>
+                        {info ? (
+                          // A real publish date renders normally; an approval-date
+                          // fallback is muted + tooltipped so the "Published"
+                          // column never misrepresents an approval date as one.
+                          <span
+                            className={info.label === "Approved" ? T_MUTED : undefined}
+                            title={
+                              info.label === "Approved"
+                                ? "Approval date (no publish date captured yet)"
+                                : "Published"
+                            }
+                          >
+                            {info.date}
+                          </span>
+                        ) : (
+                          <span className={T_MUTED}>—</span>
+                        )}
+                      </td>
                       <td className={tdCls}>
                         {synced ?? <span className={T_MUTED}>Not yet synced</span>}
                       </td>

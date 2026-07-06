@@ -697,6 +697,11 @@ export interface TrackingReportContent {
   platform: string | null;
   contentType: string | null;
   contentUrl: string | null;
+  // Phase 2 metadata, all nullable — fall back to Phase 1 placeholders when null.
+  title: string | null; // real content title (from Draft), else derive a label
+  thumbnailUrl: string | null; // real thumbnail (YouTube), else icon placeholder
+  publishedAt: string | null; // true publish date; label "Published" when present,
+  // else fall back to approvedAt labelled "Approved"
   // Raw workflow status: APPROVED | PENDING | REVISION_REQUESTED. Map to a
   // display badge (Published / Reviewing / Draft) in the UI.
   status: string;
