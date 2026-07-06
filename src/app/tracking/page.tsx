@@ -444,17 +444,6 @@ function TrackingPageContent() {
     );
   }
 
-  const shareTrackingLink = async () => {
-    if (!selectedId || typeof window === "undefined") return;
-    const detailUrl = `${window.location.origin}/tracking?campaign=${selectedId}`;
-    try {
-      await navigator.clipboard.writeText(detailUrl);
-      setShareMessage("Tracking detail link copied.");
-    } catch {
-      setShareMessage("Unable to copy automatically. Please copy from the browser URL.");
-    }
-  };
-
   const exportExcel = () => {
     if (!selectedId || detailRows.length === 0) return;
     exportRowsToExcel({
@@ -620,15 +609,6 @@ function TrackingPageContent() {
                 <span className="hidden sm:inline">Open report</span>
               </Link>
               <DetailViewToggle mode={detailViewMode} onChange={setDetailViewMode} disabled={detailRows.length === 0} />
-              <button
-                type="button"
-                onClick={shareTrackingLink}
-                disabled={detailRows.length === 0}
-                title="Share link"
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:opacity-40"
-              >
-                <Share2 className="h-4 w-4" />
-              </button>
               <button
                 type="button"
                 onClick={exportExcel}

@@ -757,6 +757,75 @@ export async function apiGetTrackingReport(token: string, campaignId: string): P
   return res.json();
 }
 
+// ── Public "Share Report" links ──────────────────────────────────────────────
+
+// A share link record (the campaign owner's view). The public URL is composed on
+// the client from the browser origin + token — the backend never returns a URL.
+export interface TrackingShareLink {
+  id: string;
+  token: string;
+  expiresAt: string | null;
+  lastViewedAt: string | null;
+  createdAt: string;
+}
+
+// The public report is the backend's presentation-safe allowlist: campaign.id is
+// dropped, and content is published-only WITHOUT the internal status/submittedAt
+// fields. Everything else mirrors the authenticated report shape so the same UI
+// components render both.
+export type PublicTrackingReportContent = Omit<
+  TrackingReportContent,
+  "status" | "submittedAt"
+>;
+
+export interface PublicTrackingReport {
+  campaign: Omit<TrackingReport["campaign"], "id">;
+  progress: TrackingReport["progress"];
+  summary: TrackingReport["summary"];
+  lastUpdated: string | null;
+  content: PublicTrackingReportContent[];
+}
+
+/** Owner-only: mint a new public share link for a campaign's report. */
+export async function apiCreateShareLink(token: string, campaignId: string): Promise<TrackingShareLink> {
+  const res = await fetch(`${API_URL}/tracking/${campaignId}/share`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create share link"));
+  return res.json();
+}
+
+/** Owner-only: list a campaign's currently active (non-revoked, non-expired) links. */
+export async function apiListShareLinks(token: string, campaignId: string): Promise<TrackingShareLink[]> {
+  const res = await fetch(`${API_URL}/tracking/${campaignId}/share`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
+  return res.json();
+}
+
+/** Owner-only: revoke a single share link (kills just that URL). */
+export async function apiRevokeShareLink(token: string, linkId: string): Promise<{ revoked: boolean }> {
+  const res = await fetch(`${API_URL}/tracking/share/${linkId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to revoke share link"));
+  return res.json();
+}
+
+/**
+ * Public, UNAUTHENTICATED report fetch by share token — deliberately sends NO
+ * Authorization header (the token in the path is the only credential). A 404
+ * means the link is unknown, revoked, or expired.
+ */
+export async function apiGetPublicTrackingReport(shareToken: string): Promise<PublicTrackingReport> {
+  const res = await fetch(`${API_URL}/public/tracking/${encodeURIComponent(shareToken)}`);
+  if (!res.ok) throw new Error(await readApiError(res, "This report link is no longer available"));
+  return res.json();
+}
+
 export async function apiConnectPlatform(token: string, platform: string): Promise<{ authUrl: string }> {
   const res = await fetch(`${API_URL}/auth/platform/connect`, {
     method: "POST",

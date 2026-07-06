@@ -51,6 +51,10 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
+  // Public "Share Report" links: an account-less visitor opens these, so they
+  // must NEVER get the authenticated sidebar chrome. Render bare, full-width —
+  // the page supplies its own report canvas.
+  const isPublicReport = pathname.startsWith("/tracking/public/");
   const pageBg = getPageBgClass(pathname);
   const { isLoggedIn, token, role } = useUserStore();
   const { error, clearError, syncFromServer } = useShortlistStore();
@@ -74,6 +78,11 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // A3: auth pages (incl. /auth/callback) render bare — no nav/sidebar.
   if (isAuthPage) {
     return <main className="mx-auto min-h-screen max-w-6xl px-4 py-8">{children}</main>;
+  }
+
+  // A3b: public shared report — bare, full-width, no nav/sidebar (no login).
+  if (isPublicReport) {
+    return <main className="min-h-screen">{children}</main>;
   }
 
   // A4: landing + public-info pages use the top-nav + footer layout.
