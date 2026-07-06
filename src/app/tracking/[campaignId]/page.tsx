@@ -216,7 +216,7 @@ function PlatformPill({ platform }: { platform: string | null }) {
  *  (non-synced content, Instagram, TikTok) or if a stored URL fails to load. */
 function ThumbnailPlaceholder({ contentType }: { contentType: string | null }) {
   return (
-    <div className="flex aspect-[4/3] w-full items-center justify-center rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#F8F9FA] to-[#ECECEC] text-[#9CA3AF] dark:border-neutral-800 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-500">
+    <div className="flex aspect-video w-full items-center justify-center rounded-2xl border border-[#E5E7EB] bg-gradient-to-br from-[#F8F9FA] to-[#ECECEC] text-[#9CA3AF] dark:border-neutral-800 dark:from-neutral-800 dark:to-neutral-900 dark:text-neutral-500">
       <div className="flex flex-col items-center gap-2">
         {contentTypeIcon(contentType, "h-8 w-8")}
         <span className="text-xs font-medium capitalize">
@@ -241,7 +241,9 @@ function ContentThumbnail({ content }: { content: TrackingReportContent }) {
       src={content.thumbnailUrl}
       alt={contentName(content)}
       onError={() => setFailed(true)}
-      className="aspect-[4/3] w-full rounded-2xl border border-[#E5E7EB] object-cover dark:border-neutral-800"
+      // 16:9 matches native platform thumbnails (YouTube), so object-cover shows
+      // the full frame uncropped.
+      className="aspect-video w-full rounded-2xl border border-[#E5E7EB] object-cover dark:border-neutral-800"
     />
   );
 }
