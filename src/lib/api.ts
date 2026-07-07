@@ -826,6 +826,77 @@ export async function apiGetPublicTrackingReport(shareToken: string): Promise<Pu
   return res.json();
 }
 
+// ── Public "Share Campaign" links ────────────────────────────────────────────
+
+// A share link record (the campaign owner's view). The public URL is composed on
+// the client from the browser origin + token — the backend never returns a URL.
+export interface CampaignShareLink {
+  id: string;
+  token: string;
+  expiresAt: string | null;
+  lastViewedAt: string | null;
+  createdAt: string;
+}
+
+// The backend's presentation-safe allowlist for a shared campaign. Budget,
+// payment, visibility, applications, and internal ids are deliberately excluded.
+export interface PublicCampaign {
+  name: string;
+  status: string;
+  brandName: string | null;
+  brandLogoUrl: string | null;
+  coverImageUrl: string | null;
+  objective: string | null;
+  keyMessage: string | null;
+  doAndDont: string | null;
+  deliverables: string | null;
+  startedAt: string | null;
+  submissionDate: string | null;
+  applyDeadline: string | null;
+  reviewDate: string | null;
+  requirements: CampaignRequirementInput[];
+}
+
+/** Owner-only: mint a new public share link for a campaign. */
+export async function apiCreateCampaignShareLink(token: string, campaignId: string): Promise<CampaignShareLink> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/share`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create share link"));
+  return res.json();
+}
+
+/** Owner-only: list a campaign's currently active (non-revoked, non-expired) links. */
+export async function apiListCampaignShareLinks(token: string, campaignId: string): Promise<CampaignShareLink[]> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/share`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
+  return res.json();
+}
+
+/** Owner-only: revoke a single share link (kills just that URL). */
+export async function apiRevokeCampaignShareLink(token: string, linkId: string): Promise<{ revoked: boolean }> {
+  const res = await fetch(`${API_URL}/campaigns/share/${linkId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to revoke share link"));
+  return res.json();
+}
+
+/**
+ * Public, UNAUTHENTICATED campaign fetch by share token — deliberately sends NO
+ * Authorization header (the token in the path is the only credential). A 404
+ * means the link is unknown, revoked, or expired.
+ */
+export async function apiGetPublicCampaign(shareToken: string): Promise<PublicCampaign> {
+  const res = await fetch(`${API_URL}/public/campaigns/${encodeURIComponent(shareToken)}`);
+  if (!res.ok) throw new Error(await readApiError(res, "This campaign link is no longer available"));
+  return res.json();
+}
+
 export async function apiConnectPlatform(token: string, platform: string): Promise<{ authUrl: string }> {
   const res = await fetch(`${API_URL}/auth/platform/connect`, {
     method: "POST",

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -24,6 +24,7 @@ import {
 import { CampaignPartnerReviews } from "@/components/CampaignPartnerReviews";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { useUserStore } from "@/store/useUserStore";
+import { ShareCampaignModal } from "@/components/campaigns/share-campaign-modal";
 import { Role } from "@/lib/types";
 import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
 import { exportRowsToExcel } from "@/lib/excel";
@@ -118,6 +119,7 @@ export default function CampaignDetailPage() {
   const [invitingId, setInvitingId] = useState<string | null>(null);
 
   const canManageCampaign = role === "brand" || role === "agency";
+  const [shareOpen, setShareOpen] = useState(false);
 
   // Commercial-term lock: once ≥1 application is ACCEPTED (from either an
   // APPLICATION or INVITATION origin — both converge on status 'ACCEPTED'), the
@@ -1260,6 +1262,32 @@ export default function CampaignDetailPage() {
             </div>
           </CardContent>
         </Card>
+      ) : null}
+
+      {canManageCampaign ? (
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Share campaign</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="mb-3 text-sm text-muted-foreground">
+              Generate a public, account-less link to a presentation-safe view of
+              this campaign. Budget, payment, and applicant data are never shown.
+            </p>
+            <Button variant="outline" onClick={() => setShareOpen(true)} className="rounded-xl">
+              <Share2 className="mr-2 h-4 w-4" />
+              Share campaign
+            </Button>
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {shareOpen && token ? (
+        <ShareCampaignModal
+          token={token}
+          campaignId={id}
+          onClose={() => setShareOpen(false)}
+        />
       ) : null}
 
       {detailInfluencer && detailInfluencer.meta ? (

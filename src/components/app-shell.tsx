@@ -51,10 +51,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
-  // Public "Share Report" links: an account-less visitor opens these, so they
-  // must NEVER get the authenticated sidebar chrome. Render bare, full-width —
-  // the page supplies its own report canvas.
-  const isPublicReport = pathname.startsWith("/tracking/public/");
+  // Public "Share Report" / "Share Campaign" links: an account-less visitor opens
+  // these, so they must NEVER get the authenticated sidebar chrome. Render bare,
+  // full-width — the page supplies its own canvas.
+  const isPublicReport =
+    pathname.startsWith("/tracking/public/") ||
+    pathname.startsWith("/campaigns/public/");
   const pageBg = getPageBgClass(pathname);
   const { isLoggedIn, token, role } = useUserStore();
   const { error, clearError, syncFromServer } = useShortlistStore();
