@@ -49,7 +49,7 @@ export function WorkStatusIndicator({ phase, className = "" }: { phase: WorkPhas
   return (
     <span className={`inline-flex items-center gap-1.5 ${className}`} title={workPhaseLabel(phase)}>
       <span className={`h-2.5 w-2.5 shrink-0 rounded-full ${phaseDotClass[phase]}`} aria-hidden />
-      <span className="text-[11px] font-medium text-muted-foreground">{workPhaseLabel(phase)}</span>
+      <span className="text-xs font-medium text-muted-foreground">{workPhaseLabel(phase)}</span>
     </span>
   );
 }
@@ -431,8 +431,8 @@ export function ProcessOfWorkPanel({
                     : "border-border bg-muted/80 hover:border-primary/20 hover:bg-card"
                 }`}
               >
-                <span className={`truncate text-xs font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : isActive ? "text-primary" : "text-foreground"}`}>{s.label}</span>
-                <span className={`truncate text-[10px] leading-tight ${done ? "text-emerald-700" : isActive ? "text-primary/70" : "text-muted-foreground"}`}>{done ? "✓ Done" : isActive ? "Active" : s.hint}</span>
+                <span className={`truncate text-sm font-semibold leading-tight sm:text-sm ${done ? "text-emerald-900" : isActive ? "text-primary" : "text-foreground"}`}>{s.label}</span>
+                <span className={`truncate text-xs leading-tight ${done ? "text-emerald-700" : isActive ? "text-primary/70" : "text-muted-foreground"}`}>{done ? "✓ Done" : isActive ? "Active" : s.hint}</span>
               </button>
             </li>
           );
@@ -442,7 +442,7 @@ export function ProcessOfWorkPanel({
       {/* Phase confirmation — both parties must confirm to advance */}
       {currentPhase && currentPhase !== "payment" && (
         <div className="mt-3 flex items-center justify-between gap-3 rounded-xl border border-border bg-muted/60 px-4 py-3">
-          <div className="flex items-center gap-3 text-xs text-muted-foreground">
+          <div className="flex items-center gap-3 text-sm text-muted-foreground">
             <span className={`flex items-center gap-1 font-medium ${brandPhaseReady ? "text-emerald-600" : "text-muted-foreground"}`}>
               <span className={`h-2 w-2 rounded-full ${brandPhaseReady ? "bg-emerald-500" : "bg-border"}`} />
               Brand
@@ -460,14 +460,14 @@ export function ProcessOfWorkPanel({
           {(() => {
             const myReady = variant === "brand" ? brandPhaseReady : influencerPhaseReady;
             return myReady ? (
-              <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-xs font-semibold text-emerald-700">
+              <span className="rounded-lg bg-emerald-100 px-3 py-1.5 text-sm font-semibold text-emerald-700">
                 You confirmed ✓
               </span>
             ) : (
               <button
                 type="button"
                 onClick={onFinishPhase}
-                className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-primary/90"
+                className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white transition hover:bg-primary/90"
               >
                 Finish {workPhaseLabel(currentPhase)} →
               </button>
@@ -484,19 +484,19 @@ export function ProcessOfWorkPanel({
         </p>
         {attachments?.contractUrl ? (
           <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
-            <span className="text-xs font-semibold text-emerald-700">Uploaded</span>
-            <a href={fileUrl(attachments.contractUrl) ?? "#"} target="_blank" rel="noreferrer" className="text-xs font-semibold text-primary hover:underline truncate">
+            <span className="text-sm font-semibold text-emerald-700">Uploaded</span>
+            <a href={fileUrl(attachments.contractUrl) ?? "#"} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
               View contract
             </a>
           </div>
         ) : null}
-        <label className="mt-4 block text-xs font-semibold text-foreground">
+        <label className="mt-4 block text-sm font-semibold text-foreground">
           {attachments?.contractUrl ? "Replace file" : "Upload image / PDF"}
         </label>
         <input
           type="file"
           accept="image/*,.pdf"
-          className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
+          className="mt-1 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary/90"
           onChange={(e) => {
             const file = e.target.files?.[0];
             if (file && onFileUpload) onFileUpload("contract", file);
@@ -505,7 +505,7 @@ export function ProcessOfWorkPanel({
         <div className="mt-4">
           <button
             type="button"
-            className="rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white"
+            className="rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white"
             onClick={() => downloadBlob("contact-agreement-template.txt", "Agreement template (demo)\n— replace with your PDF in production.")}
           >
             Download template
@@ -518,11 +518,11 @@ export function ProcessOfWorkPanel({
           <div className="rounded-xl border border-border bg-card p-4">
             <div className="flex items-center justify-between gap-2 border-b border-border pb-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief overview</p>
+                <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Brief overview</p>
                 <h4 className="text-base font-semibold text-foreground">{briefName}</h4>
               </div>
               {briefCampaign ? (
-                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-[11px] font-semibold text-primary/90">Campaign-linked</span>
+                <span className="rounded-full bg-primary/10 px-2.5 py-1 text-xs font-semibold text-primary/90">Campaign-linked</span>
               ) : null}
             </div>
 
@@ -561,7 +561,7 @@ export function ProcessOfWorkPanel({
 
           {requirementRows.length > 0 ? (
             <div className="rounded-xl border border-border bg-muted p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Requirement details</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Requirement details</p>
               <div className="mt-3 grid grid-cols-1 gap-x-4 gap-y-2 text-sm sm:grid-cols-2">
                 {requirementRows.map((row) => (
                   <p key={row.label} className="text-muted-foreground">
@@ -574,21 +574,33 @@ export function ProcessOfWorkPanel({
 
           {briefCampaign?.deliverables ? (
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Deliverables</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Deliverables</p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{briefCampaign.deliverables}</p>
             </div>
           ) : null}
 
           {briefCampaign?.doAndDont ? (
             <div className="rounded-xl border border-border bg-card p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Do &amp; Don&apos;t</p>
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Do &amp; Don&apos;t</p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{briefCampaign.doAndDont}</p>
+            </div>
+          ) : null}
+
+          {briefCampaign?.briefImageUrl ? (
+            <div className="rounded-xl border border-border bg-card p-4">
+              <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Reference image</p>
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={fileUrl(briefCampaign.briefImageUrl) ?? ""}
+                alt="Brief reference"
+                className="mt-2 max-h-80 w-full rounded-lg border border-border object-contain"
+              />
             </div>
           ) : null}
 
           {smartPlanText ? (
             <div className="rounded-xl border border-primary/20 bg-primary/5 p-4">
-              <p className="text-xs font-semibold uppercase tracking-wide text-primary/80">
+              <p className="text-sm font-semibold uppercase tracking-wide text-primary/80">
                 Smart Plan brief{smartPlanBrief?.inputMode ? ` · ${smartPlanBrief.inputMode}` : ""}
               </p>
               <p className="mt-2 whitespace-pre-wrap text-sm text-muted-foreground">{smartPlanText}</p>
@@ -598,18 +610,18 @@ export function ProcessOfWorkPanel({
 
         {variant === "brand" ? (
           <div className="mt-4 rounded-xl border border-border bg-card p-4">
-            <label className="block text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+            <label className="block text-sm font-semibold uppercase tracking-wide text-muted-foreground">
               {resolvedBriefFileUrl ? "Replace brief file" : "Upload brief (PDF / doc)"}
             </label>
             {resolvedBriefFileUrl ? (
-              <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+              <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm font-semibold text-primary hover:underline">
                 View uploaded brief
               </a>
             ) : null}
             <input
               type="file"
               accept=".pdf,.doc,.docx"
-              className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-xs file:font-semibold file:text-primary/90"
+              className="mt-2 w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-2 file:text-sm file:font-semibold file:text-primary/90"
               onChange={(e) => {
                 const file = e.target.files?.[0];
                 if (file && onFileUpload) onFileUpload("brief", file);
@@ -618,8 +630,8 @@ export function ProcessOfWorkPanel({
           </div>
         ) : resolvedBriefFileUrl ? (
           <div className="mt-4 rounded-xl border border-border bg-card p-4">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Brief file</p>
-            <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-xs font-semibold text-primary hover:underline">
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Brief file</p>
+            <a href={resolvedBriefFileUrl} target="_blank" rel="noreferrer" className="mt-1 inline-block text-sm font-semibold text-primary hover:underline">
               Download brief
             </a>
           </div>
@@ -628,7 +640,7 @@ export function ProcessOfWorkPanel({
 
       <Modal open={active === "draft"} title="Draft management" onClose={close}>
         {draftError ? (
-          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{draftError}</p>
+          <p className="mb-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{draftError}</p>
         ) : null}
 
         <div className="space-y-3">
@@ -646,14 +658,14 @@ export function ProcessOfWorkPanel({
                   <div className="flex items-start justify-between gap-2">
                     <div className="min-w-0">
                       <p className="truncate text-sm font-semibold text-foreground">{d.title}</p>
-                      {d.notes ? <p className="mt-0.5 whitespace-pre-wrap text-xs text-muted-foreground">{d.notes}</p> : null}
+                      {d.notes ? <p className="mt-0.5 whitespace-pre-wrap text-sm text-muted-foreground">{d.notes}</p> : null}
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${DRAFT_STATUS_BADGE[d.status]}`}>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${DRAFT_STATUS_BADGE[d.status]}`}>
                       {DRAFT_STATUS_LABEL[d.status]}
                     </span>
                   </div>
 
-                  <div className="mt-2 flex flex-wrap items-center gap-3 text-xs">
+                  <div className="mt-2 flex flex-wrap items-center gap-3 text-sm">
                     {draftFile ? (
                       <a href={draftFile} target="_blank" rel="noreferrer" className="font-semibold text-primary hover:underline">
                         View file{d.contentType ? ` (${d.contentType})` : ""}
@@ -669,8 +681,8 @@ export function ProcessOfWorkPanel({
 
                   {d.status === "REVISION_REQUESTED" && d.revisionNote ? (
                     <div className="mt-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-amber-700">Revision requested</p>
-                      <p className="mt-1 whitespace-pre-wrap text-xs text-amber-800">{d.revisionNote}</p>
+                      <p className="text-xs font-semibold uppercase tracking-wide text-amber-700">Revision requested</p>
+                      <p className="mt-1 whitespace-pre-wrap text-sm text-amber-800">{d.revisionNote}</p>
                     </div>
                   ) : null}
 
@@ -682,12 +694,12 @@ export function ProcessOfWorkPanel({
                           type="button"
                           disabled={busy}
                           onClick={() => handleSubmitDraft(d.id)}
-                          className="rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white disabled:opacity-50"
+                          className="rounded-lg bg-primary px-3 py-1.5 text-sm font-semibold text-white disabled:opacity-50"
                         >
                           Submit for review
                         </button>
                       ) : null}
-                      <label className="cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                      <label className="cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-muted">
                         {draftFile ? "Replace file" : "Upload file"}
                         <input
                           type="file"
@@ -703,7 +715,7 @@ export function ProcessOfWorkPanel({
                         type="button"
                         disabled={busy}
                         onClick={() => handleDeleteDraft(d.id)}
-                        className="rounded-lg border border-red-200 px-3 py-1.5 text-xs font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
+                        className="rounded-lg border border-red-200 px-3 py-1.5 text-sm font-semibold text-red-600 hover:bg-red-50 disabled:opacity-50"
                       >
                         Delete
                       </button>
@@ -718,14 +730,14 @@ export function ProcessOfWorkPanel({
                         onChange={(e) => setRevisionNotes((r) => ({ ...r, [d.id]: e.target.value }))}
                         placeholder="Revision feedback (required to request changes)…"
                         rows={2}
-                        className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+                        className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
                       />
                       <div className="flex flex-wrap gap-2">
                         <button
                           type="button"
                           disabled={busy}
                           onClick={() => handleReviewDraft(d.id, "APPROVED")}
-                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                          className="rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                         >
                           Approve
                         </button>
@@ -733,7 +745,7 @@ export function ProcessOfWorkPanel({
                           type="button"
                           disabled={busy}
                           onClick={() => handleReviewDraft(d.id, "REVISION_REQUESTED")}
-                          className="rounded-lg border border-amber-300 px-3 py-1.5 text-xs font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50"
+                          className="rounded-lg border border-amber-300 px-3 py-1.5 text-sm font-semibold text-amber-700 hover:bg-amber-50 disabled:opacity-50"
                         >
                           Request revision
                         </button>
@@ -749,21 +761,21 @@ export function ProcessOfWorkPanel({
         {/* Influencer: create a new draft */}
         {isInfluencer ? (
           <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">New draft</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">New draft</p>
             <input
               value={newTitle}
               onChange={(e) => setNewTitle(e.target.value)}
               placeholder="Draft title"
-              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
             />
             <textarea
               value={newNotes}
               onChange={(e) => setNewNotes(e.target.value)}
               placeholder="Description / notes (optional)"
               rows={2}
-              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
             />
-            <div className="flex gap-2 text-xs">
+            <div className="flex gap-2 text-sm">
               <button
                 type="button"
                 onClick={() => setNewMode("upload")}
@@ -784,21 +796,21 @@ export function ProcessOfWorkPanel({
                 type="file"
                 accept="image/*,.pdf"
                 onChange={(e) => setNewFile(e.target.files?.[0] ?? null)}
-                className="w-full text-xs file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-1.5 file:text-xs file:font-semibold file:text-primary/90"
+                className="w-full text-sm file:mr-3 file:rounded-lg file:border-0 file:bg-primary/5 file:px-3 file:py-1.5 file:text-sm file:font-semibold file:text-primary/90"
               />
             ) : (
               <input
                 value={newLink}
                 onChange={(e) => setNewLink(e.target.value)}
                 placeholder="https://youtube.com/... or Drive/Frame.io link"
-                className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+                className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
               />
             )}
             <button
               type="button"
               disabled={busy || !newTitle.trim()}
               onClick={handleCreateDraft}
-              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
               {busy ? "Saving…" : "Add draft"}
             </button>
@@ -832,7 +844,7 @@ export function ProcessOfWorkPanel({
           )}
         </div>
         {isInfluencer ? (
-          <p className="mt-3 text-xs text-muted-foreground">
+          <p className="mt-3 text-sm text-muted-foreground">
             To publish, add a draft with a link (e.g. your TikTok/YouTube post) and have the brand approve it.
           </p>
         ) : null}
@@ -844,7 +856,7 @@ export function ProcessOfWorkPanel({
           transaction — the influencer confirms receipt to mark it paid.
         </p>
         {paymentError ? (
-          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-xs font-medium text-red-600">{paymentError}</p>
+          <p className="mt-3 rounded-lg bg-red-50 px-3 py-2 text-sm font-medium text-red-600">{paymentError}</p>
         ) : null}
 
         <div className="mt-3 space-y-3">
@@ -878,25 +890,25 @@ export function ProcessOfWorkPanel({
                         {p.paymentType ? <span className="text-muted-foreground"> · {p.paymentType}</span> : null}
                       </p>
                       {p.confirmedAt ? (
-                        <p className="mt-0.5 text-[11px] text-muted-foreground">
+                        <p className="mt-0.5 text-xs text-muted-foreground">
                           Confirmed {new Date(p.confirmedAt).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}
                         </p>
                       ) : null}
                     </div>
-                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-[10px] font-semibold ${statusBadge}`}>{statusLabel}</span>
+                    <span className={`shrink-0 rounded-full px-2 py-0.5 text-xs font-semibold ${statusBadge}`}>{statusLabel}</span>
                   </div>
 
                   {proof ? (
-                    <a href={proof} target="_blank" rel="noreferrer" className="mt-2 inline-block text-xs font-semibold text-primary hover:underline">
+                    <a href={proof} target="_blank" rel="noreferrer" className="mt-2 inline-block text-sm font-semibold text-primary hover:underline">
                       View payment proof
                     </a>
                   ) : (
-                    <p className="mt-2 text-xs text-muted-foreground">No proof uploaded yet.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">No proof uploaded yet.</p>
                   )}
 
                   {/* Brand/agency: upload (or replace) proof until influencer confirms */}
                   {!isInfluencer && p.status !== "PAID" ? (
-                    <label className="mt-2 inline-block cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted">
+                    <label className="mt-2 inline-block cursor-pointer rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-muted">
                       {proof ? "Replace proof" : "Upload payment proof"}
                       <input
                         type="file"
@@ -916,13 +928,13 @@ export function ProcessOfWorkPanel({
                       type="button"
                       disabled={payBusy}
                       onClick={() => handleConfirmPayment(p.id)}
-                      className="mt-2 block rounded-lg bg-emerald-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
+                      className="mt-2 block rounded-lg bg-emerald-600 px-3 py-1.5 text-sm font-semibold text-white hover:bg-emerald-700 disabled:opacity-50"
                     >
                       Confirm received
                     </button>
                   ) : null}
                   {isInfluencer && p.status === "PENDING" ? (
-                    <p className="mt-2 text-xs text-muted-foreground">Waiting for the brand to upload payment proof.</p>
+                    <p className="mt-2 text-sm text-muted-foreground">Waiting for the brand to upload payment proof.</p>
                   ) : null}
                 </div>
               );
@@ -933,28 +945,28 @@ export function ProcessOfWorkPanel({
         {/* Brand/agency: record a new payment */}
         {!isInfluencer ? (
           <div className="mt-4 space-y-2 rounded-xl border border-border bg-muted/40 p-3">
-            <p className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">Record a payment</p>
+            <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Record a payment</p>
             <input
               value={newAmount}
               onChange={(e) => setNewAmount(e.target.value)}
               type="number"
               min="0"
               placeholder="Amount (THB)"
-              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
             />
             <input
               value={newPaymentType}
               onChange={(e) => setNewPaymentType(e.target.value)}
               placeholder="Type (e.g. Full, Deposit) — optional"
-              className="w-full rounded-lg border border-border px-2 py-1.5 text-xs"
+              className="w-full rounded-lg border border-border px-2 py-1.5 text-sm"
             />
             <button
               type="button"
               disabled={payBusy || !newAmount}
               onClick={handleCreatePayment}
-              className="w-full rounded-lg bg-primary px-3 py-2 text-xs font-semibold text-white disabled:opacity-50"
+              className="w-full rounded-lg bg-primary px-3 py-2 text-sm font-semibold text-white disabled:opacity-50"
             >
-              {payBusy ? "Saving…" : "Create payment"}
+              {payBusy ? "Saving…" : "Submit Payment"}
             </button>
           </div>
         ) : null}
