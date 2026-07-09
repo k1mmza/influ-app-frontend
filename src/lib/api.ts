@@ -353,6 +353,20 @@ export async function apiGetSmartPlanBrief(
   return JSON.parse(text) as GeneratedBrief;
 }
 
+/** Delete the current brief — standalone, or (with campaignId) the campaign's brief. */
+export async function apiDeleteSmartPlanBrief(
+  token: string,
+  campaignId?: string,
+): Promise<{ deleted: number }> {
+  const qs = campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : "";
+  const res = await fetch(`${API_URL}/smart-plan/brief${qs}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to delete brief"));
+  return res.json();
+}
+
 export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {
   await fetch(`${API_URL}/profile`, {
     method: "PATCH",
@@ -503,6 +517,7 @@ export interface CampaignResponse extends CampaignInput {
   id: string;
   status: CampaignStatus;
   coverImageUrl?: string | null;
+  briefImageUrl?: string | null;
   budgetSpent?: number;
   createdAt?: string;
   updatedAt?: string;
@@ -627,6 +642,23 @@ export async function apiUploadCampaignCover(
     body: form,
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to upload cover image"));
+  return res.json();
+}
+
+/** Upload + persist a brief reference image onto an existing campaign (display-only). */
+export async function apiUploadCampaignBriefImage(
+  token: string,
+  id: string,
+  file: File,
+): Promise<CampaignResponse> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/campaigns/${id}/brief-image`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to upload brief image"));
   return res.json();
 }
 

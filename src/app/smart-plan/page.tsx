@@ -10,7 +10,9 @@ import {
   apiGetSmartPlanBrief,
   apiSaveSmartPlanBrief,
   apiCreateCampaignFromPlan,
+  apiDeleteSmartPlanBrief,
   apiUploadBriefImage,
+  apiUploadCampaignBriefImage,
   fileUrl,
   type CampaignFields,
   type Provenance,
@@ -42,6 +44,7 @@ import {
   Rocket,
   ImageIcon,
   X,
+  Trash2,
 } from "lucide-react";
 
 type StepId = "requirement" | "brief";
@@ -68,6 +71,7 @@ type Campaign = {
   budget: string;
   timeRange: string;
   result: string;
+  briefImageUrl: string | null;
   requirement: RequirementData;
 };
 
@@ -181,6 +185,7 @@ function apiCampaignToLocal(c: any): Campaign {
     budget,
     timeRange,
     result: "—", // TODO: wire real KPI result when tracking is implemented
+    briefImageUrl: c.briefImageUrl ?? null,
     requirement: {
       campaignName: c.name ?? "",
       objective: c.objective ?? "",
@@ -237,6 +242,10 @@ export default function SmartPlanPage() {
   // Fix 1 — Save Brief state
   const [isSaving, setIsSaving] = useState(false);
   const [saveStatus, setSaveStatus] = useState<"idle" | "saved" | "error">("idle");
+  const [isDeleting, setIsDeleting] = useState(false);
+  // Brief reference image for the SELECTED existing campaign (upload + replace).
+  const [campaignBriefImgUploading, setCampaignBriefImgUploading] = useState(false);
+  const [campaignBriefImgError, setCampaignBriefImgError] = useState<string | null>(null);
 
   // Fix 2 — Real campaigns from API
   const [myCampaigns, setMyCampaigns] = useState<Campaign[]>([]);
@@ -503,6 +512,56 @@ export default function SmartPlanPage() {
       setSaveStatus("error");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Delete the current brief (the saved copy too, so it doesn't restore on reload)
+  // and drop back to the Requirement step. Requirement inputs are kept so the user
+  // can adjust and regenerate.
+  const handleDeleteBrief = async () => {
+    if (!token) return;
+    if (!window.confirm("Delete this brief? This can't be undone.")) return;
+    setIsDeleting(true);
+    setSaveStatus("idle");
+    try {
+      await apiDeleteSmartPlanBrief(token, selectedCampaign?.id);
+      // Clear the current brief content + any generated/review state
+      setStrategyText("");
+      setConceptText("");
+      setBriefText("");
+      setBriefImageUrl(null);
+      setBriefImageError(null);
+      setCampaignFields(null);
+      setProvenance({ userProvided: [], aiSuggested: [] });
+      setFlowPhase("input");
+      setActiveStep("requirement");
+    } catch {
+      setSaveStatus("error");
+    } finally {
+      setIsDeleting(false);
+    }
+  };
+
+  // Upload/replace the brief reference image on the currently selected campaign.
+  // Persists in one call and reflects immediately in the influencer's brief view.
+  const handleCampaignBriefImageUpload = async (file: File | null) => {
+    if (!token || !file || !selectedCampaign) return;
+    const campaignId = selectedCampaign.id;
+    setCampaignBriefImgUploading(true);
+    setCampaignBriefImgError(null);
+    try {
+      const updated = await apiUploadCampaignBriefImage(token, campaignId, file);
+      const newUrl = updated.briefImageUrl ?? null;
+      setSelectedCampaign((prev) =>
+        prev && prev.id === campaignId ? { ...prev, briefImageUrl: newUrl } : prev,
+      );
+      setMyCampaigns((prev) =>
+        prev.map((c) => (c.id === campaignId ? { ...c, briefImageUrl: newUrl } : c)),
+      );
+    } catch (err: any) {
+      setCampaignBriefImgError(err?.message || "Failed to upload image. Please try again.");
+    } finally {
+      setCampaignBriefImgUploading(false);
     }
   };
 
@@ -1330,6 +1389,60 @@ export default function SmartPlanPage() {
                   )}
                 </div>
 
+                {/* Brief reference image — tied to the selected campaign, shown to the
+                    influencer in their brief view. Display-only; upload + replace. */}
+                {selectedCampaign && (
+                  <div className="rounded-xl border border-border bg-muted/50 p-4">
+                    <div className="flex flex-wrap items-start justify-between gap-3">
+                      <div>
+                        <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
+                          Brief Image
+                        </p>
+                        <p className="mt-0.5 text-sm text-muted-foreground">
+                          Optional reference image shown to the creator in the brief. Not used by the AI.
+                        </p>
+                      </div>
+                      <label
+                        className={cn(
+                          "flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-medium text-foreground transition hover:border-primary/40",
+                          campaignBriefImgUploading && "pointer-events-none opacity-60",
+                        )}
+                      >
+                        {campaignBriefImgUploading ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <ImageIcon className="h-4 w-4" />
+                        )}
+                        {campaignBriefImgUploading
+                          ? "Uploading…"
+                          : selectedCampaign.briefImageUrl
+                            ? "Change image"
+                            : "Upload image"}
+                        <input
+                          type="file"
+                          accept="image/png,image/jpeg,image/webp,image/gif"
+                          className="hidden"
+                          disabled={campaignBriefImgUploading}
+                          onChange={(e) => handleCampaignBriefImageUpload(e.target.files?.[0] ?? null)}
+                        />
+                      </label>
+                    </div>
+                    {selectedCampaign.briefImageUrl && (
+                      <div className="mt-3">
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={fileUrl(selectedCampaign.briefImageUrl) ?? ""}
+                          alt="Brief reference"
+                          className="max-h-56 w-full rounded-lg border border-border object-contain"
+                        />
+                      </div>
+                    )}
+                    {campaignBriefImgError && (
+                      <p className="mt-2 text-xs font-medium text-destructive">{campaignBriefImgError}</p>
+                    )}
+                  </div>
+                )}
+
                 {/* Brief subsection tabs */}
                 <div className="flex rounded-xl bg-muted p-1 gap-1">
                   {(
@@ -1402,12 +1515,25 @@ export default function SmartPlanPage() {
                     </span>
                   )}
                   {saveStatus === "error" && (
-                    <span className="text-sm text-destructive">Save failed — try again</span>
+                    <span className="text-sm text-destructive">Something went wrong — try again</span>
                   )}
                   <Button
                     type="button"
+                    variant="outline"
+                    onClick={handleDeleteBrief}
+                    disabled={isDeleting || isSaving}
+                    className="rounded-xl border-destructive/30 text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  >
+                    {isDeleting ? (
+                      <><Loader2 className="mr-2 h-4 w-4 animate-spin" /> Deleting…</>
+                    ) : (
+                      <><Trash2 className="mr-2 h-4 w-4" /> Delete Brief</>
+                    )}
+                  </Button>
+                  <Button
+                    type="button"
                     onClick={handleSaveBrief}
-                    disabled={isSaving}
+                    disabled={isSaving || isDeleting}
                     className="rounded-xl shadow-sm"
                   >
                     {isSaving ? (
