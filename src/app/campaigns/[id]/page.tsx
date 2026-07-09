@@ -1,9 +1,9 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -16,15 +16,19 @@ import {
   apiUploadCampaignCover,
   apiUpdateCampaignApplicationStatus,
   apiFetchInfluencer,
+  apiGetCampaignShortlist,
+  apiAddCampaignShortlist,
   fileUrl,
   CampaignApplicationResponse,
   CampaignResponse,
   CampaignStatus,
+  CampaignShortlistEntry,
 } from "@/lib/api";
 import { CampaignPartnerReviews } from "@/components/CampaignPartnerReviews";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
 import { useUserStore } from "@/store/useUserStore";
 import { ShareCampaignModal } from "@/components/campaigns/share-campaign-modal";
+import { ShareInfluencersModal } from "@/components/campaigns/share-influencers-modal";
 import { Role } from "@/lib/types";
 import { useCampaignCollaborationStore } from "@/store/useCampaignCollaborationStore";
 import { exportRowsToExcel } from "@/lib/excel";
@@ -118,6 +122,11 @@ export default function CampaignDetailPage() {
   const [shortlistLoading, setShortlistLoading] = useState(false);
   const [invitingId, setInvitingId] = useState<string | null>(null);
 
+  // ── Campaign shortlist (client-review list) state ────────────────────────
+  const [campaignShortlist, setCampaignShortlist] = useState<CampaignShortlistEntry[]>([]);
+  const [addingToListId, setAddingToListId] = useState<string | null>(null);
+  const [shareInfluencersOpen, setShareInfluencersOpen] = useState(false);
+
   const canManageCampaign = role === "brand" || role === "agency";
   const [shareOpen, setShareOpen] = useState(false);
 
@@ -138,35 +147,6 @@ export default function CampaignDetailPage() {
     !!campaign &&
     (campaign.status === "COMPLETED" || collaborations.some((item) => item.campaignId === campaign.id));
 
-  const influencerRows = useMemo(
-    () =>
-      applications.map((app, index) => {
-        const primary = getPrimaryAccount(app.influencer?.platformAccounts);
-        const platform = primary?.platform ?? "—";
-        const handle = primary?.handle ?? "";
-        const followers = primary?.followers ?? 0;
-        const host =
-          platform === "YouTube"
-            ? "youtube.com"
-            : platform === "TikTok"
-              ? "tiktok.com"
-              : platform === "Instagram"
-                ? "instagram.com"
-                : `${platform.toLowerCase()}.com`;
-        return {
-          marker: index + 1,
-          kolName: getInfluencerName(app),
-          socialMediaLink: handle ? `https://www.${host}/@${handle}` : "—",
-          platform,
-          platformFollowers: followers,
-          category: toCategoryList(app.influencer?.categories).join(", ") || "—",
-          estimateView: primary?.avgViews ?? Math.round(followers * 0.35),
-          engagementRate: primary?.engagementRate ?? 0,
-        };
-      }),
-    [applications],
-  );
-
   useEffect(() => {
     let cancelled = false;
     async function loadCampaign() {
@@ -180,13 +160,15 @@ export default function CampaignDetailPage() {
       setError(null);
       try {
         if (role === "brand" || role === "agency") {
-          const [campaignData, applicationData] = await Promise.all([
+          const [campaignData, applicationData, shortlistData] = await Promise.all([
             apiGetCampaign(token, id),
             apiGetCampaignApplications(token, id),
+            apiGetCampaignShortlist(token, id),
           ]);
           if (!cancelled) {
             setCampaign(campaignData);
             setApplications(applicationData);
+            setCampaignShortlist(shortlistData);
           }
         } else {
           const publicCampaigns = await apiGetPublicCampaigns(token);
@@ -260,6 +242,27 @@ export default function CampaignDetailPage() {
       setError(err instanceof Error ? err.message : "Failed to send invitation");
     } finally {
       setInvitingId(null);
+    }
+  };
+
+  const refreshCampaignShortlist = async () => {
+    if (!token) return;
+    setCampaignShortlist(await apiGetCampaignShortlist(token, id));
+  };
+
+  const addToCampaignList = async (influencerId: string) => {
+    if (!token || !campaign) return;
+    setAddingToListId(influencerId);
+    setError(null);
+    setMessage("");
+    try {
+      await apiAddCampaignShortlist(token, campaign.id, influencerId);
+      await refreshCampaignShortlist();
+      setMessage("Added to the campaign's influencer list.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to add to list");
+    } finally {
+      setAddingToListId(null);
     }
   };
 
@@ -380,20 +383,12 @@ export default function CampaignDetailPage() {
     </>
   );
 
-  const copyShareLink = async () => {
-    if (!campaign || typeof window === "undefined") return;
-    try {
-      await navigator.clipboard.writeText(`${window.location.origin}/campaigns/${campaign.id}/share`);
-      setMessage("Client share link copied.");
-    } catch {
-      setMessage("Unable to copy automatically. Copy the URL from the preview page.");
-    }
-  };
-
-  const exportInfluencersExcel = () => {
+  // Exports the campaign shortlist (the client-review list with notes/prices),
+  // matching what the influencers preview + public share link present.
+  const exportCampaignShortlistExcel = () => {
     if (!campaign) return;
     exportRowsToExcel({
-      filename: `campaign-${campaign.id}-influencers.xls`,
+      filename: `campaign-${campaign.id}-shortlist.xls`,
       sheetName: "Influencer List",
       headers: [
         "Marker",
@@ -402,18 +397,20 @@ export default function CampaignDetailPage() {
         "Platform",
         "Platform Follower No.",
         "Category/Niche",
-        "Estimate view",
         "Engagement Rate",
+        "Why we recommend",
+        "Proposed price (THB)",
       ],
-      rows: influencerRows.map((row) => [
-        row.marker,
-        row.kolName,
-        row.socialMediaLink,
-        row.platform,
-        row.platformFollowers,
-        row.category,
-        row.estimateView,
-        `${row.engagementRate}%`,
+      rows: campaignShortlist.map((entry, index) => [
+        index + 1,
+        entry.influencer.name,
+        entry.influencer.profileUrl ?? "",
+        entry.influencer.mainPlatform ?? "",
+        entry.influencer.mainFollowers,
+        entry.influencer.category ?? "",
+        `${entry.influencer.engagementRate}%`,
+        entry.recommendationNote ?? "",
+        entry.proposedPrice ?? "",
       ]),
     });
     setMessage("Influencer list exported as CSV (opens in Excel & Numbers).");
@@ -1231,6 +1228,71 @@ export default function CampaignDetailPage() {
         </Card>
       ) : null}
 
+      {canManageCampaign ? (
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
+              <div>
+                <CardTitle className="text-lg">Campaign shortlist</CardTitle>
+                <p className="mt-1 text-sm text-muted-foreground">
+                  A client-facing list of recommended creators with notes and proposed
+                  pricing — separate from formal invitations above.
+                </p>
+              </div>
+              <Badge variant="outline" className="rounded-full">
+                {campaignShortlist.length} on list
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="flex flex-wrap gap-2">
+              <Button size="sm" onClick={openInvitePicker} className="rounded-xl">
+                <UserPlus className="mr-2 h-3.5 w-3.5" />
+                Add from shortlist
+              </Button>
+              <Button variant="outline" size="sm" asChild className="rounded-xl">
+                <Link href={`/campaigns/${campaign.id}/share`} target="_blank" rel="noreferrer">
+                  Open influencers preview
+                </Link>
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setShareInfluencersOpen(true)}
+                disabled={campaignShortlist.length === 0}
+                className="rounded-xl"
+              >
+                <Link2 className="mr-2 h-3.5 w-3.5" />
+                Share link
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={exportCampaignShortlistExcel}
+                disabled={campaignShortlist.length === 0}
+                className="rounded-xl"
+              >
+                <Download className="mr-2 h-3.5 w-3.5" />
+                Export CSV
+              </Button>
+            </div>
+            {campaignShortlist.length === 0 ? (
+              <p className="text-sm text-muted-foreground">
+                No creators on this list yet. Use{" "}
+                <span className="font-medium text-foreground">Add from shortlist</span>{" "}
+                to build a client-facing preview.
+              </p>
+            ) : (
+              <p className="text-xs text-muted-foreground">
+                Add notes and pricing in the{" "}
+                <span className="font-medium text-foreground">influencers preview</span>,
+                then share the public link with your client.
+              </p>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
       {isCampaignFinished ? (
         <CampaignPartnerReviews
           campaignId={campaign.id}
@@ -1238,30 +1300,6 @@ export default function CampaignDetailPage() {
           currentRole={role as Role}
           currentDisplayName={accountDisplayName}
         />
-      ) : null}
-
-      {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Share influencer list</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-wrap gap-2">
-              <Button variant="outline" asChild className="rounded-xl">
-                <Link href={`/campaigns/${campaign.id}/share`} target="_blank" rel="noreferrer">
-                  Open client preview
-                </Link>
-              </Button>
-              <Button variant="outline" onClick={copyShareLink} className="rounded-xl">
-                Copy share link
-              </Button>
-              <Button onClick={exportInfluencersExcel} className="rounded-xl">
-                <Download className="mr-2 h-4 w-4" />
-                Export CSV
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
       ) : null}
 
       {canManageCampaign ? (
@@ -1290,6 +1328,14 @@ export default function CampaignDetailPage() {
         />
       ) : null}
 
+      {shareInfluencersOpen && token ? (
+        <ShareInfluencersModal
+          token={token}
+          campaignId={id}
+          onClose={() => setShareInfluencersOpen(false)}
+        />
+      ) : null}
+
       {detailInfluencer && detailInfluencer.meta ? (
         <InfluencerDetailPanel
           influencer={detailInfluencer}
@@ -1306,7 +1352,7 @@ export default function CampaignDetailPage() {
           <Card className="w-full max-w-md shadow-2xl border-none" onClick={(e) => e.stopPropagation()}>
             <CardHeader className="pb-3">
               <div className="flex items-center justify-between">
-                <CardTitle className="text-base">Invite from shortlist</CardTitle>
+                <CardTitle className="text-base">From your shortlist</CardTitle>
                 <button
                   onClick={() => setShowInvitePicker(false)}
                   className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
@@ -1315,7 +1361,8 @@ export default function CampaignDetailPage() {
                 </button>
               </div>
               <p className="text-sm text-muted-foreground">
-                Inviting to <span className="font-semibold text-foreground">{campaign.name}</span>
+                Add to the client list or invite directly to{" "}
+                <span className="font-semibold text-foreground">{campaign.name}</span>
               </p>
             </CardHeader>
             <CardContent className="space-y-2 pb-4 max-h-[60vh] overflow-y-auto">
@@ -1331,6 +1378,7 @@ export default function CampaignDetailPage() {
                 shortlist.map((inf) => {
                   const existing = applications.find((a) => a.influencer?.id === inf.id);
                   const already = existing?.status === "INVITED" || existing?.status === "ACCEPTED";
+                  const onList = campaignShortlist.some((e) => e.influencerId === inf.id);
                   return (
                     <div
                       key={inf.id}
@@ -1344,21 +1392,38 @@ export default function CampaignDetailPage() {
                             : "No platform data"}
                         </p>
                       </div>
-                      <Button
-                        size="sm"
-                        variant={already ? "outline" : "default"}
-                        disabled={already || invitingId === inf.id}
-                        onClick={() => inviteFromShortlist(inf.id)}
-                        className="rounded-xl shrink-0"
-                      >
-                        {invitingId === inf.id ? (
-                          <Loader2 className="h-3.5 w-3.5 animate-spin" />
-                        ) : already ? (
-                          existing?.status === "ACCEPTED" ? "Accepted" : "Invited"
-                        ) : (
-                          "Invite"
-                        )}
-                      </Button>
+                      <div className="flex shrink-0 items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant={onList ? "outline" : "default"}
+                          disabled={onList || addingToListId === inf.id}
+                          onClick={() => addToCampaignList(inf.id)}
+                          className="rounded-xl"
+                        >
+                          {addingToListId === inf.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : onList ? (
+                            "On list"
+                          ) : (
+                            "Add to list"
+                          )}
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          disabled={already || invitingId === inf.id}
+                          onClick={() => inviteFromShortlist(inf.id)}
+                          className="rounded-xl"
+                        >
+                          {invitingId === inf.id ? (
+                            <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                          ) : already ? (
+                            existing?.status === "ACCEPTED" ? "Accepted" : "Invited"
+                          ) : (
+                            "Invite"
+                          )}
+                        </Button>
+                      </div>
                     </div>
                   );
                 })

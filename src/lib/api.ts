@@ -1099,6 +1099,175 @@ export async function apiRemoveFromShortlist(token: string, influencerId: string
   if (!res.ok) throw new Error(await readApiError(res, 'Failed to remove from shortlist'));
 }
 
+// ── Campaign-scoped shortlist (client-review candidate list) ────────────────
+//
+// Distinct from the brand-global shortlist above and from campaign invitations.
+// One row per (campaign, influencer) carrying a recommendation note + proposed
+// price, rendered in the influencers preview.
+
+/** Compact influencer shape returned inside a campaign-shortlist row. */
+export interface CampaignShortlistInfluencer {
+  id: string;
+  name: string;
+  avatarUrl: string | null;
+  platforms: string[];
+  mainPlatform: string | null;
+  mainFollowers: number;
+  totalFollowers: number;
+  handle: string | null;
+  profileUrl: string | null;
+  category: string | null;
+  engagementRate: number;
+}
+
+export interface CampaignShortlistEntry {
+  id: string;
+  influencerId: string;
+  recommendationNote: string | null;
+  proposedPrice: number | null;
+  addedAt: string;
+  updatedAt: string;
+  influencer: CampaignShortlistInfluencer;
+}
+
+/** Owner-only: the campaign's shortlist with notes/prices, newest first. */
+export async function apiGetCampaignShortlist(
+  token: string,
+  campaignId: string,
+): Promise<CampaignShortlistEntry[]> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load campaign shortlist"));
+  return res.json();
+}
+
+/** Owner-only: add an influencer to this campaign's shortlist. */
+export async function apiAddCampaignShortlist(
+  token: string,
+  campaignId: string,
+  influencerId: string,
+  extra?: { recommendationNote?: string; proposedPrice?: number },
+): Promise<CampaignShortlistEntry> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ influencerId, ...extra }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to add to campaign shortlist"));
+  return res.json();
+}
+
+/** Owner-only: update the recommendation note / proposed price for one influencer. */
+export async function apiUpdateCampaignShortlistNote(
+  token: string,
+  campaignId: string,
+  influencerId: string,
+  patch: { recommendationNote?: string | null; proposedPrice?: number | null },
+): Promise<CampaignShortlistEntry> {
+  const res = await fetch(
+    `${API_URL}/campaigns/${campaignId}/shortlist/${influencerId}`,
+    {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify(patch),
+    },
+  );
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to update note"));
+  return res.json();
+}
+
+/** Owner-only: remove an influencer from this campaign's shortlist. */
+export async function apiRemoveCampaignShortlist(
+  token: string,
+  campaignId: string,
+  influencerId: string,
+): Promise<{ success: boolean }> {
+  const res = await fetch(
+    `${API_URL}/campaigns/${campaignId}/shortlist/${influencerId}`,
+    { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to remove from campaign shortlist"));
+  return res.json();
+}
+
+// ── Public influencers-preview share links (mirror CampaignShareLink) ────────
+
+/** Owner-only: mint a public influencers-preview link for a campaign. */
+export async function apiCreateShortlistShareLink(
+  token: string,
+  campaignId: string,
+): Promise<CampaignShareLink> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to create share link"));
+  return res.json();
+}
+
+/** Owner-only: list a campaign's active influencers-preview links. */
+export async function apiListShortlistShareLinks(
+  token: string,
+  campaignId: string,
+): Promise<CampaignShareLink[]> {
+  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
+  return res.json();
+}
+
+/** Owner-only: revoke a single influencers-preview link. */
+export async function apiRevokeShortlistShareLink(
+  token: string,
+  linkId: string,
+): Promise<{ revoked: boolean }> {
+  const res = await fetch(`${API_URL}/campaigns/shortlist-share/${linkId}`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to revoke share link"));
+  return res.json();
+}
+
+// The backend's presentation-safe allowlist for the influencers preview. Budget
+// and payment are deliberately excluded; proposedPrice per influencer IS shown.
+export interface PublicInfluencerListInfluencer {
+  influencerId: string;
+  name: string;
+  avatarUrl: string | null;
+  platforms: string[];
+  mainPlatform: string | null;
+  mainFollowers: number;
+  totalFollowers: number;
+  handle: string | null;
+  profileUrl: string | null;
+  category: string | null;
+  engagementRate: number;
+  recommendationNote: string | null;
+  proposedPrice: number | null;
+}
+
+export interface PublicInfluencerList {
+  campaign: { name: string; objective: string | null; brandName: string | null };
+  influencers: PublicInfluencerListInfluencer[];
+}
+
+/**
+ * Public, UNAUTHENTICATED influencers preview by share token — sends NO
+ * Authorization header. A 404 means the link is unknown, revoked, or expired.
+ */
+export async function apiGetPublicInfluencerList(
+  shareToken: string,
+): Promise<PublicInfluencerList> {
+  const res = await fetch(
+    `${API_URL}/public/campaigns/${encodeURIComponent(shareToken)}/influencers`,
+  );
+  if (!res.ok) throw new Error(await readApiError(res, "This link is no longer available"));
+  return res.json();
+}
+
 export async function apiUploadConversationFile(
   token: string,
   conversationId: string,
