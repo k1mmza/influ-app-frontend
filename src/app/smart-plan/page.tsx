@@ -10,6 +10,8 @@ import {
   apiGetSmartPlanBrief,
   apiSaveSmartPlanBrief,
   apiCreateCampaignFromPlan,
+  apiUploadBriefImage,
+  fileUrl,
   type CampaignFields,
   type Provenance,
   type GeneratePlanResponse,
@@ -38,6 +40,8 @@ import {
   Building2,
   Wand2,
   Rocket,
+  ImageIcon,
+  X,
 } from "lucide-react";
 
 type StepId = "requirement" | "brief";
@@ -248,6 +252,12 @@ export default function SmartPlanPage() {
   // which uses a plain text input — no list endpoint exists for an agency's client brands).
   // TODO: replace with a proper dropdown once GET /agency/client-brands (or similar) exists.
   const [agencyClientBrandId, setAgencyClientBrandId] = useState("");
+  // Optional reference image shown to the creator in the brief. Display-only —
+  // uploaded to /uploads before the campaign exists, then its URL is included in
+  // the create-campaign payload. Never sent to the AI generate step.
+  const [briefImageUrl, setBriefImageUrl] = useState<string | null>(null);
+  const [briefImageUploading, setBriefImageUploading] = useState(false);
+  const [briefImageError, setBriefImageError] = useState<string | null>(null);
 
   // Fix 1 — restore last saved brief when the page loads (brand/agency only)
   useEffect(() => {
@@ -305,6 +315,22 @@ export default function SmartPlanPage() {
     setCampaignFields((prev) => setByPath(prev ?? {}, path, value));
   };
 
+  // Optional brief reference image — uploaded immediately on pick so we hold a URL
+  // to include in the create-campaign payload. Not part of the AI generate call.
+  const handleBriefImagePick = async (file: File | null) => {
+    if (!token || !file) return;
+    setBriefImageUploading(true);
+    setBriefImageError(null);
+    try {
+      const { url } = await apiUploadBriefImage(token, file);
+      setBriefImageUrl(url);
+    } catch (err: any) {
+      setBriefImageError(err?.message || "Failed to upload image. Please try again.");
+    } finally {
+      setBriefImageUploading(false);
+    }
+  };
+
   // Primary CTA — create the DRAFT campaign from the (possibly edited) fields.
   const handleCreateDraftCampaign = async () => {
     if (!token || !campaignFields) return;
@@ -316,6 +342,7 @@ export default function SmartPlanPage() {
         strategy: strategyText,
         concept: conceptText,
         briefBody: briefText,
+        briefImageUrl: briefImageUrl ?? undefined,
         clientBrandId: role === "agency" ? agencyClientBrandId.trim() || undefined : undefined,
       });
       router.push(`/campaigns/${campaignId}`);
@@ -514,6 +541,8 @@ export default function SmartPlanPage() {
     setBriefText("");
     setCampaignFields(null);
     setProvenance({ userProvided: [], aiSuggested: [] });
+    setBriefImageUrl(null);
+    setBriefImageError(null);
     setCreateError(null);
     setGenerateError(null);
     setFormErrors({});
@@ -1027,6 +1056,59 @@ export default function SmartPlanPage() {
               </CardContent>
             </Card>
           )}
+
+          {/* Optional reference image — shown to the creator in the brief only. Not sent to AI. */}
+          <Card className="border-none shadow-sm">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 font-serif text-base">
+                <ImageIcon className="h-4 w-4 text-primary" />
+                Reference image
+                <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+              </CardTitle>
+              <CardDescription>
+                Shown to the creator inside the brief for visual reference. Not used by the AI.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              {briefImageUrl ? (
+                <div className="flex items-start gap-3">
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img
+                    src={fileUrl(briefImageUrl) ?? ""}
+                    alt="Brief reference"
+                    className="h-24 w-24 rounded-xl border border-border object-cover"
+                  />
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    className="rounded-lg"
+                    onClick={() => { setBriefImageUrl(null); setBriefImageError(null); }}
+                  >
+                    <X className="mr-1 h-4 w-4" /> Remove
+                  </Button>
+                </div>
+              ) : (
+                <label className="flex w-fit cursor-pointer items-center gap-2 rounded-xl border border-dashed border-border px-4 py-2.5 text-sm font-medium text-muted-foreground transition hover:border-primary/40 hover:text-foreground">
+                  {briefImageUploading ? (
+                    <Loader2 className="h-4 w-4 animate-spin" />
+                  ) : (
+                    <ImageIcon className="h-4 w-4" />
+                  )}
+                  {briefImageUploading ? "Uploading…" : "Upload an image"}
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/webp,image/gif"
+                    className="hidden"
+                    disabled={briefImageUploading}
+                    onChange={(e) => handleBriefImagePick(e.target.files?.[0] ?? null)}
+                  />
+                </label>
+              )}
+              {briefImageError && (
+                <p className="mt-2 text-xs font-medium text-destructive">{briefImageError}</p>
+              )}
+            </CardContent>
+          </Card>
 
           {/* Generated brief — collapsible, unchanged content */}
           <details className="rounded-2xl border border-border bg-card shadow-sm">

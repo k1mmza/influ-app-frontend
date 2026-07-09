@@ -274,8 +274,26 @@ export interface CreateFromPlanPayload {
   strategy?: string;
   concept?: string;
   briefBody?: string;
+  /** Optional reference image for the creator to see in the brief (display-only, not sent to AI). */
+  briefImageUrl?: string;
   /** Required for AGENCY users — the backend returns 400 without it. */
   clientBrandId?: string;
+}
+
+/** Upload a Smart Plan brief reference image; returns its served URL for the create-campaign payload. */
+export async function apiUploadBriefImage(
+  token: string,
+  file: File,
+): Promise<{ url: string }> {
+  const form = new FormData();
+  form.append("file", file);
+  const res = await fetch(`${API_URL}/smart-plan/brief-image`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+    body: form,
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to upload brief image"));
+  return res.json();
 }
 
 export async function apiCreateCampaignFromPlan(
@@ -990,6 +1008,7 @@ export interface ConversationBrief {
     keyMessage: string | null;
     deliverables: string | null;
     doAndDont: string | null;
+    briefImageUrl: string | null;
     applyDeadline: string | null;
     submissionDate: string | null;
   } | null;
