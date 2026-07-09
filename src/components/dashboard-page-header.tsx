@@ -28,7 +28,7 @@ export function DashboardPageHeader({
           <h1 className="text-2xl font-bold">{title}</h1>
           <p className="mt-1 text-sm text-white/80">{subtitle}</p>
           {badge ? (
-            <div className="mt-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-xs font-semibold">
+            <div className="mt-3 inline-flex rounded-full bg-white/20 px-3 py-1 text-sm font-semibold">
               {badge}
             </div>
           ) : null}

@@ -225,7 +225,7 @@ export function BrandDashboard({
               <CheckCircle2 className="h-5 w-5 text-emerald-500 shrink-0" />
               <div>
                 <p className="font-bold text-sm text-foreground">You&apos;re all caught up</p>
-                <p className="text-xs text-muted-foreground">Nothing needs your attention right now.</p>
+                <p className="text-sm text-muted-foreground">Nothing needs your attention right now.</p>
               </div>
             </div>
           ) : (
@@ -242,7 +242,7 @@ export function BrandDashboard({
                   <div className="min-w-0">
                     <p className="truncate text-sm font-bold text-foreground">{item.title}</p>
                     {item.description && (
-                      <p className="truncate text-xs text-muted-foreground">{item.description}</p>
+                      <p className="truncate text-sm text-muted-foreground">{item.description}</p>
                     )}
                   </div>
                 </div>
@@ -260,7 +260,7 @@ export function BrandDashboard({
           <Card key={item.label} className="border-none shadow-sm overflow-hidden group hover:shadow-md transition-all">
             <CardContent className="p-5">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">{item.label}</p>
                 <item.icon className={cn("h-4 w-4", item.color)} />
               </div>
               <p className="mt-2 text-xl font-bold tracking-tight text-foreground">
@@ -285,15 +285,15 @@ export function BrandDashboard({
           <CardContent>
             <div className="grid grid-cols-3 gap-6">
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Impressions</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Impressions</p>
                 <p className="text-xl font-bold">{formatCompact(performance.impressions)}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Engagements</p>
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Engagements</p>
                 <p className="text-xl font-bold">{formatCompact(performance.engagements)}</p>
               </div>
               <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
+                <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground flex items-center gap-1">
                   <TrendingUp className="h-3 w-3 text-primary" /> Avg. Eng.
                 </p>
                 <p className="text-xl font-bold">{stats.avgEngagement}</p>
@@ -332,7 +332,7 @@ export function BrandDashboard({
                     <div className="flex min-w-0 items-center gap-2.5">
                       <Badge
                         className={cn(
-                          "border-none text-[10px] font-bold uppercase tracking-wide",
+                          "border-none text-xs font-bold uppercase tracking-wide",
                           isOpen
                             ? "bg-blue-50 text-blue-700 hover:bg-blue-50 dark:bg-blue-500/15 dark:text-blue-300 dark:hover:bg-blue-500/15"
                             : "bg-emerald-50 text-emerald-700 hover:bg-emerald-50 dark:bg-emerald-500/15 dark:text-emerald-300 dark:hover:bg-emerald-500/15"
@@ -348,7 +348,7 @@ export function BrandDashboard({
                       </Link>
                     </Button>
                   </div>
-                  <div className="mt-2.5 flex items-center gap-2 text-xs font-medium text-muted-foreground">
+                  <div className="mt-2.5 flex items-center gap-2 text-sm font-medium text-muted-foreground">
                     <Users className="h-3.5 w-3.5 shrink-0" />
                     <span>{applicants} applicant{applicants === 1 ? "" : "s"}</span>
                     {budget > 0 && (
@@ -421,7 +421,7 @@ export function BrandDashboard({
                 <div className={cn("mt-1.5 h-1.5 w-1.5 rounded-full shrink-0", act.isRead ? "bg-muted-foreground/40" : "bg-primary")} />
                 <div className="min-w-0">
                   <span className="text-foreground">{act.title}</span>
-                  {act.body ? <p className="text-xs text-muted-foreground line-clamp-1">{act.body}</p> : null}
+                  {act.body ? <p className="text-sm text-muted-foreground line-clamp-1">{act.body}</p> : null}
                 </div>
               </div>
             ))}

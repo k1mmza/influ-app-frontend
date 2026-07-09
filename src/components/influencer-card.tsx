@@ -130,9 +130,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         <div className="absolute inset-x-0 bottom-0 p-3">
           <h3 className="truncate text-base font-bold tracking-tight text-white font-serif">{influencer.name}</h3>
           {tags.length > 0 && (
-            <p className="truncate text-[11px] font-medium text-white/70">{tags.join(", ")}</p>
+            <p className="truncate text-xs font-medium text-white/70">{tags.join(", ")}</p>
           )}
-          <p className="mt-0.5 truncate text-[11px] font-semibold text-emerald-300">
+          <p className="mt-0.5 truncate text-xs font-semibold text-emerald-300">
             {activePlatform ? `${activePlatform} · ` : ""}{activeFollowers.toLocaleString()} followers
           </p>
         </div>
@@ -184,7 +184,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         </div>
 
         <Button
-          className="mt-auto w-full rounded-xl font-bold text-xs h-9 shadow-sm"
+          className="mt-auto w-full rounded-xl font-bold text-sm h-9 shadow-sm"
           onClick={(e) => { e.stopPropagation(); onAddToCampaign?.(influencer); }}
         >
           <PlusCircle className="mr-1.5 h-3.5 w-3.5" />

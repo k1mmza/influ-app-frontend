@@ -280,16 +280,16 @@ function MessagesView({ role }: { role: string }) {
                       <Link
                         href={`/campaigns/${conv.campaignId}`}
                         onClick={(e) => e.stopPropagation()}
-                        className="text-xs text-muted-foreground truncate hover:underline hover:text-foreground transition-colors"
+                        className="text-sm text-muted-foreground truncate hover:underline hover:text-foreground transition-colors"
                       >
                         {conv.campaignName}
                       </Link>
                     ) : (
-                      <p className="text-xs text-muted-foreground truncate">{conv.campaignName}</p>
+                      <p className="text-sm text-muted-foreground truncate">{conv.campaignName}</p>
                     )}
                   </div>
                   <div className="flex flex-col items-end shrink-0 gap-1">
-                    <span className="text-[10px] text-muted-foreground">
+                    <span className="text-xs text-muted-foreground">
                       {new Date(conv.lastMessageAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                     </span>
                     {conv.unreadCount > 0 && (
@@ -299,7 +299,7 @@ function MessagesView({ role }: { role: string }) {
                     )}
                   </div>
                 </div>
-                <p className="mt-1 line-clamp-1 text-xs text-muted-foreground">{conv.lastMessage}</p>
+                <p className="mt-1 line-clamp-1 text-sm text-muted-foreground">{conv.lastMessage}</p>
                 <div className="mt-2">
                   <WorkStatusDot phase={conv.workPhase as WorkPhase} />
                 </div>
@@ -322,7 +322,7 @@ function MessagesView({ role }: { role: string }) {
                   <div className="flex min-w-0 items-center gap-3">
                     <div className="min-w-0">
                       <p className="text-sm font-semibold text-foreground">{activeConv.partnerName}</p>
-                      <p className="text-xs text-muted-foreground">{activeConv.campaignName}</p>
+                      <p className="text-sm text-muted-foreground">{activeConv.campaignName}</p>
                     </div>
                     <WorkStatusIndicator
                       phase={activeConv.workPhase as WorkPhase}
@@ -332,7 +332,7 @@ function MessagesView({ role }: { role: string }) {
                   {activeConv.campaignId ? (
                     <Link
                       href={`/campaigns/${activeConv.campaignId}`}
-                      className="shrink-0 rounded-xl border border-border px-3 py-1.5 text-xs font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
+                      className="shrink-0 rounded-xl border border-border px-3 py-1.5 text-sm font-semibold text-foreground hover:bg-muted transition-colors cursor-pointer"
                     >
                       View Campaign →
                     </Link>
@@ -368,7 +368,7 @@ function MessagesView({ role }: { role: string }) {
                   </div>
                 ) : (
                   <>
-                    <p className="text-center text-[10px] text-muted-foreground uppercase font-bold tracking-widest">
+                    <p className="text-center text-xs text-muted-foreground uppercase font-bold tracking-widest">
                       Conversation started
                     </p>
                     {messages.map((msg) => {
@@ -383,7 +383,7 @@ function MessagesView({ role }: { role: string }) {
                             }`}
                           >
                             {msg.content}
-                            <p className={`mt-1 text-[10px] ${isMe ? "text-white/60" : "text-muted-foreground"}`}>
+                            <p className={`mt-1 text-xs ${isMe ? "text-white/60" : "text-muted-foreground"}`}>
                               {new Date(msg.sentAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}
                             </p>
                           </div>

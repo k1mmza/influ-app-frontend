@@ -551,7 +551,7 @@ export default function CampaignDetailPage() {
               ) : (
                 <div className="flex h-full w-full flex-col items-center justify-center gap-2 text-muted-foreground">
                   <ImageIcon className="h-8 w-8" />
-                  <span className="text-xs font-medium">No cover image yet</span>
+                  <span className="text-sm font-medium">No cover image yet</span>
                 </div>
               )}
               {isEditing && canManageCampaign && (
@@ -648,7 +648,7 @@ export default function CampaignDetailPage() {
                     placeholder="Budget in THB"
                     {...lockedInputProps}
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editVisibility">Visibility</Label>
@@ -672,7 +672,7 @@ export default function CampaignDetailPage() {
                     placeholder="Per post, package, affiliate"
                     {...lockedInputProps}
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
               </>
             ) : (
@@ -789,7 +789,7 @@ export default function CampaignDetailPage() {
                     className="w-full min-h-[100px] p-2 mt-1 rounded-xl border border-input bg-background text-foreground text-sm resize-none focus:outline-none focus:ring-1 focus:ring-ring disabled:opacity-60 disabled:cursor-not-allowed"
                     {...lockedInputProps}
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Locked — campaign has accepted creators</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editDoAndDont" className="font-semibold text-foreground mb-1">Do and don't</Label>
@@ -841,7 +841,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, applyDeadline: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editSubmissionDate">Submission date</Label>
@@ -853,7 +853,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, submissionDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editReviewDate">Review date</Label>
@@ -865,7 +865,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, reviewDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
                 <div>
                   <Label htmlFor="editPaymentDate">Payment date</Label>
@@ -877,7 +877,7 @@ export default function CampaignDetailPage() {
                     onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
                     className="mt-1 rounded-xl"
                   />
-                  {termsLocked ? <p className="mt-1 text-xs text-muted-foreground">Can be extended, not shortened</p> : null}
+                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
                 </div>
               </>
             ) : (
@@ -901,7 +901,7 @@ export default function CampaignDetailPage() {
             {isEditing && editFormData ? (
               <>
               {termsLocked ? (
-                <p className="mb-3 text-xs text-muted-foreground">
+                <p className="mb-3 text-sm text-muted-foreground">
                   Creator requirements are locked — this campaign has accepted creators.
                 </p>
               ) : null}
@@ -1027,7 +1027,7 @@ export default function CampaignDetailPage() {
                       onClick={() => setApplicationsView(mode)}
                       aria-pressed={applicationsView === mode}
                       className={cn(
-                        "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-xs font-medium transition",
+                        "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium transition",
                         applicationsView === mode
                           ? "bg-card text-foreground shadow-sm"
                           : "text-muted-foreground hover:text-foreground",
@@ -1055,7 +1055,7 @@ export default function CampaignDetailPage() {
                           <p className="truncate font-semibold text-foreground">{getInfluencerName(application)}</p>
                           <Badge className={cn("border-none uppercase", statusClass(application.status))}>{application.status}</Badge>
                         </div>
-                        <p className="mt-0.5 truncate text-xs text-muted-foreground">
+                        <p className="mt-0.5 truncate text-sm text-muted-foreground">
                           {accounts.length
                             ? accounts.map((account) => `${account.platform} @${account.handle}`).join(" | ")
                             : "No connected platform data"}
@@ -1097,7 +1097,7 @@ export default function CampaignDetailPage() {
                         />
                         <div className="min-w-0 flex-1">
                           <p className="truncate font-semibold text-foreground">{name}</p>
-                          <p className="truncate text-xs text-muted-foreground">
+                          <p className="truncate text-sm text-muted-foreground">
                             {primary ? `${primary.platform} @${primary.handle}` : "No connected platform"}
                           </p>
                         </div>
@@ -1105,24 +1105,24 @@ export default function CampaignDetailPage() {
                       </div>
 
                       {application.influencer?.bio ? (
-                        <p className="mt-3 line-clamp-2 text-xs text-muted-foreground">{application.influencer.bio}</p>
+                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{application.influencer.bio}</p>
                       ) : null}
 
                       {primary ? (
                         <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted/40 p-2 text-center">
                           <div>
                             <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.followers)}</p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Followers</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Followers</p>
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.avgViews)}</p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Avg views</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg views</p>
                           </div>
                           <div>
                             <p className="text-sm font-semibold text-foreground">
                               {primary.engagementRate != null ? `${primary.engagementRate.toFixed(1)}%` : "—"}
                             </p>
-                            <p className="text-[10px] uppercase tracking-wide text-muted-foreground">Eng.</p>
+                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Eng.</p>
                           </div>
                         </div>
                       ) : null}
@@ -1130,14 +1130,14 @@ export default function CampaignDetailPage() {
                       {cats.length ? (
                         <div className="mt-3 flex flex-wrap gap-1.5">
                           {cats.map((c) => (
-                            <span key={c} className="rounded-full bg-primary/10 px-2 py-0.5 text-[10px] font-medium text-primary">
+                            <span key={c} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
                               {c}
                             </span>
                           ))}
                         </div>
                       ) : null}
 
-                      <div className="mt-3 flex items-center gap-1 text-[11px] font-medium text-primary">
+                      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
                         {isLoadingDetail ? (
                           <>
                             <Loader2 className="h-3 w-3 animate-spin" /> Loading profile…
@@ -1186,7 +1186,7 @@ export default function CampaignDetailPage() {
                   if (rows.length === 0) return null;
                   return (
                     <div key={groupStatus} className="space-y-2">
-                      <p className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground">
                         {label} ({rows.length})
                       </p>
                       {rows.map((invitation) => {
@@ -1196,7 +1196,7 @@ export default function CampaignDetailPage() {
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
                                 <p className="font-semibold text-foreground">{getInfluencerName(invitation)}</p>
-                                <p className="mt-1 text-xs text-muted-foreground">
+                                <p className="mt-1 text-sm text-muted-foreground">
                                   {accounts.length
                                     ? accounts.map((account) => `${account.platform} @${account.handle}`).join(" | ")
                                     : "No connected platform data"}
@@ -1314,7 +1314,7 @@ export default function CampaignDetailPage() {
                   <X className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Inviting to <span className="font-semibold text-foreground">{campaign.name}</span>
               </p>
             </CardHeader>
@@ -1338,7 +1338,7 @@ export default function CampaignDetailPage() {
                     >
                       <div className="min-w-0">
                         <p className="truncate text-sm font-semibold">{inf.name}</p>
-                        <p className="truncate text-xs text-muted-foreground">
+                        <p className="truncate text-sm text-muted-foreground">
                           {Array.isArray(inf.platforms) && inf.platforms.length
                             ? inf.platforms.join(", ")
                             : "No platform data"}
