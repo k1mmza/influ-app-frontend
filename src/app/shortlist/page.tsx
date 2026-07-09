@@ -3,12 +3,12 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Loader2, AlertCircle, CheckCheck, X as XIcon } from "lucide-react";
+import { Heart, Loader2, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { InfluencerCard } from "@/components/influencer-card";
 import { InfluencerDetailPanel } from "@/components/influencer-detail-panel";
+import { AddToCampaignModal } from "@/components/add-to-campaign-modal";
 import { Influencer } from "@/lib/types";
 import {
   apiGetCampaigns,
@@ -18,7 +18,6 @@ import {
 } from "@/lib/api";
 import { useShortlistStore } from "@/store/useShortlistStore";
 import { useUserStore } from "@/store/useUserStore";
-import { cn } from "@/lib/utils";
 
 export default function ShortlistPage() {
   const router = useRouter();
@@ -172,98 +171,17 @@ export default function ShortlistPage() {
       )}
 
       {/* Campaign picker modal */}
-      {campaignPickerInfluencer && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={() => setCampaignPickerInfluencer(null)}
-        >
-          <Card
-            className="w-full max-w-md shadow-2xl border-none"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-serif">Add to Campaign</CardTitle>
-                <button
-                  onClick={() => setCampaignPickerInfluencer(null)}
-                  className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <XIcon className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Invite <span className="font-semibold text-foreground">{campaignPickerInfluencer.name}</span> to one of your campaigns
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2 pb-4">
-              {campaigns.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No campaigns yet. Create one first.</p>
-              ) : (
-                campaigns.map((campaign) => (
-                  <button
-                    key={campaign.id}
-                    onClick={() => setPickedCampaignId(campaign.id)}
-                    className={cn(
-                      "w-full rounded-xl border p-3 text-left transition-all cursor-pointer",
-                      pickedCampaignId === campaign.id
-                        ? "border-primary bg-primary/5"
-                        : "border-border hover:border-primary/40 hover:bg-muted/50"
-                    )}
-                  >
-                    <p className="text-sm font-semibold">{campaign.name}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
-                    <div className="flex items-center gap-2 mt-1.5">
-                      <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
-                      <span className="text-[10px] text-muted-foreground">
-                        {campaign.budget != null ? `THB ${Number(campaign.budget).toLocaleString()}` : "Budget TBD"}
-                      </span>
-                    </div>
-                  </button>
-                ))
-              )}
-              {campaignPickerInfluencer.id.startsWith("url-derived-") && (
-                <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  This creator isn&apos;t registered on InfluApp yet, so they can&apos;t be invited.
-                </div>
-              )}
-              {addConfirmed && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 pt-1">
-                  <CheckCheck className="h-4 w-4" />
-                  Invitation sent to {campaignPickerInfluencer.name}!
-                </div>
-              )}
-              {inviteError && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-rose-600 pt-1">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {inviteError}
-                </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-xl"
-                  onClick={() => setCampaignPickerInfluencer(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 rounded-xl"
-                  disabled={
-                    !pickedCampaignId ||
-                    addConfirmed ||
-                    inviting ||
-                    campaignPickerInfluencer.id.startsWith("url-derived-")
-                  }
-                  onClick={handleConfirmInvite}
-                >
-                  {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invitation"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AddToCampaignModal
+        influencer={campaignPickerInfluencer}
+        campaigns={campaigns}
+        pickedCampaignId={pickedCampaignId}
+        onPick={setPickedCampaignId}
+        inviting={inviting}
+        addConfirmed={addConfirmed}
+        inviteError={inviteError}
+        onConfirm={handleConfirmInvite}
+        onClose={() => setCampaignPickerInfluencer(null)}
+      />
 
       {/* Message / start conversation picker modal */}
       {messagePickerInfluencer && role !== "influencer" && (

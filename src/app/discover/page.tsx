@@ -30,9 +30,8 @@ import {
   CheckCircle2,
   AlertCircle,
   X as XIcon,
-  CheckCheck,
 } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { AddToCampaignModal } from "@/components/add-to-campaign-modal";
 
 type FollowerRange = "All" | "Nano" | "Micro" | "Mid" | "Macro" | "Mega";
 type InfluencerMeta = {
@@ -118,7 +117,6 @@ function DiscoverPageContent() {
   const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
-  const [campaignPickerPage, setCampaignPickerPage] = useState(0);
   const [addConfirmed, setAddConfirmed] = useState(false);
   const [inviting, setInviting] = useState(false);
   const [inviteError, setInviteError] = useState<string | null>(null);
@@ -137,28 +135,6 @@ function DiscoverPageContent() {
       .then(setCampaigns)
       .catch((err) => console.error("Failed to fetch campaigns:", err));
   }, [role, token]);
-
-  // The "Add to Campaign" picker invites a creator, so only ACTIVE campaigns are
-  // valid targets (drafts/completed aren't recruiting). Paginate so the list
-  // can't overflow the modal.
-  const CAMPAIGN_PICKER_PAGE_SIZE = 4;
-  const activeCampaigns = useMemo(
-    () => campaigns.filter((c) => c.status === "ACTIVE"),
-    [campaigns],
-  );
-  const campaignPageCount = Math.max(
-    1,
-    Math.ceil(activeCampaigns.length / CAMPAIGN_PICKER_PAGE_SIZE),
-  );
-  const pagedCampaigns = activeCampaigns.slice(
-    campaignPickerPage * CAMPAIGN_PICKER_PAGE_SIZE,
-    campaignPickerPage * CAMPAIGN_PICKER_PAGE_SIZE + CAMPAIGN_PICKER_PAGE_SIZE,
-  );
-
-  // Reset to the first page each time the picker opens for a new creator.
-  useEffect(() => {
-    setCampaignPickerPage(0);
-  }, [campaignPickerInfluencer]);
 
   const handleConfirmInvite = async () => {
     if (!token || !campaignPickerInfluencer || !pickedCampaignId) return;
@@ -672,7 +648,7 @@ function DiscoverPageContent() {
                 <SlidersHorizontal className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Filters</span>
                 {activeChips.length > 0 && (
-                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-black/10 px-1 text-[10px] font-bold leading-none dark:bg-white/25">
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-black/10 px-1 text-xs font-bold leading-none dark:bg-white/25">
                     {activeChips.length}
                   </span>
                 )}
@@ -689,7 +665,7 @@ function DiscoverPageContent() {
                     <Filter className="h-4 w-4" />
                     Filters
                   </CardTitle>
-                  <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-2 text-xs font-bold text-primary">
+                  <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-2 text-sm font-bold text-primary">
                     <RotateCcw className="mr-1.5 h-3 w-3" />
                     Reset
                   </Button>
@@ -701,7 +677,7 @@ function DiscoverPageContent() {
                 <div className="grid gap-x-6 gap-y-6 sm:grid-cols-2">
                 {/* Platform */}
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Platform</Label>
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Platform</Label>
                   <div className="space-y-2">
                     {platforms.slice(0, 5).filter((p) => p !== "X").map((item) => (
                       <div key={item} className="flex items-center space-x-2">
@@ -715,7 +691,7 @@ function DiscoverPageContent() {
                           }}
                           className="h-4 w-4 rounded border-input bg-background"
                         />
-                        <Label htmlFor={`p-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
+                        <Label htmlFor={`p-${item}`} className="text-sm font-medium cursor-pointer">{item}</Label>
                       </div>
                     ))}
                   </div>
@@ -723,7 +699,7 @@ function DiscoverPageContent() {
 
                 {/* Min Engagement Rate — primary filter, always visible */}
                 <div className="space-y-2">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Engagement Rate</Label>
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Engagement Rate</Label>
                   <div className="relative">
                     <Input
                       type="number"
@@ -733,16 +709,16 @@ function DiscoverPageContent() {
                       value={minEngagementRate || ""}
                       onChange={(e) => setMinEngagementRate(Number(e.target.value))}
                       placeholder="Any"
-                      className="h-8 text-xs pr-8"
+                      className="h-8 text-sm pr-8"
                     />
-                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                    <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                   </div>
                 </div>
                 </div>
 
                 {/* Category — full-width band, responsive columns (up to 4) */}
                 <div className="space-y-3">
-                  <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
+                  <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Category</Label>
                   <div className="grid grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-3 lg:grid-cols-4">
                     {categories.filter((c) => c !== "All").map((item) => (
                       <div key={item} className="flex items-center space-x-2">
@@ -756,7 +732,7 @@ function DiscoverPageContent() {
                           }}
                           className="h-4 w-4 rounded border-input bg-background"
                         />
-                        <Label htmlFor={`cat-${item}`} className="text-xs font-medium cursor-pointer">{item}</Label>
+                        <Label htmlFor={`cat-${item}`} className="text-sm font-medium cursor-pointer">{item}</Label>
                       </div>
                     ))}
                   </div>
@@ -766,7 +742,7 @@ function DiscoverPageContent() {
                   variant="outline"
                   size="sm"
                   onClick={() => setShowAdvancedFilters(!showAdvancedFilters)}
-                  className="w-full justify-between rounded-xl font-bold text-xs"
+                  className="w-full justify-between rounded-xl font-bold text-sm"
                 >
                   Advanced Filters
                   {showAdvancedFilters ? <ChevronUp className="h-3 w-3" /> : <ChevronDown className="h-3 w-3" />}
@@ -777,16 +753,16 @@ function DiscoverPageContent() {
 
                     {/* ── FOLLOWER SIZE ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Follower Size</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Follower Size</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Range</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Range</Label>
                       <select
                         value={followerRange}
                         onChange={(e) => setFollowerRange(e.target.value as FollowerRange)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="All">All Ranges</option>
                         <option value="Nano">Nano (1K – 10K)</option>
@@ -798,7 +774,7 @@ function DiscoverPageContent() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Followers (custom)</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Followers (custom)</Label>
                       <Input
                         type="number"
                         min={0}
@@ -806,22 +782,22 @@ function DiscoverPageContent() {
                         value={minFollowers || ""}
                         onChange={(e) => setMinFollowers(Number(e.target.value))}
                         placeholder="e.g. 50000"
-                        className="h-8 text-xs"
+                        className="h-8 text-sm"
                       />
                     </div>
 
                     {/* ── LOCATION ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Location</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Location</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Country</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Country</Label>
                       <select
                         value={country}
                         onChange={(e) => setCountry(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         {countryOptions.map((c) => (
                           <option key={c} value={c}>{c === "All" ? "All Countries" : c}</option>
@@ -831,16 +807,16 @@ function DiscoverPageContent() {
 
                     {/* ── AUDIENCE ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Audience</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Audience</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Gender</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Gender</Label>
                       <select
                         value={audienceGender}
                         onChange={(e) => setAudienceGender(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         {audienceGenders.map((g) => (
                           <option key={g} value={g}>{g}</option>
@@ -849,11 +825,11 @@ function DiscoverPageContent() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Age Group</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Age Group</Label>
                       <select
                         value={audienceAgeGroup}
                         onChange={(e) => setAudienceAgeGroup(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         {ageGroups.map((a) => (
                           <option key={a} value={a}>{a}</option>
@@ -863,12 +839,12 @@ function DiscoverPageContent() {
 
                     {/* ── PERFORMANCE ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Performance</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Performance</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Growth Rate</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Growth Rate</Label>
                       <div className="relative">
                         <Input
                           type="number"
@@ -878,14 +854,14 @@ function DiscoverPageContent() {
                           value={minGrowthRate || ""}
                           onChange={(e) => setMinGrowthRate(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pr-8"
+                          className="h-8 text-sm pr-8"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Avg Views</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Avg Views</Label>
                       <Input
                         type="number"
                         min={0}
@@ -893,12 +869,12 @@ function DiscoverPageContent() {
                         value={minAverageViews || ""}
                         onChange={(e) => setMinAverageViews(Number(e.target.value))}
                         placeholder="Any"
-                        className="h-8 text-xs"
+                        className="h-8 text-sm"
                       />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Content Quality Score</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Content Quality Score</Label>
                       <div className="relative">
                         <Input
                           type="number"
@@ -907,14 +883,14 @@ function DiscoverPageContent() {
                           value={minQualityScore || ""}
                           onChange={(e) => updateQualityScore(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pr-8"
+                          className="h-8 text-sm pr-8"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Performance Score</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Campaign Performance Score</Label>
                       <div className="relative">
                         <Input
                           type="number"
@@ -923,24 +899,24 @@ function DiscoverPageContent() {
                           value={minPerformanceScore || ""}
                           onChange={(e) => updatePerformanceScore(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pr-8"
+                          className="h-8 text-sm pr-8"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                       </div>
                     </div>
 
                     {/* ── CREATOR PROFILE ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Creator Profile</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Creator Profile</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Content Style</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Content Style</Label>
                       <select
                         value={stylePresent}
                         onChange={(e) => setStylePresent(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         {stylePresentOptions.map((s) => (
                           <option key={s} value={s}>{s}</option>
@@ -949,11 +925,11 @@ function DiscoverPageContent() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Availability</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Availability</Label>
                       <select
                         value={availabilityStatus}
                         onChange={(e) => setAvailabilityStatus(e.target.value)}
-                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-xs"
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
                       >
                         <option value="All">All</option>
                         <option value="available">Available</option>
@@ -963,7 +939,7 @@ function DiscoverPageContent() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Response Rate</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Response Rate</Label>
                       <div className="relative">
                         <Input
                           type="number"
@@ -972,14 +948,14 @@ function DiscoverPageContent() {
                           value={minResponseRate || ""}
                           onChange={(e) => updateResponseRate(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pr-8"
+                          className="h-8 text-sm pr-8"
                         />
-                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">%</span>
+                        <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
                       <div className="space-y-2">
                         {campaignIntents.map((intent) => (
                           <div key={intent} className="flex items-center space-x-2">
@@ -993,7 +969,7 @@ function DiscoverPageContent() {
                               }}
                               className="h-4 w-4 rounded border-input bg-background"
                             />
-                            <Label htmlFor={`i-${intent}`} className="text-xs font-medium cursor-pointer">{intent}</Label>
+                            <Label htmlFor={`i-${intent}`} className="text-sm font-medium cursor-pointer">{intent}</Label>
                           </div>
                         ))}
                       </div>
@@ -1001,14 +977,14 @@ function DiscoverPageContent() {
 
                     {/* ── BUDGET ── */}
                     <div className="col-span-full flex items-center gap-2">
-                      <span className="text-[11px] font-black uppercase tracking-widest text-primary/60">Budget</span>
+                      <span className="text-xs font-black uppercase tracking-widest text-primary/60">Budget</span>
                       <div className="flex-1 h-px bg-border" />
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Min Rate / Post</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Min Rate / Post</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                         <Input
                           type="number"
                           min={0}
@@ -1016,15 +992,15 @@ function DiscoverPageContent() {
                           value={minRatePerPost || ""}
                           onChange={(e) => setMinRatePerPost(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pl-6"
+                          className="h-8 text-sm pl-6"
                         />
                       </div>
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Max Rate / Post</Label>
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Max Rate / Post</Label>
                       <div className="relative">
-                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-muted-foreground">$</span>
+                        <span className="absolute left-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">$</span>
                         <Input
                           type="number"
                           min={0}
@@ -1032,7 +1008,7 @@ function DiscoverPageContent() {
                           value={maxRatePerPost || ""}
                           onChange={(e) => setMaxRatePerPost(Number(e.target.value))}
                           placeholder="Any"
-                          className="h-8 text-xs pl-6"
+                          className="h-8 text-sm pl-6"
                         />
                       </div>
                     </div>
@@ -1047,7 +1023,7 @@ function DiscoverPageContent() {
       <div className="space-y-6">
         {activeChips.length > 0 && (
           <div className="flex flex-wrap items-center gap-2">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mr-2">Active:</span>
+            <span className="text-xs font-bold uppercase tracking-widest text-muted-foreground mr-2">Active:</span>
             {activeChips.map((chip) => (
               <Badge key={chip} variant="secondary" className="rounded-full bg-muted text-foreground font-semibold px-3 py-1 border-none">
                 {chip}
@@ -1094,7 +1070,7 @@ function DiscoverPageContent() {
         {/* URL / smart-search result — one-off card prepended above the shelves. */}
         {generatedInfluencer && (
           <div className="space-y-2">
-            <h2 className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search result</h2>
+            <h2 className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Search result</h2>
             <div className="relative w-full max-w-[18.5rem]">
               <button
                 onClick={() => { setGeneratedInfluencer(null); setGeneratedInfluencerMeta(null); setUrlLookupStatus(null); if (selectedInfluencerId === generatedInfluencer.id) setSelectedInfluencerId(null); }}
@@ -1106,7 +1082,7 @@ function DiscoverPageContent() {
               {generatedInfluencer.syncStatus === 'SYNCING' && (
                 <div className="absolute inset-0 z-20 flex flex-col items-center justify-center rounded-2xl bg-background/80 backdrop-blur-sm gap-2 pointer-events-none">
                   <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                  <span className="text-xs font-medium text-muted-foreground">Fetching profile…</span>
+                  <span className="text-sm font-medium text-muted-foreground">Fetching profile…</span>
                 </div>
               )}
               <InfluencerCard
@@ -1143,7 +1119,7 @@ function DiscoverPageContent() {
         <div className="space-y-4 rounded-2xl bg-muted/30 p-4 sm:p-5">
           <div className="flex items-center justify-between">
             <h2 className="text-lg font-bold font-serif text-foreground">All Influencers</h2>
-            {!loading && <span className="text-xs font-medium text-muted-foreground">{totalCount} creators</span>}
+            {!loading && <span className="text-sm font-medium text-muted-foreground">{totalCount} creators</span>}
           </div>
           {loading ? (
             <div className="flex min-h-[300px] items-center justify-center">
@@ -1235,125 +1211,17 @@ function DiscoverPageContent() {
       )}
 
       {/* Campaign picker modal */}
-      {campaignPickerInfluencer && (
-        <div
-          className="fixed inset-0 z-[60] flex items-center justify-center bg-black/50 backdrop-blur-sm p-4"
-          onClick={() => setCampaignPickerInfluencer(null)}
-        >
-          <Card
-            className="w-full max-w-md shadow-2xl border-none"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <CardHeader className="pb-3">
-              <div className="flex items-center justify-between">
-                <CardTitle className="text-base font-serif">Add to Campaign</CardTitle>
-                <button
-                  onClick={() => setCampaignPickerInfluencer(null)}
-                  className="rounded-full p-1 hover:bg-muted transition-colors cursor-pointer"
-                >
-                  <XIcon className="h-4 w-4 text-muted-foreground" />
-                </button>
-              </div>
-              <p className="text-xs text-muted-foreground">
-                Invite <span className="font-semibold text-foreground">{campaignPickerInfluencer.name}</span> to one of your campaigns
-              </p>
-            </CardHeader>
-            <CardContent className="space-y-2 pb-4">
-              {activeCampaigns.length === 0 ? (
-                <p className="text-sm text-muted-foreground py-4 text-center">No active campaigns. Activate or create one first.</p>
-              ) : (
-                <>
-                  {pagedCampaigns.map((campaign) => (
-                    <button
-                      key={campaign.id}
-                      onClick={() => setPickedCampaignId(campaign.id)}
-                      className={cn(
-                        "w-full rounded-xl border p-3 text-left transition-all cursor-pointer",
-                        pickedCampaignId === campaign.id
-                          ? "border-primary bg-primary/5"
-                          : "border-border hover:border-primary/40 hover:bg-muted/50"
-                      )}
-                    >
-                      <p className="text-sm font-semibold">{campaign.name}</p>
-                      <p className="text-xs text-muted-foreground mt-0.5">{campaign.objective}</p>
-                      <div className="flex items-center gap-2 mt-1.5">
-                        <Badge variant="secondary" className="text-[10px] h-5">{campaign.status}</Badge>
-                        <span className="text-[10px] text-muted-foreground">
-                          {campaign.budget != null ? `THB ${Number(campaign.budget).toLocaleString()}` : "Budget TBD"}
-                        </span>
-                      </div>
-                    </button>
-                  ))}
-                  {campaignPageCount > 1 && (
-                    <div className="flex items-center justify-between pt-1">
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 rounded-lg px-3"
-                        disabled={campaignPickerPage === 0}
-                        onClick={() => setCampaignPickerPage((p) => Math.max(0, p - 1))}
-                      >
-                        <ChevronLeft className="mr-1 h-4 w-4" /> Prev
-                      </Button>
-                      <span className="text-[11px] text-muted-foreground">
-                        Page {campaignPickerPage + 1} of {campaignPageCount}
-                      </span>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="h-9 rounded-lg px-3"
-                        disabled={campaignPickerPage >= campaignPageCount - 1}
-                        onClick={() => setCampaignPickerPage((p) => Math.min(campaignPageCount - 1, p + 1))}
-                      >
-                        Next <ChevronRight className="ml-1 h-4 w-4" />
-                      </Button>
-                    </div>
-                  )}
-                </>
-              )}
-              {campaignPickerInfluencer.id.startsWith("url-derived-") && (
-                <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">
-                  <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-                  This creator isn&apos;t registered on InfluApp yet, so they can&apos;t be invited.
-                </div>
-              )}
-              {addConfirmed && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-emerald-600 pt-1">
-                  <CheckCheck className="h-4 w-4" />
-                  Invitation sent to {campaignPickerInfluencer.name}!
-                </div>
-              )}
-              {inviteError && (
-                <div className="flex items-center gap-2 text-sm font-semibold text-rose-600 pt-1">
-                  <AlertCircle className="h-4 w-4 shrink-0" />
-                  {inviteError}
-                </div>
-              )}
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="outline"
-                  className="flex-1 rounded-xl"
-                  onClick={() => setCampaignPickerInfluencer(null)}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 rounded-xl"
-                  disabled={
-                    !pickedCampaignId ||
-                    addConfirmed ||
-                    inviting ||
-                    campaignPickerInfluencer.id.startsWith("url-derived-")
-                  }
-                  onClick={handleConfirmInvite}
-                >
-                  {inviting ? <Loader2 className="h-4 w-4 animate-spin" /> : "Send Invitation"}
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        </div>
-      )}
+      <AddToCampaignModal
+        influencer={campaignPickerInfluencer}
+        campaigns={campaigns}
+        pickedCampaignId={pickedCampaignId}
+        onPick={setPickedCampaignId}
+        inviting={inviting}
+        addConfirmed={addConfirmed}
+        inviteError={inviteError}
+        onConfirm={handleConfirmInvite}
+        onClose={() => setCampaignPickerInfluencer(null)}
+      />
 
       {/* Message / start conversation picker modal */}
       {messagePickerInfluencer && role !== "influencer" && (
@@ -1375,7 +1243,7 @@ function DiscoverPageContent() {
                   <XIcon className="h-4 w-4 text-muted-foreground" />
                 </button>
               </div>
-              <p className="text-xs text-muted-foreground">
+              <p className="text-sm text-muted-foreground">
                 Starting a conversation with <span className="font-semibold text-foreground">{messagePickerInfluencer.name}</span>. Select a campaign to link this conversation to.
               </p>
             </CardHeader>
