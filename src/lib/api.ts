@@ -2,19 +2,6 @@ import { Role } from "./types";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
-/**
- * Resolve a stored file path into an absolute URL against the backend origin.
- * Uploaded files are stored as root-relative paths (e.g. "/uploads/conversations/x.pdf").
- * Used verbatim, the browser resolves these against the frontend origin (:3000) → 404.
- * Prefixing with API_URL points them at the backend (:3001) where useStaticAssets serves them.
- * Returns null for empty input; passes through values that are already absolute URLs.
- */
-export function fileUrl(path?: string | null): string | null {
-  if (!path) return null;
-  if (/^(https?:\/\/|data:)/i.test(path)) return path;
-  return `${API_URL}${path.startsWith("/") ? "" : "/"}${path}`;
-}
-
 async function readApiError(res: Response, fallback: string) {
   try {
     const error = await res.json();

@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useMemo, useState, type ReactNode } from "react";
 import {
-  fileUrl,
   apiGetDrafts,
   apiCreateDraft,
   apiUpdateDraft,
@@ -410,7 +409,7 @@ export function ProcessOfWorkPanel({
     null;
 
   const briefName = briefCampaign?.name ?? linkedCampaign?.name ?? "No campaign linked";
-  const resolvedBriefFileUrl = fileUrl(brief?.briefFileUrl ?? attachments?.briefFileUrl ?? null);
+  const resolvedBriefFileUrl = brief?.briefFileUrl ?? attachments?.briefFileUrl ?? null;
 
   return (
     <div>
@@ -485,7 +484,7 @@ export function ProcessOfWorkPanel({
         {attachments?.contractUrl ? (
           <div className="mt-4 flex items-center gap-3 rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3">
             <span className="text-sm font-semibold text-emerald-700">Uploaded</span>
-            <a href={fileUrl(attachments.contractUrl) ?? "#"} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
+            <a href={attachments.contractUrl ?? "#"} target="_blank" rel="noreferrer" className="text-sm font-semibold text-primary hover:underline truncate">
               View contract
             </a>
           </div>
@@ -591,7 +590,7 @@ export function ProcessOfWorkPanel({
               <p className="text-sm font-semibold uppercase tracking-wide text-muted-foreground">Reference image</p>
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={fileUrl(briefCampaign.briefImageUrl) ?? ""}
+                src={briefCampaign.briefImageUrl ?? ""}
                 alt="Brief reference"
                 className="mt-2 max-h-80 w-full rounded-lg border border-border object-contain"
               />
@@ -652,7 +651,7 @@ export function ProcessOfWorkPanel({
             </p>
           ) : (
             drafts.map((d) => {
-              const draftFile = fileUrl(d.fileUrl);
+              const draftFile = d.fileUrl;
               return (
                 <div key={d.id} className="rounded-xl border border-border bg-card p-3">
                   <div className="flex items-start justify-between gap-2">
@@ -868,7 +867,7 @@ export function ProcessOfWorkPanel({
             </p>
           ) : (
             payments.map((p) => {
-              const proof = fileUrl(p.proofUrl);
+              const proof = p.proofUrl;
               const statusBadge =
                 p.status === "PAID"
                   ? "bg-emerald-100 text-emerald-700"

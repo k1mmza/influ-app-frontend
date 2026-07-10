@@ -19,7 +19,6 @@ import {
   apiFetchInfluencer,
   apiGetCampaignShortlist,
   apiAddCampaignShortlist,
-  fileUrl,
   CampaignApplicationResponse,
   CampaignResponse,
   CampaignStatus,
@@ -561,7 +560,7 @@ export default function CampaignDetailPage() {
             <div className="relative mb-5 h-40 w-full overflow-hidden rounded-2xl bg-muted sm:h-56">
               {campaign.coverImageUrl ? (
                 <img
-                  src={fileUrl(campaign.coverImageUrl) ?? ""}
+                  src={campaign.coverImageUrl ?? ""}
                   alt={`${campaign.name} cover`}
                   className="h-full w-full object-cover"
                 />
@@ -787,7 +786,7 @@ export default function CampaignDetailPage() {
             <div className="relative w-full overflow-hidden rounded-xl border border-border bg-muted">
               {campaign.briefImageUrl ? (
                 <img
-                  src={fileUrl(campaign.briefImageUrl) ?? ""}
+                  src={campaign.briefImageUrl ?? ""}
                   alt={`${campaign.name} product`}
                   className="max-h-80 w-full object-contain"
                 />

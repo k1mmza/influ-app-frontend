@@ -13,7 +13,6 @@ import {
   apiDeleteSmartPlanBrief,
   apiUploadBriefImage,
   apiUploadCampaignBriefImage,
-  fileUrl,
   type CampaignFields,
   type Provenance,
   type GeneratePlanResponse,
@@ -1133,7 +1132,7 @@ export default function SmartPlanPage() {
                 <div className="flex items-start gap-3">
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
-                    src={fileUrl(briefImageUrl) ?? ""}
+                    src={briefImageUrl ?? ""}
                     alt="Brief reference"
                     className="h-24 w-24 rounded-xl border border-border object-cover"
                   />
@@ -1431,7 +1430,7 @@ export default function SmartPlanPage() {
                       <div className="mt-3">
                         {/* eslint-disable-next-line @next/next/no-img-element */}
                         <img
-                          src={fileUrl(selectedCampaign.briefImageUrl) ?? ""}
+                          src={selectedCampaign.briefImageUrl ?? ""}
                           alt="Brief reference"
                           className="max-h-56 w-full rounded-lg border border-border object-contain"
                         />

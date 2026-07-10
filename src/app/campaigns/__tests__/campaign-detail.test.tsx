@@ -70,6 +70,8 @@ jest.mock('@/lib/api', () => ({
   apiUpdateCampaign: (...args: any[]) => mockApiUpdateCampaign(...args),
   apiUpdateCampaignApplicationStatus: (...args: any[]) => mockApiUpdateCampaignApplicationStatus(...args),
   apiApplyToCampaign: (...args: any[]) => mockApiApplyToCampaign(...args),
+  apiGetCampaignShortlist: () => Promise.resolve([]),
+  apiAddCampaignShortlist: () => Promise.resolve({}),
   CampaignStatus: {},
 }));
 

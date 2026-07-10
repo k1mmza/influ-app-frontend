@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { apiGetProfile, fileUrl } from "@/lib/api";
+import { apiGetProfile } from "@/lib/api";
 import { useUserStore } from "@/store/useUserStore";
 
 /**
@@ -9,7 +9,7 @@ import { useUserStore } from "@/store/useUserStore";
  *
  * The avatar is server-side only (apiGetProfile(token).avatarUrl) — it is NOT
  * in useUserStore, and we must not widen that store. This hook fetches it once
- * per session/token and resolves server-relative paths with fileUrl(). Returns
+ * per session/token; the API returns an absolute avatar URL. Returns
  * null when not logged in or when the user has no uploaded avatar, in which
  * case UserProfileChip falls back to a generated avatar.
  */
@@ -27,7 +27,7 @@ export function useProfileAvatar(): string | null {
     let cancelled = false;
     apiGetProfile(token)
       .then((data) => {
-        if (!cancelled) setAvatarUrl(fileUrl(data?.avatarUrl) ?? null);
+        if (!cancelled) setAvatarUrl(data?.avatarUrl ?? null);
       })
       .catch(() => {
         if (!cancelled) setAvatarUrl(null);

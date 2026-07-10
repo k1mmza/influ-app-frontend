@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Influencer } from "@/lib/types";
-import { fileUrl } from "@/lib/api";
 import { useShortlistStore } from "@/store/useShortlistStore";
 import type { IconType } from "react-icons";
 import { FaGlobe, FaLinkedinIn, FaMobileAlt } from "react-icons/fa";
@@ -71,7 +70,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
   const activeFollowers = influencer.followersByPlatform?.[activePlatform] ?? influencer.followers;
   const activeEngagement = influencer.engagementByPlatform?.[activePlatform] ?? influencer.engagementRate;
   const activeHandle = influencer.handleByPlatform?.[activePlatform] ?? null;
-  const activeAvatar = fileUrl(influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl);
+  const activeAvatar = influencer.avatarByPlatform?.[activePlatform] ?? influencer.avatarUrl ?? null;
   const [avatarFailed, setAvatarFailed] = useState(false);
   const showAvatarImg = Boolean(activeAvatar) && !avatarFailed;
 

@@ -17,7 +17,6 @@ import { useEffect, useState } from "react";
 import { Loader2, Link2 } from "lucide-react";
 import {
   apiGetPublicCampaign,
-  fileUrl,
   type PublicCampaign,
   type PublicCampaignInfluencer,
   type CampaignRequirementInput,
@@ -284,7 +283,7 @@ function InfluencerCard({ inf }: { inf: PublicCampaignInfluencer }) {
     <>
       <div className="flex items-center gap-3">
         <Avatar className="h-11 w-11">
-          {inf.avatarUrl ? <AvatarImage src={fileUrl(inf.avatarUrl) ?? ""} alt="" /> : null}
+          {inf.avatarUrl ? <AvatarImage src={inf.avatarUrl ?? ""} alt="" /> : null}
           <AvatarFallback className="text-xs font-bold text-muted-foreground">
             {initials(inf.name)}
           </AvatarFallback>
@@ -397,7 +396,7 @@ export default function PublicCampaignPage() {
               {campaign.coverImageUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={fileUrl(campaign.coverImageUrl) ?? ""}
+                  src={campaign.coverImageUrl ?? ""}
                   alt=""
                   className="h-40 w-full object-cover sm:h-56"
                 />
@@ -406,7 +405,7 @@ export default function PublicCampaignPage() {
                 <Avatar className="h-14 w-14 rounded-xl">
                   {campaign.brandLogoUrl ? (
                     <AvatarImage
-                      src={fileUrl(campaign.brandLogoUrl) ?? ""}
+                      src={campaign.brandLogoUrl ?? ""}
                       alt=""
                       className="rounded-xl object-cover"
                     />
@@ -440,7 +439,7 @@ export default function PublicCampaignPage() {
               <div className="overflow-hidden rounded-2xl bg-muted">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
-                  src={fileUrl(campaign.briefImageUrl) ?? ""}
+                  src={campaign.briefImageUrl ?? ""}
                   alt={`${campaign.name} product`}
                   className="max-h-72 w-full object-contain sm:max-h-96"
                 />
