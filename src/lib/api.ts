@@ -889,13 +889,15 @@ export interface CampaignShareLink {
 }
 
 // The backend's presentation-safe allowlist for a shared campaign. Budget,
-// payment, visibility, applications, and internal ids are deliberately excluded.
+// payment, visibility, application status/origin, and internal ids are deliberately
+// excluded. `influencers` is the ACCEPTED-only roster (see PublicCampaignInfluencer).
 export interface PublicCampaign {
   name: string;
   status: string;
   brandName: string | null;
   brandLogoUrl: string | null;
   coverImageUrl: string | null;
+  briefImageUrl: string | null;
   objective: string | null;
   keyMessage: string | null;
   doAndDont: string | null;
@@ -905,6 +907,24 @@ export interface PublicCampaign {
   applyDeadline: string | null;
   reviewDate: string | null;
   requirements: CampaignRequirementInput[];
+  influencers: PublicCampaignInfluencer[];
+}
+
+// A confirmed roster entry on the public share page. Contact info, rate/pricing,
+// scores, and application status are deliberately excluded from this allowlist.
+export interface PublicCampaignInfluencer {
+  influencerId: string;
+  name: string;
+  avatarUrl: string | null;
+  platforms: string[];
+  mainPlatform: string | null;
+  mainFollowers: number;
+  totalFollowers: number;
+  handle: string | null;
+  profileUrl: string | null;
+  category: string | null;
+  engagementRate: number;
+  country: string | null;
 }
 
 /** Owner-only: mint a new public share link for a campaign. */

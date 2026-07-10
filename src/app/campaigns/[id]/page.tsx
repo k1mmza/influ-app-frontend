@@ -14,6 +14,7 @@ import {
   apiInviteToCampaign,
   apiUpdateCampaign,
   apiUploadCampaignCover,
+  apiUploadCampaignBriefImage,
   apiUpdateCampaignApplicationStatus,
   apiFetchInfluencer,
   apiGetCampaignShortlist,
@@ -113,6 +114,8 @@ export default function CampaignDetailPage() {
   const [editFormData, setEditFormData] = useState<any>(null);
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
+  const [uploadingBriefImage, setUploadingBriefImage] = useState(false);
+  const briefImageInputRef = useRef<HTMLInputElement>(null);
   const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
   const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
 
@@ -465,6 +468,23 @@ export default function CampaignDetailPage() {
     }
   };
 
+  const handleBriefImageUpload = async (file: File | undefined) => {
+    if (!token || !campaign || !file) return;
+    setUploadingBriefImage(true);
+    setError(null);
+    setMessage("");
+    try {
+      const updated = await apiUploadCampaignBriefImage(token, campaign.id, file);
+      setCampaign(updated);
+      setMessage("Product image updated.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to upload product image");
+    } finally {
+      setUploadingBriefImage(false);
+      if (briefImageInputRef.current) briefImageInputRef.current.value = "";
+    }
+  };
+
   const saveChanges = async () => {
     if (!token || !campaign || !editFormData) return;
     setBusyAction("save");
@@ -757,6 +777,56 @@ export default function CampaignDetailPage() {
           </div>
         </CardContent>
       </Card>
+
+      {(campaign.briefImageUrl || (isEditing && canManageCampaign)) ? (
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <CardTitle className="text-lg">Product image</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="relative w-full overflow-hidden rounded-xl border border-border bg-muted">
+              {campaign.briefImageUrl ? (
+                <img
+                  src={fileUrl(campaign.briefImageUrl) ?? ""}
+                  alt={`${campaign.name} product`}
+                  className="max-h-80 w-full object-contain"
+                />
+              ) : (
+                <div className="flex h-40 w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                  <ImageIcon className="h-8 w-8" />
+                  <span className="text-sm font-medium">No product image yet</span>
+                </div>
+              )}
+              {isEditing && canManageCampaign && (
+                <>
+                  <input
+                    ref={briefImageInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className="hidden"
+                    onChange={(e) => handleBriefImageUpload(e.target.files?.[0])}
+                  />
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="secondary"
+                    disabled={uploadingBriefImage}
+                    onClick={() => briefImageInputRef.current?.click()}
+                    className="absolute bottom-3 right-3 rounded-xl font-bold shadow-md"
+                  >
+                    {uploadingBriefImage ? (
+                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                    ) : (
+                      <ImageIcon className="mr-1.5 h-4 w-4" />
+                    )}
+                    {campaign.briefImageUrl ? "Change product image" : "Upload product image"}
+                  </Button>
+                </>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      ) : null}
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-none shadow-sm">
