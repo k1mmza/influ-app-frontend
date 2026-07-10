@@ -15,7 +15,13 @@
 import { useParams } from "next/navigation";
 import { useEffect, useState } from "react";
 import { Loader2, Link2 } from "lucide-react";
-import { apiGetPublicCampaign, fileUrl, type PublicCampaign, type CampaignRequirementInput } from "@/lib/api";
+import {
+  apiGetPublicCampaign,
+  fileUrl,
+  type PublicCampaign,
+  type PublicCampaignInfluencer,
+  type CampaignRequirementInput,
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
@@ -254,6 +260,93 @@ function RequirementBlock({ r }: { r: CampaignRequirementInput }) {
   );
 }
 
+// Confirmed-roster grid — a lineup, not a data table. Always rendered (even when
+// empty) so a campaign with zero accepted influencers gets a clean message instead
+// of a missing/broken section.
+function InfluencerRoster({ influencers }: { influencers: PublicCampaignInfluencer[] }) {
+  return (
+    <SectionCard title="Influencers in this Campaign">
+      {influencers.length === 0 ? (
+        <p>No influencers yet.</p>
+      ) : (
+        <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {influencers.map((inf) => (
+            <InfluencerCard key={inf.influencerId} inf={inf} />
+          ))}
+        </div>
+      )}
+    </SectionCard>
+  );
+}
+
+function InfluencerCard({ inf }: { inf: PublicCampaignInfluencer }) {
+  const content = (
+    <>
+      <div className="flex items-center gap-3">
+        <Avatar className="h-11 w-11">
+          {inf.avatarUrl ? <AvatarImage src={fileUrl(inf.avatarUrl) ?? ""} alt="" /> : null}
+          <AvatarFallback className="text-xs font-bold text-muted-foreground">
+            {initials(inf.name)}
+          </AvatarFallback>
+        </Avatar>
+        <div className="min-w-0">
+          <p className="truncate font-medium text-foreground">{inf.name}</p>
+          {inf.handle ? (
+            <p className="truncate text-xs text-muted-foreground">
+              @{inf.handle.replace(/^@/, "")}
+            </p>
+          ) : null}
+        </div>
+      </div>
+
+      {inf.platforms.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {inf.platforms.map((p) => (
+            <Badge key={p} variant="secondary" className="rounded-full font-normal capitalize">
+              {p}
+            </Badge>
+          ))}
+        </div>
+      ) : null}
+
+      <dl className="mt-3 grid grid-cols-2 gap-x-4 gap-y-2">
+        <div>
+          <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Followers
+          </dt>
+          <dd className="tabular-nums text-sm font-semibold text-foreground">
+            {inf.mainFollowers.toLocaleString()}
+          </dd>
+        </div>
+        <div>
+          <dt className="text-[10px] font-medium uppercase tracking-wide text-muted-foreground">
+            Engagement
+          </dt>
+          <dd className="tabular-nums text-sm font-semibold text-foreground">
+            {inf.engagementRate}%
+          </dd>
+        </div>
+      </dl>
+
+      {inf.category || inf.country ? (
+        <p className="mt-2 text-xs text-muted-foreground">
+          {[inf.category, inf.country].filter(Boolean).join(" · ")}
+        </p>
+      ) : null}
+    </>
+  );
+
+  const className = "block rounded-xl border border-border bg-card p-4";
+
+  return inf.profileUrl ? (
+    <a href={inf.profileUrl} target="_blank" rel="noreferrer" className={cn(className, "transition-colors hover:border-primary/40")}>
+      {content}
+    </a>
+  ) : (
+    <div className={className}>{content}</div>
+  );
+}
+
 export default function PublicCampaignPage() {
   const params = useParams<{ token: string }>();
   const shareToken = params?.token;
@@ -343,6 +436,17 @@ export default function PublicCampaignPage() {
               </div>
             </Card>
 
+            {campaign.briefImageUrl ? (
+              <div className="overflow-hidden rounded-2xl bg-muted">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src={fileUrl(campaign.briefImageUrl) ?? ""}
+                  alt={`${campaign.name} product`}
+                  className="max-h-72 w-full object-contain sm:max-h-96"
+                />
+              </div>
+            ) : null}
+
             {/* Timeline — the 5-second scan */}
             <CampaignTimeline
               milestones={[
@@ -377,6 +481,8 @@ export default function PublicCampaignPage() {
                 </div>
               </SectionCard>
             ) : null}
+
+            <InfluencerRoster influencers={campaign.influencers} />
 
             {/* Footer */}
             <div className="pt-2">
