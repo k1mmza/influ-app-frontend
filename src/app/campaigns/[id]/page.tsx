@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
 import {
@@ -93,7 +93,121 @@ function listOrUndefined(value: string) {
 }
 
 function getInfluencerName(application: CampaignApplicationResponse) {
-  return application.influencer?.user?.name || application.influencer?.user?.email || "Unnamed creator";
+  // Mirror the backend's resolution order (formatShortlistInfluencer): external/
+  // unclaimed profiles have no linked User, so fall back to a platform account's
+  // displayName, then the externalHandle, before giving up.
+  const inf = application.influencer;
+  return (
+    inf?.user?.name ||
+    inf?.platformAccounts?.find((a) => a.displayName)?.displayName ||
+    inf?.externalHandle ||
+    inf?.user?.email ||
+    "Unnamed creator"
+  );
+}
+
+// Clickable influencer profile card — shared between the Applications section and
+// the Confirmed-influencers roster. Closure-bound bits (detail-panel loading state,
+// open handler, action buttons) are passed in so this can live at module scope.
+function ApplicantCard({
+  application,
+  detailLoadingId,
+  onOpenDetail,
+  actions,
+  readOnly = false,
+}: {
+  application: CampaignApplicationResponse;
+  detailLoadingId: string | null;
+  onOpenDetail: (influencerId?: string) => void;
+  actions?: ReactNode;
+  // Confirmed-roster mode: hide Accept/Reject (already-confirmed creators);
+  // everything else — click-to-open-detail, stats, categories — stays identical.
+  readOnly?: boolean;
+}) {
+  const name = getInfluencerName(application);
+  const accounts = application.influencer?.platformAccounts ?? [];
+  const primary = getPrimaryAccount(accounts);
+  const cats = toCategoryList(application.influencer?.categories).slice(0, 3);
+  const isLoadingDetail = detailLoadingId === application.influencer?.id;
+  return (
+    <div
+      role="button"
+      tabIndex={0}
+      onClick={() => onOpenDetail(application.influencer?.id)}
+      onKeyDown={(e) => {
+        if (e.key === "Enter" || e.key === " ") {
+          e.preventDefault();
+          onOpenDetail(application.influencer?.id);
+        }
+      }}
+      className="flex cursor-pointer flex-col rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
+    >
+      <div className="flex items-start gap-3">
+        {/* eslint-disable-next-line @next/next/no-img-element */}
+        <img
+          src={applicationAvatar(name)}
+          alt={name}
+          className="h-12 w-12 shrink-0 rounded-full border border-border bg-muted object-cover"
+        />
+        <div className="min-w-0 flex-1">
+          <p className="truncate font-semibold text-foreground">{name}</p>
+          <p className="truncate text-sm text-muted-foreground">
+            {primary ? `${primary.platform} @${primary.handle}` : "No connected platform"}
+          </p>
+        </div>
+        <Badge className={cn("border-none uppercase", statusClass(application.status))}>{application.status}</Badge>
+      </div>
+
+      {application.influencer?.bio ? (
+        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{application.influencer.bio}</p>
+      ) : null}
+
+      {primary ? (
+        <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted/40 p-2 text-center">
+          <div>
+            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.followers)}</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Followers</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.avgViews)}</p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg views</p>
+          </div>
+          <div>
+            <p className="text-sm font-semibold text-foreground">
+              {primary.engagementRate != null ? `${primary.engagementRate.toFixed(1)}%` : "—"}
+            </p>
+            <p className="text-xs uppercase tracking-wide text-muted-foreground">Eng.</p>
+          </div>
+        </div>
+      ) : null}
+
+      {cats.length ? (
+        <div className="mt-3 flex flex-wrap gap-1.5">
+          {cats.map((c) => (
+            <span key={c} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
+              {c}
+            </span>
+          ))}
+        </div>
+      ) : null}
+
+      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
+        {isLoadingDetail ? (
+          <>
+            <Loader2 className="h-3 w-3 animate-spin" /> Loading profile…
+          </>
+        ) : (
+          "Click to view full profile"
+        )}
+      </div>
+
+      {readOnly ? null : (
+        <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
+          {actions}
+        </div>
+      )}
+    </div>
+  );
 }
 
 export default function CampaignDetailPage() {
@@ -145,6 +259,9 @@ export default function CampaignDetailPage() {
   // Split the unified application list: brand-initiated invites vs. influencer-initiated applications.
   const invitations = applications.filter((a) => a.origin === "INVITATION");
   const inboundApplications = applications.filter((a) => (a.origin ?? "APPLICATION") === "APPLICATION");
+  // Confirmed roster: everyone who has accepted, regardless of origin. These
+  // creators intentionally also still appear in their Applications/Invited section.
+  const confirmed = applications.filter((a) => a.status === "ACCEPTED");
   const isCampaignFinished =
     !!campaign &&
     (campaign.status === "COMPLETED" || collaborations.some((item) => item.campaignId === campaign.id));
@@ -1080,6 +1197,36 @@ export default function CampaignDetailPage() {
         <Card className="border-none shadow-sm">
           <CardHeader>
             <div className="flex flex-wrap items-center justify-between gap-2">
+              <CardTitle className="text-lg">Confirmed influencers</CardTitle>
+              <Badge variant="outline" className="rounded-full">
+                {confirmed.length} confirmed
+              </Badge>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {confirmed.length === 0 ? (
+              <p className="text-sm text-muted-foreground">No confirmed influencers yet.</p>
+            ) : (
+              <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
+                {confirmed.map((application) => (
+                  <ApplicantCard
+                    key={application.id}
+                    application={application}
+                    detailLoadingId={detailLoadingId}
+                    onOpenDetail={openInfluencerDetail}
+                    readOnly
+                  />
+                ))}
+              </div>
+            )}
+          </CardContent>
+        </Card>
+      ) : null}
+
+      {canManageCampaign ? (
+        <Card className="border-none shadow-sm">
+          <CardHeader>
+            <div className="flex flex-wrap items-center justify-between gap-2">
               <CardTitle className="text-lg">Applications</CardTitle>
               {inboundApplications.length > 0 ? (
                 <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
@@ -1134,91 +1281,15 @@ export default function CampaignDetailPage() {
               </div>
             ) : (
               <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-3">
-                {inboundApplications.map((application) => {
-                  const name = getInfluencerName(application);
-                  const accounts = application.influencer?.platformAccounts ?? [];
-                  const primary = getPrimaryAccount(accounts);
-                  const cats = toCategoryList(application.influencer?.categories).slice(0, 3);
-                  const isLoadingDetail = detailLoadingId === application.influencer?.id;
-                  return (
-                    <div
-                      key={application.id}
-                      role="button"
-                      tabIndex={0}
-                      onClick={() => openInfluencerDetail(application.influencer?.id)}
-                      onKeyDown={(e) => {
-                        if (e.key === "Enter" || e.key === " ") {
-                          e.preventDefault();
-                          openInfluencerDetail(application.influencer?.id);
-                        }
-                      }}
-                      className="flex cursor-pointer flex-col rounded-2xl border border-border bg-card p-4 transition hover:border-primary/40 hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/40"
-                    >
-                      <div className="flex items-start gap-3">
-                        {/* eslint-disable-next-line @next/next/no-img-element */}
-                        <img
-                          src={applicationAvatar(name)}
-                          alt={name}
-                          className="h-12 w-12 shrink-0 rounded-full border border-border bg-muted object-cover"
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="truncate font-semibold text-foreground">{name}</p>
-                          <p className="truncate text-sm text-muted-foreground">
-                            {primary ? `${primary.platform} @${primary.handle}` : "No connected platform"}
-                          </p>
-                        </div>
-                        <Badge className={cn("border-none uppercase", statusClass(application.status))}>{application.status}</Badge>
-                      </div>
-
-                      {application.influencer?.bio ? (
-                        <p className="mt-3 line-clamp-2 text-sm text-muted-foreground">{application.influencer.bio}</p>
-                      ) : null}
-
-                      {primary ? (
-                        <div className="mt-3 grid grid-cols-3 gap-2 rounded-xl bg-muted/40 p-2 text-center">
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.followers)}</p>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Followers</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">{formatFollowers(primary.avgViews)}</p>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Avg views</p>
-                          </div>
-                          <div>
-                            <p className="text-sm font-semibold text-foreground">
-                              {primary.engagementRate != null ? `${primary.engagementRate.toFixed(1)}%` : "—"}
-                            </p>
-                            <p className="text-xs uppercase tracking-wide text-muted-foreground">Eng.</p>
-                          </div>
-                        </div>
-                      ) : null}
-
-                      {cats.length ? (
-                        <div className="mt-3 flex flex-wrap gap-1.5">
-                          {cats.map((c) => (
-                            <span key={c} className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-                              {c}
-                            </span>
-                          ))}
-                        </div>
-                      ) : null}
-
-                      <div className="mt-3 flex items-center gap-1 text-xs font-medium text-primary">
-                        {isLoadingDetail ? (
-                          <>
-                            <Loader2 className="h-3 w-3 animate-spin" /> Loading profile…
-                          </>
-                        ) : (
-                          "Click to view full profile"
-                        )}
-                      </div>
-
-                      <div className="mt-3 flex flex-wrap gap-2" onClick={(e) => e.stopPropagation()}>
-                        {renderApplicationActions(application)}
-                      </div>
-                    </div>
-                  );
-                })}
+                {inboundApplications.map((application) => (
+                  <ApplicantCard
+                    key={application.id}
+                    application={application}
+                    detailLoadingId={detailLoadingId}
+                    onOpenDetail={openInfluencerDetail}
+                    actions={renderApplicationActions(application)}
+                  />
+                ))}
               </div>
             )}
           </CardContent>

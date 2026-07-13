@@ -23,6 +23,7 @@ import { useUserStore } from "@/store/useUserStore";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ReadableToggle } from "@/components/readable-toggle";
 import type { Role } from "@/lib/types";
 
 type NavLink = { href: string; label: string; icon: LucideIcon };
@@ -127,6 +128,7 @@ export function Navigation() {
         </div>
 
         <div className="flex items-center gap-2">
+          <ReadableToggle />
           <ThemeToggle />
           {isLoggedIn ? (
             <Link href="/dashboard" className="cursor-pointer">

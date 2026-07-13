@@ -279,8 +279,15 @@ function InfluencerRoster({ influencers }: { influencers: PublicCampaignInfluenc
 }
 
 function InfluencerCard({ inf }: { inf: PublicCampaignInfluencer }) {
-  const content = (
-    <>
+  // Prefer per-platform links so each pill opens its OWN profile; fall back to the
+  // bare platform-name list (no link) for older payloads without platformLinks.
+  const pills =
+    inf.platformLinks && inf.platformLinks.length
+      ? inf.platformLinks
+      : inf.platforms.map((p) => ({ platform: p, profileUrl: null, handle: null, followers: 0 }));
+
+  return (
+    <div className="block rounded-xl border border-border bg-card p-4">
       <div className="flex items-center gap-3">
         <Avatar className="h-11 w-11">
           {inf.avatarUrl ? <AvatarImage src={inf.avatarUrl ?? ""} alt="" /> : null}
@@ -298,13 +305,34 @@ function InfluencerCard({ inf }: { inf: PublicCampaignInfluencer }) {
         </div>
       </div>
 
-      {inf.platforms.length ? (
+      {pills.length ? (
         <div className="mt-3 flex flex-wrap gap-1.5">
-          {inf.platforms.map((p) => (
-            <Badge key={p} variant="secondary" className="rounded-full font-normal capitalize">
-              {p}
-            </Badge>
-          ))}
+          {pills.map((p) =>
+            p.profileUrl ? (
+              <a
+                key={p.platform}
+                href={p.profileUrl}
+                target="_blank"
+                rel="noreferrer"
+                title={`Open on ${p.platform}`}
+              >
+                <Badge
+                  variant="secondary"
+                  className="cursor-pointer rounded-full font-normal capitalize transition-colors hover:bg-primary/15 hover:text-primary"
+                >
+                  {p.platform}
+                </Badge>
+              </a>
+            ) : (
+              <Badge
+                key={p.platform}
+                variant="secondary"
+                className="rounded-full font-normal capitalize"
+              >
+                {p.platform}
+              </Badge>
+            ),
+          )}
         </div>
       ) : null}
 
@@ -332,17 +360,7 @@ function InfluencerCard({ inf }: { inf: PublicCampaignInfluencer }) {
           {[inf.category, inf.country].filter(Boolean).join(" · ")}
         </p>
       ) : null}
-    </>
-  );
-
-  const className = "block rounded-xl border border-border bg-card p-4";
-
-  return inf.profileUrl ? (
-    <a href={inf.profileUrl} target="_blank" rel="noreferrer" className={cn(className, "transition-colors hover:border-primary/40")}>
-      {content}
-    </a>
-  ) : (
-    <div className={className}>{content}</div>
+    </div>
   );
 }
 

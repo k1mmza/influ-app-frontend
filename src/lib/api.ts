@@ -529,11 +529,15 @@ export interface CampaignApplicationResponse {
     id: string;
     bio?: string | null;
     categories?: unknown;
+    // External/unclaimed profiles have no linked User — fall back to
+    // platformAccounts[].displayName or externalHandle for a name.
+    externalHandle?: string | null;
     user?: { name?: string | null; email?: string | null };
     platformAccounts?: Array<{
       id: string;
       platform: string;
       handle: string;
+      displayName?: string | null;
       followers?: number;
       avgViews?: number;
       engagementRate?: number;
@@ -904,6 +908,8 @@ export interface PublicCampaignInfluencer {
   name: string;
   avatarUrl: string | null;
   platforms: string[];
+  /** Per-platform profile links so each platform pill can open its own URL. */
+  platformLinks?: { platform: string; profileUrl: string | null; handle: string | null; followers: number }[];
   mainPlatform: string | null;
   mainFollowers: number;
   totalFollowers: number;

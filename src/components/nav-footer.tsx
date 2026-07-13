@@ -8,6 +8,7 @@ import { UserProfileChip } from "@/components/user-profile-chip";
 import { useProfileAvatar } from "@/lib/use-profile-avatar";
 import { useUserStore } from "@/store/useUserStore";
 import { ThemeToggle } from "@/components/theme-toggle";
+import { ReadableToggle } from "@/components/readable-toggle";
 
 /**
  * Sidebar footer (collapse toggle, theme, logout, profile chip), extracted from
@@ -59,6 +60,12 @@ export function NavFooter() {
       <div className={cn("mb-2 flex items-center", collapsed ? "justify-center" : "gap-3 px-1")}>
         <ThemeToggle />
         {!collapsed ? <span className="text-sm font-medium text-muted-foreground">Theme</span> : null}
+      </div>
+
+      {/* Readable mode — orthogonal to Theme; both can be active at once. */}
+      <div className={cn("mb-2 flex items-center", collapsed ? "justify-center" : "gap-3 px-1")}>
+        <ReadableToggle />
+        {!collapsed ? <span className="text-sm font-medium text-muted-foreground">Readable</span> : null}
       </div>
 
       <button

@@ -3,6 +3,7 @@ import { Montserrat, Playfair_Display, Space_Grotesk, DM_Sans } from "next/font/
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
+import { READABLE_MODE_SCRIPT } from "@/components/readable-mode";
 
 const montserrat = Montserrat({
   subsets: ["latin"],
@@ -36,6 +37,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={`${montserrat.variable} ${playfair.variable} ${spaceGrotesk.variable} ${dmSans.variable}`} suppressHydrationWarning>
+      <head>
+        <script dangerouslySetInnerHTML={{ __html: READABLE_MODE_SCRIPT }} />
+      </head>
       <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>

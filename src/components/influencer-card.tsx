@@ -65,7 +65,16 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
     ...PLATFORM_ORDER.filter((p) => influencer.platforms.includes(p)),
     ...influencer.platforms.filter((p) => !PLATFORM_ORDER.includes(p)),
   ];
-  const [activePlatform, setActivePlatform] = useState(orderedPlatforms[0] ?? "");
+  // Default to the primary platform (most followers), not the canonical first.
+  // Falls back to canonical order when no per-platform follower data exists.
+  const primaryPlatform =
+    orderedPlatforms.reduce<{ platform: string; followers: number } | null>((best, p) => {
+      const followers = influencer.followersByPlatform?.[p] ?? -1;
+      return best === null || followers > best.followers ? { platform: p, followers } : best;
+    }, null)?.platform ??
+    orderedPlatforms[0] ??
+    "";
+  const [activePlatform, setActivePlatform] = useState(primaryPlatform);
 
   const activeFollowers = influencer.followersByPlatform?.[activePlatform] ?? influencer.followers;
   const activeEngagement = influencer.engagementByPlatform?.[activePlatform] ?? influencer.engagementRate;

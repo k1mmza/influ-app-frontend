@@ -60,7 +60,6 @@ const categories = [
   "Cooking", "Health",
 ];
 const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", "LinkedIn", "Red Note (Xiaohongshu)"];
-const campaignIntents = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
 const audienceGenders = ["All", "Female", "Male", "Mixed"];
 const countryOptions = ["All", "Thailand", "Vietnam", "Singapore", "Malaysia", "Indonesia", "Philippines"];
@@ -215,7 +214,6 @@ function DiscoverPageContent() {
   const [minEngagementRate, setMinEngagementRate] = useState(0);
   const [minGrowthRate, setMinGrowthRate] = useState(0);
   const [keyword, setKeyword] = useState("");
-  const [selectedCampaignIntents, setSelectedCampaignIntents] = useState<string[]>([]);
   const [audienceGender, setAudienceGender] = useState("All");
   const [audienceAgeGroup, setAudienceAgeGroup] = useState("All");
   const [stylePresent, setStylePresent] = useState("All");
@@ -360,7 +358,6 @@ function DiscoverPageContent() {
     setMinEngagementRate(0);
     setMinGrowthRate(0);
     setKeyword("");
-    setSelectedCampaignIntents([]);
     setAudienceGender("All");
     setAudienceAgeGroup("All");
     setStylePresent("All");
@@ -547,7 +544,6 @@ function DiscoverPageContent() {
 
   const activeChips = [
     selectedPlatforms.length ? `${selectedPlatforms.length} platforms` : "",
-    selectedCampaignIntents.length ? `${selectedCampaignIntents.length} intents` : "",
     country !== "All" ? country : "",
     city !== "All" ? city : "",
     selectedCategories.length > 0 ? selectedCategories.join(", ") : "",
@@ -557,15 +553,21 @@ function DiscoverPageContent() {
     mainPlatformFilter !== "All" ? `Main audience: ${mainPlatformFilter}` : ""
   ].filter(Boolean);
 
-  // Single hero shelf: re-sorts the filter-aware pool by REAL, always-present
-  // fields (performanceScore, followers). No proxies, no fallbacks.
-  const trendingInfluencers = useMemo(
-    () =>
-      [...poolInfluencers]
-        .sort((a, b) => (b.performanceScore * 1000 + b.followers) - (a.performanceScore * 1000 + a.followers))
-        .slice(0, 10),
-    [poolInfluencers]
-  );
+  // Single hero shelf: re-sorts the filter-aware pool by a 50/50 blend of score
+  // (performanceScore) and reach (followers). The two fields live on very
+  // different scales, so each is min-max normalized to 0–1 across the pool
+  // before combining with equal weight — a genuine 50/50, not reach-dominated.
+  const trendingInfluencers = useMemo(() => {
+    if (poolInfluencers.length === 0) return [];
+    const scores = poolInfluencers.map((i) => i.performanceScore);
+    const reaches = poolInfluencers.map((i) => i.followers);
+    const sMin = Math.min(...scores), sMax = Math.max(...scores);
+    const rMin = Math.min(...reaches), rMax = Math.max(...reaches);
+    const norm = (v: number, min: number, max: number) => (max > min ? (v - min) / (max - min) : 0);
+    const rank = (i: Influencer) =>
+      0.5 * norm(i.performanceScore, sMin, sMax) + 0.5 * norm(i.followers, rMin, rMax);
+    return [...poolInfluencers].sort((a, b) => rank(b) - rank(a)).slice(0, 10);
+  }, [poolInfluencers]);
 
   // Resolve the selected creator across every visible source (URL-search result,
   // shelf pool, and the paginated grid) — a shelf pick may not be on the grid page.
@@ -951,27 +953,6 @@ function DiscoverPageContent() {
                           className="h-8 text-sm pr-8"
                         />
                         <span className="absolute right-3 top-1/2 -translate-y-1/2 text-sm text-muted-foreground">%</span>
-                      </div>
-                    </div>
-
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Campaign Intent</Label>
-                      <div className="space-y-2">
-                        {campaignIntents.map((intent) => (
-                          <div key={intent} className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`i-${intent}`}
-                              checked={selectedCampaignIntents.includes(intent)}
-                              onChange={(e) => {
-                                if (e.target.checked) setSelectedCampaignIntents(p => [...p, intent]);
-                                else setSelectedCampaignIntents(p => p.filter(v => v !== intent));
-                              }}
-                              className="h-4 w-4 rounded border-input bg-background"
-                            />
-                            <Label htmlFor={`i-${intent}`} className="text-sm font-medium cursor-pointer">{intent}</Label>
-                          </div>
-                        ))}
                       </div>
                     </div>
 
