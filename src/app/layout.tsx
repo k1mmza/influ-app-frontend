@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { Montserrat, Playfair_Display, Space_Grotesk, DM_Sans } from "next/font/google";
+import { Montserrat, Playfair_Display, Space_Grotesk, DM_Sans, Bricolage_Grotesque } from "next/font/google";
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
@@ -25,6 +25,13 @@ const dmSans = DM_Sans({
   variable: "--font-dm",
 });
 
+// Landing-only display face. Scoped via font-[family-name:var(--font-display)]
+// on the marketing surface; deliberately not the app's serif/body faces.
+const bricolage = Bricolage_Grotesque({
+  subsets: ["latin"],
+  variable: "--font-display",
+});
+
 export const metadata: Metadata = {
   title: "Inflique MVP",
   description: "Influencer marketplace platform demo"
@@ -36,7 +43,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={`${montserrat.variable} ${playfair.variable} ${spaceGrotesk.variable} ${dmSans.variable}`} suppressHydrationWarning>
+    <html lang="en" className={`${montserrat.variable} ${playfair.variable} ${spaceGrotesk.variable} ${dmSans.variable} ${bricolage.variable}`} suppressHydrationWarning>
       <head>
         <script dangerouslySetInnerHTML={{ __html: READABLE_MODE_SCRIPT }} />
       </head>

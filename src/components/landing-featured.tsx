@@ -2,21 +2,10 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 import { LandingAnimate } from "@/components/landing-motion";
-import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { apiGetInfluencers } from "@/lib/influencers";
 import { Influencer } from "@/lib/types";
-import { cn } from "@/lib/utils";
-
-const CATEGORY_GRADIENT: Record<string, string> = {
-  Beauty:  "from-rose-400 to-pink-500",
-  Fitness: "from-emerald-400 to-green-500",
-  Fashion: "from-violet-400 to-purple-500",
-  Travel:  "from-sky-400 to-blue-500",
-  Tech:    "from-slate-400 to-indigo-500",
-  Food:    "from-orange-400 to-amber-500",
-};
 
 function formatFollowers(n: number): string {
   if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
@@ -25,20 +14,62 @@ function formatFollowers(n: number): string {
 }
 
 function getInitials(name: string): string {
-  return name.split(" ").map((w) => w[0]).join("");
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function getAvatarUrl(influencer: Influencer): string | null {
+  return (
+    influencer.avatarUrl ??
+    Object.values(influencer.avatarByPlatform ?? {}).find(Boolean) ??
+    null
+  );
+}
+
+/** Influencer picture with a graceful initials fallback if it's missing or fails to load. */
+function RosterAvatar({ influencer }: { influencer: Influencer }) {
+  const url = getAvatarUrl(influencer);
+  const [failed, setFailed] = useState(false);
+
+  if (!url || failed) {
+    return (
+      <div className="flex h-14 w-14 shrink-0 items-center justify-center rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface)] font-[family-name:var(--font-display)] text-base font-semibold text-[var(--lp-ink)] transition-colors group-hover:border-[var(--lp-accent-line)]">
+        {getInitials(influencer.name)}
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- avatars are arbitrary remote hosts; plain img avoids next/image domain config
+    <img
+      src={url}
+      alt={influencer.name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className="h-14 w-14 shrink-0 rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface-2)] object-cover transition-colors group-hover:border-[var(--lp-accent-line)]"
+    />
+  );
 }
 
 export function LandingFeatured() {
   const [influencers, setInfluencers] = useState<Influencer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [total, setTotal] = useState<number | null>(null);
 
   useEffect(() => {
     let cancelled = false;
     // Public endpoint — backend sorts by performanceScore desc, so the first
-    // page is effectively the "featured" set.
+    // page is effectively the "featured" set. `total` is the real platform count.
     apiGetInfluencers({ limit: 8 })
       .then((res) => {
-        if (!cancelled) setInfluencers(res.data);
+        if (!cancelled) {
+          setInfluencers(res.data);
+          setTotal(res.total);
+        }
       })
       .catch(() => {
         if (!cancelled) setInfluencers([]);
@@ -55,86 +86,87 @@ export function LandingFeatured() {
   if (!loading && influencers.length === 0) return null;
 
   return (
-    <section className="bg-background w-full py-20 px-4">
+    <section className="w-full border-y border-[var(--lp-line)] bg-[var(--lp-surface)] px-4 py-20">
       <div className="mx-auto max-w-6xl">
         <LandingAnimate>
-          <div className="flex items-end justify-between gap-4 flex-wrap mb-10">
-            <h2 className="font-serif text-4xl font-medium text-foreground">
-              Featured Creators
-            </h2>
-            <Button variant="outline" asChild className="rounded-full font-semibold text-sm cursor-pointer">
-              <Link href="/discover">View all creators</Link>
-            </Button>
+          <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+            <div>
+              <p className="font-[family-name:var(--font-grotesk)] text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-muted)]">
+                Live roster
+              </p>
+              <h2 className="mt-2 font-[family-name:var(--font-display)] text-4xl font-semibold tracking-tight text-[var(--lp-ink)]">
+                On the platform right now
+              </h2>
+            </div>
+            <Link
+              href="/discover"
+              className="inline-flex items-center gap-1.5 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-ink)] transition hover:text-[var(--lp-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-surface)]"
+            >
+              {total !== null ? `Browse all ${total.toLocaleString()}` : "Browse all creators"}
+              <ArrowRight className="h-4 w-4" />
+            </Link>
           </div>
         </LandingAnimate>
 
         <LandingAnimate delay={100}>
-          <div className="flex gap-5 overflow-x-auto pb-4 scrollbar-none snap-x snap-mandatory -mx-4 px-4">
+          <div className="scrollbar-none -mx-4 flex snap-x snap-mandatory gap-4 overflow-x-auto px-4 pb-4">
             {loading &&
-              Array.from({ length: 4 }).map((_, i) => (
+              Array.from({ length: 5 }).map((_, i) => (
                 <div
                   key={`skeleton-${i}`}
-                  className="snap-start shrink-0 w-[260px] h-[260px] rounded-2xl border border-border bg-card shadow-sm animate-pulse"
+                  className="h-[184px] w-[248px] shrink-0 animate-pulse snap-start rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-paper)]"
                 />
               ))}
-            {!loading && influencers.map((influencer, index) => (
-              <LandingAnimate key={influencer.id} delay={index * 75} direction="none">
-                <Link href="/discover" className="block">
-                  <div className="snap-start shrink-0 w-[260px] rounded-2xl border border-border bg-card shadow-sm hover:shadow-md hover:-translate-y-1 transition-all p-5 cursor-pointer">
-                    {/* Avatar */}
-                    <div
-                      className={cn(
-                        "w-16 h-16 rounded-2xl bg-gradient-to-br flex items-center justify-center text-white font-bold text-xl font-serif shadow-md",
-                        CATEGORY_GRADIENT[influencer.category] ?? "from-slate-400 to-slate-500"
-                      )}
-                    >
-                      {getInitials(influencer.name)}
-                    </div>
-
-                    {/* Name + category */}
-                    <h3 className="mt-4 font-serif font-semibold text-base text-foreground leading-tight">
-                      {influencer.name}
-                    </h3>
-                    <Badge className="mt-1 text-[10px] font-bold border-0 bg-primary/10 text-primary hover:bg-primary/10">
-                      {influencer.category}
-                    </Badge>
-
-                    {/* Platforms */}
-                    <div className="mt-3 flex gap-1 flex-wrap">
-                      {influencer.platforms.map((p) => (
-                        <span
-                          key={p}
-                          className="text-[10px] font-semibold uppercase tracking-wide bg-muted text-muted-foreground rounded-full px-2 py-0.5"
-                        >
-                          {p}
-                        </span>
-                      ))}
-                    </div>
-
-                    {/* Stats */}
-                    <div className="mt-4 grid grid-cols-2 gap-2">
-                      <div className="rounded-xl bg-muted/60 p-2">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                          Engagement
-                        </p>
-                        <p className="text-sm font-bold text-foreground">{influencer.engagementRate}%</p>
+            {!loading &&
+              influencers.map((influencer, index) => (
+                <LandingAnimate key={influencer.id} delay={index * 60} direction="none">
+                  <Link href="/discover" className="block">
+                    <div className="group w-[248px] shrink-0 snap-start rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-paper)] p-5 transition-all duration-200 hover:-translate-y-1 hover:border-[var(--lp-accent-line)]">
+                      <div className="flex items-center gap-3">
+                        <RosterAvatar influencer={influencer} />
+                        <div className="min-w-0">
+                          <h3 className="truncate font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-ink)]">
+                            {influencer.name}
+                          </h3>
+                          <p className="mt-0.5 font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)]">
+                            {influencer.category}
+                          </p>
+                        </div>
                       </div>
-                      <div className="rounded-xl bg-muted/60 p-2">
-                        <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">
-                          Score
-                        </p>
-                        <p className="text-sm font-bold text-foreground">{influencer.performanceScore}</p>
+
+                      <div className="mt-4 flex flex-wrap gap-1">
+                        {influencer.platforms.slice(0, 3).map((p) => (
+                          <span
+                            key={p}
+                            className="rounded-md bg-[var(--lp-surface-2)] px-2 py-0.5 font-[family-name:var(--font-grotesk)] text-[10px] font-medium uppercase tracking-wide text-[var(--lp-muted)]"
+                          >
+                            {p}
+                          </span>
+                        ))}
+                      </div>
+
+                      <div className="mt-4 flex items-end justify-between border-t border-[var(--lp-line)] pt-3">
+                        <div>
+                          <p className="font-[family-name:var(--font-grotesk)] text-[10px] uppercase tracking-widest text-[var(--lp-muted)]">
+                            Followers
+                          </p>
+                          <p className="font-[family-name:var(--font-grotesk)] text-lg font-semibold text-[var(--lp-ink)]">
+                            {formatFollowers(influencer.followers)}
+                          </p>
+                        </div>
+                        <div className="text-right">
+                          <p className="font-[family-name:var(--font-grotesk)] text-[10px] uppercase tracking-widest text-[var(--lp-muted)]">
+                            Engaged
+                          </p>
+                          <p className="font-[family-name:var(--font-grotesk)] text-lg font-semibold text-[var(--lp-accent)]">
+                            {influencer.engagementRate}%
+                          </p>
+                        </div>
                       </div>
                     </div>
-
-                    {/* Followers */}
-                    <p className="mt-3 text-xs font-medium text-muted-foreground">
-                      {formatFollowers(influencer.followers)} followers
-                    </p>
-                  </div>
-                </Link>
-              </LandingAnimate>
-            ))}
+                  </Link>
+                </LandingAnimate>
+              ))}
           </div>
         </LandingAnimate>
       </div>

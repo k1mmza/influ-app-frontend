@@ -1,11 +1,13 @@
 "use client";
 
-import { PanelLeft, PanelLeftClose } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { LogOut, PanelLeft, PanelLeftClose } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useSidebarOptional } from "@/components/sidebar-context";
 import { UserProfileChip } from "@/components/user-profile-chip";
 import { AccountSwitcher } from "@/components/account-switcher";
 import { useProfileAvatar } from "@/lib/use-profile-avatar";
+import { useUserStore } from "@/store/useUserStore";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ReadableToggle } from "@/components/readable-toggle";
 
@@ -17,6 +19,8 @@ import { ReadableToggle } from "@/components/readable-toggle";
  * needed.
  */
 export function NavFooter() {
+  const router = useRouter();
+  const logout = useUserStore((s) => s.logout);
   const sidebar = useSidebarOptional();
   const avatarUrl = useProfileAvatar();
 
@@ -25,6 +29,13 @@ export function NavFooter() {
   // Mobile: part of the collapsible hamburger menu (hidden until opened);
   // always shown at lg. Shares SidebarContext state with Navigation's toggle.
   const mobileOpen = sidebar?.mobileOpen ?? false;
+
+  // Sign out the active account (the switcher below handles multi-account /
+  // "sign out of all"). Kept as an always-visible button so logout is one click.
+  const handleLogout = () => {
+    logout();
+    router.push("/login");
+  };
 
   return (
     <div className={cn("shrink-0 lg:block", collapsed ? "p-2" : "p-3", mobileOpen ? "block" : "hidden")}>
@@ -64,6 +75,21 @@ export function NavFooter() {
       <div className="mb-2">
         <AccountSwitcher collapsed={collapsed} />
       </div>
+
+      {/* Direct log out for the active account — always visible, one click. */}
+      <button
+        type="button"
+        onClick={handleLogout}
+        title={collapsed ? "Log out" : undefined}
+        aria-label="Log out"
+        className={cn(
+          "group mb-2 flex w-full items-center rounded-xl text-sm font-medium text-muted-foreground transition hover:bg-destructive/10 hover:text-destructive cursor-pointer",
+          collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5"
+        )}
+      >
+        <LogOut className="h-[18px] w-[18px] shrink-0 transition-colors" />
+        {!collapsed ? "Log out" : null}
+      </button>
 
       <div className={cn(collapsed ? "flex justify-center" : "w-full")}>
         <UserProfileChip

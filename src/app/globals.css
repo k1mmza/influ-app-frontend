@@ -5,6 +5,14 @@
 .scrollbar-none::-webkit-scrollbar { display: none; }
 .scrollbar-none { -ms-overflow-style: none; scrollbar-width: none; }
 
+/* Landing casting-bar hint cross-fade (see landing-hero.tsx). */
+@keyframes lpFade {
+  0%   { opacity: 0; transform: translateY(3px); }
+  12%  { opacity: 1; transform: translateY(0); }
+  88%  { opacity: 1; transform: translateY(0); }
+  100% { opacity: 0; transform: translateY(-3px); }
+}
+
 @layer base {
   :root {
     /* Neutrals */
@@ -100,6 +108,50 @@
     --chart-4: 38 92% 44%;
     --chart-5: 199 89% 48%;
   }
+}
+
+/* ── Landing (marketing) palette ─────────────────────────────────────
+   Scoped tokens for the standalone marketing surface ONLY (the `/` route,
+   plus the public branches of the top-nav + footer). Deliberately does NOT
+   reference --primary/--secondary so the redesign stays fully separated from
+   the logged-in app's token system. Concept: a neutral "casting directory" —
+   porcelain paper, graphite ink, one hot persimmon accent. No blue, no violet.
+   Consumed via arbitrary values, e.g. bg-[var(--lp-paper)]. */
+:root {
+  --lp-paper:        #F2F3F2; /* page canvas — neutral porcelain, not cream   */
+  --lp-surface:      #FBFBFA; /* raised cards                                 */
+  --lp-surface-2:    #ECEDEA; /* recessed / quiet fills                       */
+  --lp-ink:          #161615; /* primary text — warm near-black graphite      */
+  --lp-ink-soft:     #3A3A37; /* secondary heads                              */
+  --lp-muted:        #6B6B68; /* muted text / labels                          */
+  --lp-line:         #E2E1DD; /* hairlines & borders                          */
+  --lp-accent:       #F0512E; /* persimmon — the single deliberate accent     */
+  --lp-accent-ink:   #FFFFFF; /* text on accent                               */
+  --lp-accent-soft:  rgba(240, 81, 46, 0.10); /* accent tint surface          */
+  --lp-accent-line:  rgba(240, 81, 46, 0.28); /* accent hairline / focus ring */
+
+  /* Persona ticks — used ONLY in the "who it's for" tri-lane, per spec. */
+  --lp-brand:        #1E3A8A; /* Brand navy      */
+  --lp-agency:       #059669; /* Agency emerald  */
+  --lp-creator:      #F87171; /* Creator coral   */
+}
+
+.dark {
+  --lp-paper:        #141413; /* dark gallery canvas          */
+  --lp-surface:      #1D1D1B;
+  --lp-surface-2:    #232320;
+  --lp-ink:          #F4F3EF;
+  --lp-ink-soft:     #D6D5CF;
+  --lp-muted:        #A1A09B;
+  --lp-line:         #2C2B28;
+  --lp-accent:       #FF6844; /* nudged brighter to hold on dark */
+  --lp-accent-ink:   #161615;
+  --lp-accent-soft:  rgba(255, 104, 68, 0.12);
+  --lp-accent-line:  rgba(255, 104, 68, 0.34);
+
+  --lp-brand:        #6E8BE0;
+  --lp-agency:       #34D399;
+  --lp-creator:      #FB9C9C;
 }
 
 /* ── Page accent colours ─────────────────────────────────────────── */

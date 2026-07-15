@@ -90,7 +90,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   // A4: landing + public-info pages use the top-nav + footer layout.
   if (isLandingPage || isPublicInfoPage) {
     return (
-      <main className="flex min-h-screen flex-col bg-background">
+      <main className="flex min-h-screen flex-col bg-[var(--lp-paper)]">
         <div className="mx-auto w-full max-w-7xl px-4 pt-6">
           <Navigation />
         </div>

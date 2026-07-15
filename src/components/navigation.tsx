@@ -20,8 +20,6 @@ import { getNavIconActiveClass, getNavIndicatorClass, getNavLinkClass } from "@/
 import { getSidebarMenuHeading, getSidebarWorkspaceLabel } from "@/lib/role-labels";
 import { useSidebarOptional } from "@/components/sidebar-context";
 import { useUserStore } from "@/store/useUserStore";
-import { Button } from "@/components/ui/button";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { ThemeToggle } from "@/components/theme-toggle";
 import { ReadableToggle } from "@/components/readable-toggle";
 import type { Role } from "@/lib/types";
@@ -96,12 +94,15 @@ export function Navigation() {
     ];
 
     return (
-      <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border bg-background/80 px-6 py-3 shadow-sm backdrop-blur-md sm:px-8">
-        <div className="flex items-center gap-6">
-          <Link href="/" className="text-xl font-bold font-serif text-foreground transition hover:opacity-80 shrink-0">
+      <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-paper)]/85 px-4 py-2.5 shadow-[0_10px_30px_-22px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-5">
+        <div className="flex items-center gap-2">
+          <Link
+            href="/"
+            className="shrink-0 rounded-md px-1 font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-[var(--lp-ink)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
+          >
             Inflique
           </Link>
-          <div className="hidden md:flex items-center gap-1 ml-6">
+          <div className="ml-4 hidden items-center gap-0.5 md:flex">
             {publicNavLinks.map(({ href, label, tip }) => {
               const active = pathname === href;
               return (
@@ -109,17 +110,17 @@ export function Navigation() {
                   <Link
                     href={href}
                     className={cn(
-                      "inline-flex items-center rounded-full px-5 py-2 text-base font-semibold font-serif tracking-wide transition-all",
+                      "inline-flex items-center rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]",
                       active
-                        ? "bg-primary text-primary-foreground shadow-sm"
-                        : "text-foreground hover:bg-accent hover:text-accent-foreground"
+                        ? "bg-[var(--lp-ink)] text-[var(--lp-paper)]"
+                        : "text-[var(--lp-ink-soft)] hover:bg-[var(--lp-surface-2)] hover:text-[var(--lp-ink)]"
                     )}
                   >
                     {label}
                   </Link>
-                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-border bg-popover px-3 py-1.5 text-xs font-medium text-popover-foreground shadow-md opacity-0 transition-opacity duration-150 group-hover:opacity-100">
+                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface)] px-3 py-1.5 font-[family-name:var(--font-grotesk)] text-xs font-medium text-[var(--lp-ink-soft)] opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
                     {tip}
-                    <div className="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-border bg-popover" />
+                    <div className="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-[var(--lp-line)] bg-[var(--lp-surface)]" />
                   </div>
                 </div>
               );
@@ -132,20 +133,24 @@ export function Navigation() {
           <ThemeToggle />
           {isLoggedIn ? (
             <Link href="/dashboard" className="cursor-pointer">
-              <Avatar className="h-9 w-9 ring-2 ring-primary/20 transition hover:ring-primary/60">
-                <AvatarFallback className="bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white">
-                  {name ? name.charAt(0).toUpperCase() : "U"}
-                </AvatarFallback>
-              </Avatar>
+              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--lp-ink)] font-[family-name:var(--font-grotesk)] text-sm font-bold text-[var(--lp-paper)] transition hover:brightness-110">
+                {name ? name.charAt(0).toUpperCase() : "U"}
+              </span>
             </Link>
           ) : (
             <>
-              <Button variant="ghost" asChild className="rounded-full font-medium font-serif tracking-wide">
-                <Link href="/login">Login</Link>
-              </Button>
-              <Button asChild className="rounded-full shadow-md font-semibold font-serif tracking-wide">
-                <Link href="/register">Get Started</Link>
-              </Button>
+              <Link
+                href="/login"
+                className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
+              >
+                Log in
+              </Link>
+              <Link
+                href="/register"
+                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
+              >
+                Get started
+              </Link>
             </>
           )}
         </div>
