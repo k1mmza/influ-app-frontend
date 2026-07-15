@@ -90,7 +90,7 @@ export function Navigation() {
   if (isPublicPage) {
     const publicNavLinks = [
       { href: "/discover", label: "Discover", tip: "Search and filter creators" },
-      { href: "/how-it-works", label: "How it Works", tip: "See how InfluApp works" },
+      { href: "/how-it-works", label: "How it Works", tip: "See how Inflique works" },
       { href: "/creators", label: "Creators", tip: "Join as a creator" },
       { href: "/agencies", label: "Agencies & Brands", tip: "Start running campaigns" },
     ];
@@ -99,7 +99,7 @@ export function Navigation() {
       <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border bg-background/80 px-6 py-3 shadow-sm backdrop-blur-md sm:px-8">
         <div className="flex items-center gap-6">
           <Link href="/" className="text-xl font-bold font-serif text-foreground transition hover:opacity-80 shrink-0">
-            InfluApp
+            Inflique
           </Link>
           <div className="hidden md:flex items-center gap-1 ml-6">
             {publicNavLinks.map(({ href, label, tip }) => {
@@ -168,14 +168,14 @@ export function Navigation() {
         <Link
           href="/dashboard"
           className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "gap-3")}
-          title={collapsed ? `InfluApp — ${getSidebarWorkspaceLabel(role)}` : undefined}
+          title={collapsed ? `Inflique — ${getSidebarWorkspaceLabel(role)}` : undefined}
         >
           <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white shadow-lg shadow-primary/25">
             IA
           </span>
           {!collapsed ? (
             <div className="min-w-0">
-              <p className="truncate text-base font-bold tracking-tight text-foreground font-serif">InfluApp</p>
+              <p className="truncate text-base font-bold tracking-tight text-foreground font-serif">Inflique</p>
               <p className="text-xs font-medium text-muted-foreground">{getSidebarWorkspaceLabel(role)}</p>
             </div>
           ) : null}

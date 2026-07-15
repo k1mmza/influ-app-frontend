@@ -70,6 +70,6 @@ export const useCampaignCollaborationStore = create<CampaignCollaborationState>(
         return row ? row.participantKeys : null;
       }
     }),
-    { name: "influapp-campaign-collaborations" }
+    { name: "inflique-campaign-collaborations" }
   )
 );

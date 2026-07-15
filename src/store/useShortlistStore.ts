@@ -85,7 +85,7 @@ export const useShortlistStore = create<ShortlistState>()(
       },
     }),
     {
-      name: "influapp-shortlist",
+      name: "inflique-shortlist",
       // Only persist ids and influencers — error is transient UI state
       // and must not resurface on the next page load or device.
       partialize: (state) => ({ ids: state.ids, influencers: state.influencers }),

@@ -14,7 +14,7 @@ type SidebarContextValue = {
 
 const SidebarContext = createContext<SidebarContextValue | null>(null);
 
-const STORAGE_KEY = "influapp-sidebar-collapsed";
+const STORAGE_KEY = "inflique-sidebar-collapsed";
 
 export function SidebarProvider({ children }: { children: ReactNode }) {
   const [collapsed, setCollapsed] = useState(false);

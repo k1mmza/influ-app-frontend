@@ -1103,7 +1103,7 @@ export default function CreateCampaignPage() {
         the next circle. The dashed (not solid) treatment is intentional: it
         signals that the form is open and in-progress, not a completed workflow.
 
-        This works for InfluApp specifically because campaign creation is a
+        This works for Inflique specifically because campaign creation is a
         production workflow — brands are writing an influencer brief, not just
         filling in a database record. The spine turns the page into a structured
         document with numbered chapters (like a production schedule or creative

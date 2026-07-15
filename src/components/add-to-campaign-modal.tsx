@@ -153,7 +153,7 @@ export function AddToCampaignModal({
           {isUrlDerived && (
             <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">
               <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              This creator isn&apos;t registered on InfluApp yet, so they can&apos;t be invited.
+              This creator isn&apos;t registered on Inflique yet, so they can&apos;t be invited.
             </div>
           )}
           {addConfirmed && (

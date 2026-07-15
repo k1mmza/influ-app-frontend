@@ -105,6 +105,6 @@ export const useReviewStore = create<ReviewState>()(
           .reviews.filter((r) => sameRecipient(r, role, displayName))
           .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
     }),
-    { name: "influapp-partner-reviews" }
+    { name: "inflique-partner-reviews" }
   )
 );

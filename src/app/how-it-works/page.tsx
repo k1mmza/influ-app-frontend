@@ -7,7 +7,7 @@ export default function HowItWorksPage() {
       {/* Hero */}
       <section className="w-full bg-gradient-to-br from-[#0F172A] via-[#1e3a8a] to-[#7C3AED] px-4 py-32 text-center">
         <h1 className="font-serif text-5xl font-medium text-white md:text-6xl">
-          How InfluApp Works
+          How Inflique Works
         </h1>
         <p className="mx-auto mt-6 max-w-xl text-lg text-white/70">
           Everything you need to run influencer campaigns — from discovery to results.

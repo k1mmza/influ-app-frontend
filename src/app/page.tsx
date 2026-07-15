@@ -42,7 +42,7 @@ export default function HomePage() {
               Ready to find your perfect creator?
             </h2>
             <p className="mt-4 text-white/75 text-lg font-light max-w-xl mx-auto">
-              Join brands and agencies already scaling with InfluApp.
+              Join brands and agencies already scaling with Inflique.
             </p>
             <div className="mt-10 flex flex-col sm:flex-row justify-center gap-4">
               <Button

@@ -119,7 +119,7 @@ export default function RegisterPage() {
           <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-900 text-xs font-bold">IA</div>
         </div>
         <div>
-          <p className="text-sm font-semibold">InfluApp Platform</p>
+          <p className="text-sm font-semibold">Inflique Platform</p>
           <p className="text-xs text-slate-400">Trusted by 500+ brands &amp; creators</p>
         </div>
       </div>
@@ -136,7 +136,7 @@ export default function RegisterPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
               IA
             </span>
-            <span className="font-serif">InfluApp</span>
+            <span className="font-serif">Inflique</span>
           </Link>
 
           {leftPanel}
@@ -159,7 +159,7 @@ export default function RegisterPage() {
               <>
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tight font-serif">Create your account</h1>
-                  <p className="text-sm text-muted-foreground">Join InfluApp and start connecting with creators.</p>
+                  <p className="text-sm text-muted-foreground">Join Inflique and start connecting with creators.</p>
                 </div>
 
                 <div className="grid grid-cols-2 gap-3">
@@ -219,7 +219,7 @@ export default function RegisterPage() {
               <>
                 <div className="space-y-2">
                   <h1 className="text-3xl font-bold tracking-tight font-serif">Select your role</h1>
-                  <p className="text-sm text-muted-foreground">Choose how you will use InfluApp.</p>
+                  <p className="text-sm text-muted-foreground">Choose how you will use Inflique.</p>
                 </div>
 
                 <div className="space-y-4">

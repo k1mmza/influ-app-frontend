@@ -43,7 +43,7 @@ export default function LoginPage() {
             <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
               IA
             </span>
-            <span className="font-serif">InfluApp</span>
+            <span className="font-serif">Inflique</span>
           </Link>
 
           <div className="relative z-10 max-w-sm">

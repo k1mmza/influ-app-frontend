@@ -173,7 +173,7 @@ export const useMediaKitStore = create<MediaKitStore>()(
       resetToDemo: () => set(defaultMediaKit())
     }),
     {
-      name: "influapp-media-kit-v2",
+      name: "inflique-media-kit-v2",
       partialize: (s) => ({
         displayName: s.displayName,
         handle: s.handle,

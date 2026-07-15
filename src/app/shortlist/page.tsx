@@ -76,7 +76,7 @@ export default function ShortlistPage() {
   const handleConfirmInvite = async () => {
     if (!token || !campaignPickerInfluencer || !pickedCampaignId) return;
     if (campaignPickerInfluencer.id.startsWith("url-derived-")) {
-      setInviteError("This creator isn't registered on InfluApp yet, so they can't be invited.");
+      setInviteError("This creator isn't registered on Inflique yet, so they can't be invited.");
       return;
     }
     setInviting(true);

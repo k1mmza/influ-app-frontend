@@ -504,7 +504,7 @@ export default function PublicCampaignPage() {
             {/* Footer */}
             <div className="pt-2">
               <Separator className="mb-4" />
-              <p className="text-center text-xs text-muted-foreground">Shared via InfluApp</p>
+              <p className="text-center text-xs text-muted-foreground">Shared via Inflique</p>
             </div>
           </div>
         ) : null}

@@ -481,7 +481,7 @@ function InfluencerProfileView() {
   const downloadMediaKitTemplate = () => {
     const s = useMediaKitStore.getState();
     const num = (n: number) => (n && n > 0 ? String(n) : "");
-    const template = `# InfluApp Media Kit — fill in the value after each ":" then upload this file.
+    const template = `# Inflique Media Kit — fill in the value after each ":" then upload this file.
 # Lines starting with "#" are notes and are ignored. Leave a line blank to skip it.
 # (Name and Handle below are just for your reference.)
 # Name: ${s.displayName || ""}

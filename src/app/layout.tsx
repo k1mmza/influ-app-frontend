@@ -26,7 +26,7 @@ const dmSans = DM_Sans({
 });
 
 export const metadata: Metadata = {
-  title: "InfluApp MVP",
+  title: "Inflique MVP",
   description: "Influencer marketplace platform demo"
 };
 

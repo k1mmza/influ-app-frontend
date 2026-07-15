@@ -74,7 +74,7 @@ export default function PublicReportPage() {
           <>
             <CampaignReportBody report={report} isPublic />
             <p className={cn("mt-10 text-center text-xs", T_MUTED)}>
-              Shared via InfluApp
+              Shared via Inflique
             </p>
           </>
         ) : null}

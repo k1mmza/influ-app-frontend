@@ -210,7 +210,7 @@ export const useUserStore = create<UserState>()(
         useMediaKitStore.getState().resetToDemo();
         set(mirror([], null));
         if (typeof window !== "undefined") {
-          window.localStorage.removeItem("influapp-user");
+          window.localStorage.removeItem("inflique-user");
         }
       },
 
@@ -250,7 +250,7 @@ export const useUserStore = create<UserState>()(
       },
     }),
     {
-      name: "influapp-user",
+      name: "inflique-user",
       version: 2,
       skipHydration: true,
       partialize: (s) => ({

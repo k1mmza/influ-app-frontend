@@ -140,7 +140,7 @@ function DiscoverPageContent() {
     // External / URL-derived profiles are not registered influencers — inviting them is
     // the deferred external-outreach flow, out of scope here.
     if (campaignPickerInfluencer.id.startsWith("url-derived-")) {
-      setInviteError("This creator isn't registered on InfluApp yet, so they can't be invited.");
+      setInviteError("This creator isn't registered on Inflique yet, so they can't be invited.");
       return;
     }
     setInviting(true);
@@ -1031,7 +1031,7 @@ function DiscoverPageContent() {
             <CheckCircle2 className="h-4 w-4 shrink-0" />
             Live data from {generatedInfluencer?.platforms?.[0]
               ? generatedInfluencer.platforms[0].charAt(0).toUpperCase() + generatedInfluencer.platforms[0].slice(1)
-              : "platform"} — not yet registered on InfluApp
+              : "platform"} — not yet registered on Inflique
           </div>
         )}
 
