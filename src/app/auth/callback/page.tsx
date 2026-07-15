@@ -12,6 +12,7 @@ function CallbackHandler() {
 
   useEffect(() => {
     const token = searchParams.get("token");
+    const refresh = searchParams.get("refresh") ?? "";
     const roleSelected = searchParams.get("roleSelected") === "true";
 
     if (!token) {
@@ -22,7 +23,9 @@ function CallbackHandler() {
     apiGetProfile(token)
       .then((profile) => {
         setOAuthSession({
+          id: profile.id,
           token,
+          refreshToken: refresh,
           name: profile.name ?? "",
           email: profile.email ?? "",
           role: profile.role?.toLowerCase() ?? null,

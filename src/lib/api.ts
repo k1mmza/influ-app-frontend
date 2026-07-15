@@ -11,8 +11,81 @@ async function readApiError(res: Response, fallback: string) {
   }
 }
 
+// ── Silent-refresh interceptor ───────────────────────────────────────────────
+// Every authenticated call below goes through authFetch instead of fetch. On a
+// 401 for a request that carried a Bearer token, authFetch asks the registered
+// refresher (the user store owns the account list + refresh tokens) to mint a
+// fresh access token for whichever account owns the expired one, then retries
+// the original request ONCE. If the refresh itself fails (refresh token expired
+// or revoked), the original 401 is surfaced so the caller can prompt re-login.
+type TokenRefresher = (expiredAccessToken: string) => Promise<string | null>;
+let tokenRefresher: TokenRefresher | null = null;
+
+/** Called once by the user store so the interceptor can reach the account list. */
+export function registerTokenRefresher(fn: TokenRefresher | null) {
+  tokenRefresher = fn;
+}
+
+// All api functions build headers as plain object literals, so we only need to
+// read/rewrite that shape (not Headers instances or [key,value][] tuples).
+function bearerOf(init?: RequestInit): string | null {
+  const headers = init?.headers as Record<string, string> | undefined;
+  const auth = headers?.["Authorization"] ?? headers?.["authorization"];
+  if (!auth) return null;
+  return auth.startsWith("Bearer ") ? auth.slice(7) : auth;
+}
+
+async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  const res = await fetch(input, init);
+  if (res.status !== 401 || !tokenRefresher) return res;
+
+  const expired = bearerOf(init);
+  if (!expired) return res; // no Bearer token → not an auth failure we can fix
+
+  const fresh = await tokenRefresher(expired);
+  if (!fresh || fresh === expired) return res; // refresh failed → surface the 401
+
+  // Retry exactly once with the rotated access token (uses raw fetch, so a
+  // second 401 is returned as-is rather than looping).
+  const retryInit: RequestInit = {
+    ...init,
+    headers: { ...(init?.headers as Record<string, string>), Authorization: `Bearer ${fresh}` },
+  };
+  return fetch(input, retryInit);
+}
+
+/**
+ * Exchange a refresh token for a new access token + rotated refresh token.
+ * Uses the raw fetch (not authFetch) so a 401 here is final — it means the
+ * refresh token is expired/revoked and the account must sign in again.
+ */
+export async function apiRefresh(
+  refreshToken: string,
+): Promise<{ access_token: string; refresh_token: string }> {
+  const res = await fetch(`${API_URL}/auth/refresh`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ refresh_token: refreshToken }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Session refresh failed"));
+  return res.json();
+}
+
+/** Revoke a single session server-side. Best-effort: never throws (logout must always succeed locally). */
+export async function apiLogout(refreshToken: string): Promise<void> {
+  try {
+    await fetch(`${API_URL}/auth/logout`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ refresh_token: refreshToken }),
+    });
+  } catch {
+    // Network error on logout is non-fatal — the client still drops the account.
+  }
+}
+
 export async function apiRegister(name: string, email: string, password: string) {
-  const res = await fetch(`${API_URL}/auth/register`, {
+  const res = await authFetch(`${API_URL}/auth/register`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ name, email, password }),
@@ -25,7 +98,7 @@ export async function apiRegister(name: string, email: string, password: string)
 }
 
 export async function apiLogin(email: string, password: string) {
-  const res = await fetch(`${API_URL}/auth/login`, {
+  const res = await authFetch(`${API_URL}/auth/login`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({ email, password }),
@@ -38,7 +111,7 @@ export async function apiLogin(email: string, password: string) {
 }
 
 export async function apiSelectRole(token: string, role: Role) {
-  const res = await fetch(`${API_URL}/auth/select-role`, {
+  const res = await authFetch(`${API_URL}/auth/select-role`, {
     method: "POST",
     headers: { 
       "Content-Type": "application/json",
@@ -54,7 +127,7 @@ export async function apiSelectRole(token: string, role: Role) {
 }
 
 export async function apiGetDashboard(token: string) {
-  const res = await fetch(`${API_URL}/dashboard`, {
+  const res = await authFetch(`${API_URL}/dashboard`, {
     method: "GET",
     headers: { 
       "Authorization": `Bearer ${token}`
@@ -68,7 +141,7 @@ export async function apiGetDashboard(token: string) {
 }
 
 export async function apiGetConversations(token: string) {
-  const res = await fetch(`${API_URL}/conversations`, {
+  const res = await authFetch(`${API_URL}/conversations`, {
     method: "GET",
     headers: { 
       "Authorization": `Bearer ${token}`
@@ -82,7 +155,7 @@ export async function apiGetConversations(token: string) {
 }
 
 export async function apiGetMessages(token: string, conversationId: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/messages`, {
     method: "GET",
     headers: { 
       "Authorization": `Bearer ${token}`
@@ -96,7 +169,7 @@ export async function apiGetMessages(token: string, conversationId: string) {
 }
 
 export async function apiGetProfile(token: string) {
-  const res = await fetch(`${API_URL}/profile`, {
+  const res = await authFetch(`${API_URL}/profile`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) {
@@ -107,7 +180,7 @@ export async function apiGetProfile(token: string) {
 }
 
 export async function apiGetCompleteness(token: string): Promise<number> {
-  const res = await fetch(`${API_URL}/profile/completeness`, {
+  const res = await authFetch(`${API_URL}/profile/completeness`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return 0;
@@ -120,13 +193,13 @@ export async function apiLookupInfluencerByUrl(
   handle: string,
 ): Promise<{ found: boolean; source?: "db" | "api"; loading?: boolean; influencer?: any }> {
   const params = new URLSearchParams({ platform, handle });
-  const res = await fetch(`${API_URL}/influencers/lookup?${params}`);
+  const res = await authFetch(`${API_URL}/influencers/lookup?${params}`);
   if (!res.ok) throw new Error("Lookup failed");
   return res.json();
 }
 
 export async function apiFetchInfluencer(id: string): Promise<any | null> {
-  const res = await fetch(`${API_URL}/influencers/${id}`);
+  const res = await authFetch(`${API_URL}/influencers/${id}`);
   if (!res.ok) return null;
   return res.json();
 }
@@ -135,7 +208,7 @@ export async function apiGetClaimCandidates(
   token: string,
   influencerId: string,
 ): Promise<any[]> {
-  const res = await fetch(
+  const res = await authFetch(
     `${API_URL}/influencers/claim-candidates?influencerId=${influencerId}`,
     { headers: { Authorization: `Bearer ${token}` } },
   );
@@ -148,7 +221,7 @@ export async function apiClaimProfile(
   externalInfluencerId: string,
   claimerInfluencerId: string,
 ): Promise<void> {
-  const res = await fetch(`${API_URL}/influencers/claim/${externalInfluencerId}`, {
+  const res = await authFetch(`${API_URL}/influencers/claim/${externalInfluencerId}`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -160,7 +233,7 @@ export async function apiClaimProfile(
 }
 
 export async function apiUpdateProfile(token: string, data: Record<string, any>) {
-  const res = await fetch(`${API_URL}/profile`, {
+  const res = await authFetch(`${API_URL}/profile`, {
     method: "PATCH",
     headers: {
       "Content-Type": "application/json",
@@ -241,7 +314,7 @@ export async function apiGenerateSmartPlan(
   token: string,
   data: SmartPlanInput,
 ): Promise<GeneratePlanResponse> {
-  const res = await fetch(`${API_URL}/smart-plan/generate`, {
+  const res = await authFetch(`${API_URL}/smart-plan/generate`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -274,7 +347,7 @@ export async function apiUploadBriefImage(
 ): Promise<{ url: string }> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/smart-plan/brief-image`, {
+  const res = await authFetch(`${API_URL}/smart-plan/brief-image`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -287,7 +360,7 @@ export async function apiCreateCampaignFromPlan(
   token: string,
   payload: CreateFromPlanPayload,
 ): Promise<{ campaignId: string }> {
-  const res = await fetch(`${API_URL}/smart-plan/create-campaign`, {
+  const res = await authFetch(`${API_URL}/smart-plan/create-campaign`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -310,7 +383,7 @@ export async function apiSaveSmartPlanBrief(
   token: string,
   data: SaveBriefInput,
 ): Promise<{ id: string }> {
-  const res = await fetch(`${API_URL}/smart-plan/save`, {
+  const res = await authFetch(`${API_URL}/smart-plan/save`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -328,7 +401,7 @@ export async function apiSaveSmartPlanBrief(
 export async function apiGetSmartPlanBrief(
   token: string,
 ): Promise<GeneratedBrief | null> {
-  const res = await fetch(`${API_URL}/smart-plan/brief`, {
+  const res = await authFetch(`${API_URL}/smart-plan/brief`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) return null;
@@ -346,7 +419,7 @@ export async function apiDeleteSmartPlanBrief(
   campaignId?: string,
 ): Promise<{ deleted: number }> {
   const qs = campaignId ? `?campaignId=${encodeURIComponent(campaignId)}` : "";
-  const res = await fetch(`${API_URL}/smart-plan/brief${qs}`, {
+  const res = await authFetch(`${API_URL}/smart-plan/brief${qs}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -355,7 +428,7 @@ export async function apiDeleteSmartPlanBrief(
 }
 
 export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise<void> {
-  await fetch(`${API_URL}/profile`, {
+  await authFetch(`${API_URL}/profile`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ avatarUrl }),
@@ -365,7 +438,7 @@ export async function apiSetAvatarUrl(token: string, avatarUrl: string): Promise
 export async function apiUploadAvatar(token: string, file: File): Promise<{ avatarUrl: string }> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/profile/avatar`, {
+  const res = await authFetch(`${API_URL}/profile/avatar`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -380,7 +453,7 @@ export async function apiUploadAvatar(token: string, file: File): Promise<{ avat
 export async function apiUploadRateCard(token: string, file: File): Promise<{ rateCardFileUrl: string }> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/profile/rate-card`, {
+  const res = await authFetch(`${API_URL}/profile/rate-card`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -425,7 +498,7 @@ export interface MediaKitAnalysis {
 export async function apiAnalyzeMediaKit(token: string, file: File): Promise<MediaKitAnalysis> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/profile/media-kit/analyze`, {
+  const res = await authFetch(`${API_URL}/profile/media-kit/analyze`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -438,7 +511,7 @@ export async function apiAnalyzeMediaKit(token: string, file: File): Promise<Med
 }
 
 export async function apiDeleteRateCard(token: string): Promise<void> {
-  const res = await fetch(`${API_URL}/profile/rate-card`, {
+  const res = await authFetch(`${API_URL}/profile/rate-card`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -446,7 +519,7 @@ export async function apiDeleteRateCard(token: string): Promise<void> {
 }
 
 export async function apiGetCampaigns(token: string): Promise<any[]> {
-  const res = await fetch(`${API_URL}/campaigns`, {
+  const res = await authFetch(`${API_URL}/campaigns`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch campaigns"));
@@ -462,7 +535,7 @@ export interface PaginatedResponse<T> {
 }
 
 export async function apiGetPublicCampaigns(token: string, page = 1, pageSize = 12): Promise<PaginatedResponse<any>> {
-  const res = await fetch(`${API_URL}/campaigns/public?page=${page}&pageSize=${pageSize}`, {
+  const res = await authFetch(`${API_URL}/campaigns/public?page=${page}&pageSize=${pageSize}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch public campaigns"));
@@ -561,7 +634,7 @@ export interface ClientBrandResponse {
  */
 export async function apiGetClientBrands(token: string, search?: string): Promise<ClientBrandResponse[]> {
   const qs = search?.trim() ? `?search=${encodeURIComponent(search.trim())}` : "";
-  const res = await fetch(`${API_URL}/client-brands${qs}`, {
+  const res = await authFetch(`${API_URL}/client-brands${qs}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch client brands"));
@@ -579,7 +652,7 @@ export async function apiCreateManagedBrand(
   token: string,
   data: CreateManagedBrandInput,
 ): Promise<ClientBrandResponse> {
-  const res = await fetch(`${API_URL}/client-brands`, {
+  const res = await authFetch(`${API_URL}/client-brands`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -589,7 +662,7 @@ export async function apiCreateManagedBrand(
 }
 
 export async function apiCreateCampaign(token: string, data: CampaignInput): Promise<CampaignResponse> {
-  const res = await fetch(`${API_URL}/campaigns`, {
+  const res = await authFetch(`${API_URL}/campaigns`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -599,7 +672,7 @@ export async function apiCreateCampaign(token: string, data: CampaignInput): Pro
 }
 
 export async function apiGetCampaign(token: string, id: string): Promise<CampaignResponse> {
-  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch campaign"));
@@ -611,7 +684,7 @@ export async function apiUpdateCampaign(
   id: string,
   data: Partial<CampaignInput> & { status?: CampaignStatus },
 ): Promise<CampaignResponse> {
-  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify(data),
@@ -627,7 +700,7 @@ export async function apiUploadCampaignCover(
 ): Promise<CampaignResponse> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/campaigns/${id}/cover`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}/cover`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -644,7 +717,7 @@ export async function apiUploadCampaignBriefImage(
 ): Promise<CampaignResponse> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/campaigns/${id}/brief-image`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}/brief-image`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -654,7 +727,7 @@ export async function apiUploadCampaignBriefImage(
 }
 
 export async function apiDeleteCampaign(token: string, id: string): Promise<void> {
-  const res = await fetch(`${API_URL}/campaigns/${id}`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -662,7 +735,7 @@ export async function apiDeleteCampaign(token: string, id: string): Promise<void
 }
 
 export async function apiApplyToCampaign(token: string, id: string): Promise<CampaignApplicationResponse> {
-  const res = await fetch(`${API_URL}/campaigns/${id}/apply`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}/apply`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -671,7 +744,7 @@ export async function apiApplyToCampaign(token: string, id: string): Promise<Cam
 }
 
 export async function apiGetCampaignApplications(token: string, id: string): Promise<CampaignApplicationResponse[]> {
-  const res = await fetch(`${API_URL}/campaigns/${id}/applications`, {
+  const res = await authFetch(`${API_URL}/campaigns/${id}/applications`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch applications"));
@@ -684,7 +757,7 @@ export async function apiUpdateCampaignApplicationStatus(
   applicationId: string,
   status: "PENDING" | "ACCEPTED" | "REJECTED",
 ): Promise<CampaignApplicationResponse> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/applications/${applicationId}`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/applications/${applicationId}`, {
     method: "PATCH",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ status }),
@@ -720,7 +793,7 @@ export interface TrackingDetailRow {
 }
 
 export async function apiGetTracking(token: string): Promise<TrackingSummaryRow[]> {
-  const res = await fetch(`${API_URL}/tracking`, {
+  const res = await authFetch(`${API_URL}/tracking`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking data"));
@@ -783,7 +856,7 @@ export interface TrackingReport {
 }
 
 export async function apiGetTrackingDetail(token: string, campaignId: string): Promise<TrackingDetailRow[]> {
-  const res = await fetch(`${API_URL}/tracking/${campaignId}`, {
+  const res = await authFetch(`${API_URL}/tracking/${campaignId}`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking detail"));
@@ -791,7 +864,7 @@ export async function apiGetTrackingDetail(token: string, campaignId: string): P
 }
 
 export async function apiGetTrackingReport(token: string, campaignId: string): Promise<TrackingReport> {
-  const res = await fetch(`${API_URL}/tracking/${campaignId}/report`, {
+  const res = await authFetch(`${API_URL}/tracking/${campaignId}/report`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch tracking report"));
@@ -829,7 +902,7 @@ export interface PublicTrackingReport {
 
 /** Owner-only: mint a new public share link for a campaign's report. */
 export async function apiCreateShareLink(token: string, campaignId: string): Promise<TrackingShareLink> {
-  const res = await fetch(`${API_URL}/tracking/${campaignId}/share`, {
+  const res = await authFetch(`${API_URL}/tracking/${campaignId}/share`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -839,7 +912,7 @@ export async function apiCreateShareLink(token: string, campaignId: string): Pro
 
 /** Owner-only: list a campaign's currently active (non-revoked, non-expired) links. */
 export async function apiListShareLinks(token: string, campaignId: string): Promise<TrackingShareLink[]> {
-  const res = await fetch(`${API_URL}/tracking/${campaignId}/share`, {
+  const res = await authFetch(`${API_URL}/tracking/${campaignId}/share`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
@@ -848,7 +921,7 @@ export async function apiListShareLinks(token: string, campaignId: string): Prom
 
 /** Owner-only: revoke a single share link (kills just that URL). */
 export async function apiRevokeShareLink(token: string, linkId: string): Promise<{ revoked: boolean }> {
-  const res = await fetch(`${API_URL}/tracking/share/${linkId}`, {
+  const res = await authFetch(`${API_URL}/tracking/share/${linkId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -862,7 +935,7 @@ export async function apiRevokeShareLink(token: string, linkId: string): Promise
  * means the link is unknown, revoked, or expired.
  */
 export async function apiGetPublicTrackingReport(shareToken: string): Promise<PublicTrackingReport> {
-  const res = await fetch(`${API_URL}/public/tracking/${encodeURIComponent(shareToken)}`);
+  const res = await authFetch(`${API_URL}/public/tracking/${encodeURIComponent(shareToken)}`);
   if (!res.ok) throw new Error(await readApiError(res, "This report link is no longer available"));
   return res.json();
 }
@@ -922,7 +995,7 @@ export interface PublicCampaignInfluencer {
 
 /** Owner-only: mint a new public share link for a campaign. */
 export async function apiCreateCampaignShareLink(token: string, campaignId: string): Promise<CampaignShareLink> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/share`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/share`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -932,7 +1005,7 @@ export async function apiCreateCampaignShareLink(token: string, campaignId: stri
 
 /** Owner-only: list a campaign's currently active (non-revoked, non-expired) links. */
 export async function apiListCampaignShareLinks(token: string, campaignId: string): Promise<CampaignShareLink[]> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/share`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/share`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
@@ -941,7 +1014,7 @@ export async function apiListCampaignShareLinks(token: string, campaignId: strin
 
 /** Owner-only: revoke a single share link (kills just that URL). */
 export async function apiRevokeCampaignShareLink(token: string, linkId: string): Promise<{ revoked: boolean }> {
-  const res = await fetch(`${API_URL}/campaigns/share/${linkId}`, {
+  const res = await authFetch(`${API_URL}/campaigns/share/${linkId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -955,13 +1028,13 @@ export async function apiRevokeCampaignShareLink(token: string, linkId: string):
  * means the link is unknown, revoked, or expired.
  */
 export async function apiGetPublicCampaign(shareToken: string): Promise<PublicCampaign> {
-  const res = await fetch(`${API_URL}/public/campaigns/${encodeURIComponent(shareToken)}`);
+  const res = await authFetch(`${API_URL}/public/campaigns/${encodeURIComponent(shareToken)}`);
   if (!res.ok) throw new Error(await readApiError(res, "This campaign link is no longer available"));
   return res.json();
 }
 
 export async function apiConnectPlatform(token: string, platform: string): Promise<{ authUrl: string }> {
-  const res = await fetch(`${API_URL}/auth/platform/connect`, {
+  const res = await authFetch(`${API_URL}/auth/platform/connect`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ platform }),
@@ -974,7 +1047,7 @@ export async function apiConnectPlatform(token: string, platform: string): Promi
 }
 
 export async function apiDisconnectPlatform(token: string, platform: string): Promise<void> {
-  const res = await fetch(`${API_URL}/auth/platform/connect`, {
+  const res = await authFetch(`${API_URL}/auth/platform/connect`, {
     method: "DELETE",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ platform }),
@@ -983,7 +1056,7 @@ export async function apiDisconnectPlatform(token: string, platform: string): Pr
 }
 
 export async function apiSendMessage(token: string, conversationId: string, content: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/messages`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/messages`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json",
@@ -999,7 +1072,7 @@ export async function apiSendMessage(token: string, conversationId: string, cont
 }
 
 export async function apiStartConversation(token: string, influencerId: string, campaignId: string) {
-  const res = await fetch(`${API_URL}/conversations`, {
+  const res = await authFetch(`${API_URL}/conversations`, {
     method: "POST",
     headers: { "Content-Type": "application/json", "Authorization": `Bearer ${token}` },
     body: JSON.stringify({ influencerId, campaignId }),
@@ -1012,7 +1085,7 @@ export async function apiStartConversation(token: string, influencerId: string, 
 }
 
 export async function apiMarkPhaseReady(token: string, conversationId: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/phase-ready`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/phase-ready`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}` },
   });
@@ -1028,7 +1101,7 @@ export async function apiMarkPhaseReady(token: string, conversationId: string) {
 // goes through apiMarkPhaseReady (POST /:id/phase-ready).
 
 export async function apiMarkConversationRead(token: string, conversationId: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/read`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/read`, {
     method: "PATCH",
     headers: { "Authorization": `Bearer ${token}` },
   });
@@ -1036,7 +1109,7 @@ export async function apiMarkConversationRead(token: string, conversationId: str
 }
 
 export async function apiGetConversation(token: string, conversationId: string) {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}`, {
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) return null;
@@ -1079,7 +1152,7 @@ export interface ConversationBrief {
 }
 
 export async function apiGetConversationBrief(token: string, conversationId: string): Promise<ConversationBrief | null> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/brief`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/brief`, {
     headers: { "Authorization": `Bearer ${token}` },
   });
   if (!res.ok) return null;
@@ -1089,7 +1162,7 @@ export async function apiGetConversationBrief(token: string, conversationId: str
 // ── Shortlist ─────────────────────────────────────────────────────────────
 
 export async function apiGetShortlist(token: string): Promise<any[]> {
-  const res = await fetch(`${API_URL}/shortlist`, {
+  const res = await authFetch(`${API_URL}/shortlist`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, 'Failed to fetch shortlist'));
@@ -1097,7 +1170,7 @@ export async function apiGetShortlist(token: string): Promise<any[]> {
 }
 
 export async function apiAddToShortlist(token: string, influencerId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/shortlist/${influencerId}`, {
+  const res = await authFetch(`${API_URL}/shortlist/${influencerId}`, {
     method: 'POST',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1105,7 +1178,7 @@ export async function apiAddToShortlist(token: string, influencerId: string): Pr
 }
 
 export async function apiRemoveFromShortlist(token: string, influencerId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/shortlist/${influencerId}`, {
+  const res = await authFetch(`${API_URL}/shortlist/${influencerId}`, {
     method: 'DELETE',
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1148,7 +1221,7 @@ export async function apiGetCampaignShortlist(
   token: string,
   campaignId: string,
 ): Promise<CampaignShortlistEntry[]> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load campaign shortlist"));
@@ -1162,7 +1235,7 @@ export async function apiAddCampaignShortlist(
   influencerId: string,
   extra?: { recommendationNote?: string; proposedPrice?: number },
 ): Promise<CampaignShortlistEntry> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/shortlist`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ influencerId, ...extra }),
@@ -1178,7 +1251,7 @@ export async function apiUpdateCampaignShortlistNote(
   influencerId: string,
   patch: { recommendationNote?: string | null; proposedPrice?: number | null },
 ): Promise<CampaignShortlistEntry> {
-  const res = await fetch(
+  const res = await authFetch(
     `${API_URL}/campaigns/${campaignId}/shortlist/${influencerId}`,
     {
       method: "PATCH",
@@ -1196,7 +1269,7 @@ export async function apiRemoveCampaignShortlist(
   campaignId: string,
   influencerId: string,
 ): Promise<{ success: boolean }> {
-  const res = await fetch(
+  const res = await authFetch(
     `${API_URL}/campaigns/${campaignId}/shortlist/${influencerId}`,
     { method: "DELETE", headers: { Authorization: `Bearer ${token}` } },
   );
@@ -1211,7 +1284,7 @@ export async function apiCreateShortlistShareLink(
   token: string,
   campaignId: string,
 ): Promise<CampaignShareLink> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1224,7 +1297,7 @@ export async function apiListShortlistShareLinks(
   token: string,
   campaignId: string,
 ): Promise<CampaignShareLink[]> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/shortlist-share`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to load share links"));
@@ -1236,7 +1309,7 @@ export async function apiRevokeShortlistShareLink(
   token: string,
   linkId: string,
 ): Promise<{ revoked: boolean }> {
-  const res = await fetch(`${API_URL}/campaigns/shortlist-share/${linkId}`, {
+  const res = await authFetch(`${API_URL}/campaigns/shortlist-share/${linkId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1274,7 +1347,7 @@ export interface PublicInfluencerList {
 export async function apiGetPublicInfluencerList(
   shareToken: string,
 ): Promise<PublicInfluencerList> {
-  const res = await fetch(
+  const res = await authFetch(
     `${API_URL}/public/campaigns/${encodeURIComponent(shareToken)}/influencers`,
   );
   if (!res.ok) throw new Error(await readApiError(res, "This link is no longer available"));
@@ -1290,7 +1363,7 @@ export async function apiUploadConversationFile(
   const form = new FormData();
   form.append("file", file);
   form.append("type", type);
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/upload`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/upload`, {
     method: "POST",
     headers: { "Authorization": `Bearer ${token}` },
     body: form,
@@ -1319,7 +1392,7 @@ export interface Draft {
 }
 
 export async function apiGetDrafts(token: string, conversationId: string): Promise<Draft[]> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch drafts"));
@@ -1331,7 +1404,7 @@ export async function apiCreateDraft(
   conversationId: string,
   data: { title: string; notes?: string; linkUrl?: string; contentType?: string },
 ): Promise<Draft> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -1346,7 +1419,7 @@ export async function apiUpdateDraft(
   draftId: string,
   data: { title?: string; notes?: string; linkUrl?: string; contentType?: string; status?: "DRAFT" | "SUBMITTED" },
 ): Promise<Draft> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -1356,7 +1429,7 @@ export async function apiUpdateDraft(
 }
 
 export async function apiDeleteDraft(token: string, conversationId: string, draftId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}`, {
     method: "DELETE",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1369,7 +1442,7 @@ export async function apiReviewDraft(
   draftId: string,
   data: { status: "APPROVED" | "REVISION_REQUESTED"; revisionNote?: string },
 ): Promise<Draft> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/review`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/review`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -1386,7 +1459,7 @@ export async function apiUploadDraftFile(
 ): Promise<Draft> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/upload`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/drafts/${draftId}/upload`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -1411,7 +1484,7 @@ export interface Payment {
 }
 
 export async function apiGetPayments(token: string, conversationId: string): Promise<Payment[]> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/payments`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch payments"));
@@ -1423,7 +1496,7 @@ export async function apiCreatePayment(
   conversationId: string,
   data: { amount: number; paymentType?: string },
 ): Promise<Payment> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/payments`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
     body: JSON.stringify(data),
@@ -1440,7 +1513,7 @@ export async function apiUploadPaymentProof(
 ): Promise<Payment> {
   const form = new FormData();
   form.append("file", file);
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/proof`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/proof`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
     body: form,
@@ -1454,7 +1527,7 @@ export async function apiConfirmPayment(
   conversationId: string,
   paymentId: string,
 ): Promise<Payment> {
-  const res = await fetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/confirm`, {
+  const res = await authFetch(`${API_URL}/conversations/${conversationId}/payments/${paymentId}/confirm`, {
     method: "PATCH",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1502,7 +1575,7 @@ export async function apiInviteToCampaign(
   campaignId: string,
   influencerId: string,
 ): Promise<InviteResponse> {
-  const res = await fetch(`${API_URL}/campaigns/${campaignId}/invite`, {
+  const res = await authFetch(`${API_URL}/campaigns/${campaignId}/invite`, {
     method: "POST",
     headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
     body: JSON.stringify({ influencerId }),
@@ -1512,7 +1585,7 @@ export async function apiInviteToCampaign(
 }
 
 export async function apiGetInvitations(token: string): Promise<Invitation[]> {
-  const res = await fetch(`${API_URL}/invitations`, {
+  const res = await authFetch(`${API_URL}/invitations`, {
     headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch invitations"));
@@ -1523,7 +1596,7 @@ export async function apiAcceptInvitation(
   token: string,
   invitationId: string,
 ): Promise<{ id: string; status: string; conversationId: string }> {
-  const res = await fetch(`${API_URL}/invitations/${invitationId}/accept`, {
+  const res = await authFetch(`${API_URL}/invitations/${invitationId}/accept`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -1532,7 +1605,7 @@ export async function apiAcceptInvitation(
 }
 
 export async function apiDeclineInvitation(token: string, invitationId: string): Promise<void> {
-  const res = await fetch(`${API_URL}/invitations/${invitationId}/decline`, {
+  const res = await authFetch(`${API_URL}/invitations/${invitationId}/decline`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
   });
