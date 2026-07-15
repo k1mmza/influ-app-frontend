@@ -50,7 +50,13 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
   const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
-  const isPublicInfoPage = pathname === "/how-it-works" || pathname === "/creators" || pathname === "/agencies";
+  const isPublicInfoPage =
+    pathname === "/how-it-works" ||
+    pathname === "/creators" ||
+    pathname === "/agencies" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/cookies";
   // Public "Share Report" / "Share Campaign" links: an account-less visitor opens
   // these, so they must NEVER get the authenticated sidebar chrome. Render bare,
   // full-width — the page supplies its own canvas.

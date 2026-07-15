@@ -207,7 +207,7 @@ export default function RegisterPage() {
                   <div className="flex items-center gap-2">
                     <input type="checkbox" required className="h-4 w-4 rounded border-input bg-background" id="terms" />
                     <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
-                      I agree to the <Link href="#" className="underline">Terms</Link> and <Link href="#" className="underline">Privacy Policy</Link>.
+                      I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
                     </Label>
                   </div>
                   <Button type="submit" className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
