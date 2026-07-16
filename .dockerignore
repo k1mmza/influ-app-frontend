@@ -1,6 +1,10 @@
 node_modules
 dist
 .next
+.git
 .env
 .env.local
 *.log
+Dockerfile
+.dockerignore
+deploy.sh
