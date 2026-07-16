@@ -1,46 +1,81 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { Compass, Heart, Share2, Megaphone, Activity, MessageSquare } from "lucide-react";
+import {
+  MarketingHero,
+  SectionHeading,
+  FeatureGrid,
+  ClosingCTA,
+  CtaPrimary,
+  CtaSecondary,
+  type Feature,
+} from "@/components/marketing-sections";
+
+const features: Feature[] = [
+  {
+    icon: Compass,
+    title: "Discover the right creators",
+    body: "Search the roster by niche, reach, and audience, or paste a profile link to pull real numbers. Filter down to a fit instead of scrolling feeds.",
+  },
+  {
+    icon: Megaphone,
+    title: "Run campaigns end to end",
+    body: "Create, edit, and manage campaign briefs, then collect applications from creators in one place — the whole brief-to-shortlist loop, off email.",
+  },
+  {
+    icon: Heart,
+    title: "Shortlist applicants",
+    body: "Star the applicants worth a second look and keep every campaign's shortlist organized, instead of a spreadsheet tab per client.",
+  },
+  {
+    icon: Share2,
+    title: "Share for client sign-off",
+    body: "Send a public shortlist or campaign page by link. Clients open it in the browser and review — no account, no login, no PDF export.",
+  },
+  {
+    icon: Activity,
+    title: "Track what went live",
+    body: "Approved content flows into performance tracking and reporting (YouTube today, with manual sync) so results sit next to the campaign that drove them.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Message creators in-app",
+    body: "Talk to applicants and confirmed creators inside the campaign — context stays attached instead of scattered across inboxes.",
+  },
+];
 
 export default function AgenciesPage() {
   return (
     <div>
-      {/* Hero */}
-      <section className="w-full bg-gradient-to-br from-[#0F172A] via-[#0369A1] to-[#0F172A] px-4 py-32 text-center">
-        <h1 className="font-serif text-5xl font-medium text-white md:text-6xl">
-          For Agencies & Brands
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-white/70">
-          Find the right creators, launch campaigns faster, and measure real results — all in one place.
-        </p>
-        <Button asChild className="mt-10 h-14 rounded-2xl bg-white px-10 text-base font-bold font-serif text-[#0F172A] shadow-xl hover:bg-white/90">
-          <Link href="/register">Get Started Free</Link>
-        </Button>
-      </section>
+      <MarketingHero
+        eyebrow="For agencies & brands"
+        title="Run creator campaigns"
+        highlight="without the spreadsheet."
+        subtitle="Discover creators, brief a campaign, shortlist applicants, and track what went live — the workflow you're stitching together across sheets and email, in one directory."
+      >
+        <CtaPrimary href="/register">Get started free</CtaPrimary>
+        <CtaSecondary href="/discover">Explore the roster</CtaSecondary>
+      </MarketingHero>
 
-      {/* Placeholder benefits */}
-      <section className="mx-auto max-w-4xl px-4 py-24">
-        <div className="grid gap-8 md:grid-cols-3">
-          {[
-            { step: "01", title: "Discover Creators",     description: "Placeholder — search thousands of vetted creators by niche, platform, audience size, engagement rate, and location." },
-            { step: "02", title: "Launch Campaigns",      description: "Placeholder — create a campaign brief, set your budget, and invite creators to apply — no back-and-forth emails." },
-            { step: "03", title: "Measure Performance",   description: "Placeholder — track submissions, approvals, reach, and ROI from a single dashboard in real time." },
-          ].map(({ step, title, description }) => (
-            <div key={step} className="rounded-2xl border border-border bg-card p-8">
-              <p className="font-serif text-4xl font-bold text-primary/30">{step}</p>
-              <h3 className="mt-4 font-serif text-xl font-semibold text-foreground">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-16 rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
-          <p className="font-serif text-2xl font-medium text-foreground">More content coming soon</p>
-          <p className="mt-3 text-sm text-muted-foreground">This page is a placeholder — full content will be added in a future session.</p>
-          <Button asChild className="mt-8 rounded-full font-serif font-semibold">
-            <Link href="/">Back to Home</Link>
-          </Button>
+      <section className="w-full bg-[var(--lp-paper)] px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <SectionHeading
+            eyebrow="What you can do today"
+            title="Everything from first search to sign-off."
+            intro="These are working features, not a roadmap — set up an account and you can run a real campaign through them now."
+          />
+          <FeatureGrid features={features} />
         </div>
       </section>
+
+      <ClosingCTA
+        title="Replace the sheet-and-email scramble."
+        subtitle="Free to search the roster. Set up a campaign when you're ready."
+        primaryHref="/register"
+        primaryLabel="Get started free"
+        secondaryHref="/how-it-works"
+        secondaryLabel="See how it works"
+      />
     </div>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
@@ -61,8 +62,6 @@ export default function RegisterPage() {
     }
   }, []);
 
-  const selected = ROLES.find((r) => r.id === selectedRole)!;
-
   const handleNextStep = (e: React.FormEvent) => {
     e.preventDefault();
     setStep(1);
@@ -88,72 +87,34 @@ export default function RegisterPage() {
     }
   };
 
-  // Left panel content — static for step 0, dynamic per role for step 1
-  const leftPanel = step === 0 ? (
-    <div className="relative z-10 max-w-sm">
-      <h2 className="text-4xl font-bold leading-tight tracking-tight font-serif">Build your creator growth engine.</h2>
-      <p className="mt-6 text-lg text-slate-300">
-        &ldquo;Launch faster, match smarter, and scale your partnerships with trusted creator insights.&rdquo;
-      </p>
-      <div className="mt-10 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary/80 to-secondary/80 p-0.5">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-900 text-xs font-bold">AM</div>
-        </div>
-        <div>
-          <p className="text-sm font-semibold">Alya Morgan</p>
-          <p className="text-xs text-slate-400">Partnership Lead, Nexa Commerce</p>
-        </div>
-      </div>
-    </div>
-  ) : (
-    <div className="relative z-10 max-w-sm space-y-6">
-      <p className="text-xs font-bold uppercase tracking-widest text-primary/80">You&apos;re almost in</p>
-      <h2 key={selected.id + "-h"} className="text-4xl font-bold leading-tight tracking-tight font-serif">
-        {selected.heading}
-      </h2>
-      <p key={selected.id + "-d"} className="text-base text-slate-300 leading-relaxed">
-        {selected.detail}
-      </p>
-      <div className="mt-4 flex items-center gap-3">
-        <div className="h-10 w-10 rounded-full bg-gradient-to-tr from-primary/80 to-secondary/80 p-0.5">
-          <div className="flex h-full w-full items-center justify-center rounded-full bg-slate-900 text-xs font-bold">IA</div>
-        </div>
-        <div>
-          <p className="text-sm font-semibold">Inflique Platform</p>
-          <p className="text-xs text-slate-400">Trusted by 500+ brands &amp; creators</p>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center p-4">
-      <Card className="grid w-full max-w-5xl overflow-hidden border-none shadow-2xl md:grid-cols-2">
-        <aside className="relative hidden flex-col justify-between bg-slate-950 p-10 text-white md:flex">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/20 via-transparent to-secondary/20" />
+    <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12">
+      <Card className="grid w-full max-w-5xl overflow-hidden border shadow-2xl md:grid-cols-2">
+        {/* ─── Brand image panel ───────────────────────────────── */}
+        <aside className="relative hidden flex-col justify-between overflow-hidden bg-slate-950 p-10 text-white md:flex">
+          {/* Full-bleed related photo */}
+          <Image
+            src="/pictures/influencer.jpg"
+            alt="Creator filming content outdoors"
+            fill
+            priority
+            sizes="(min-width: 768px) 50vw, 0px"
+            className="object-cover"
+          />
+          {/* Gradient scrim for legibility */}
+          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/40" />
 
-          <Link href="/" className="relative z-10 inline-flex items-center gap-2 text-lg font-bold transition hover:opacity-80">
-            <span className="inline-flex h-8 w-8 items-center justify-center rounded-lg bg-gradient-to-r from-primary to-secondary text-sm text-white">
-              IA
-            </span>
-            <span className="font-serif">Inflique</span>
-          </Link>
-
-          {leftPanel}
-
-          <div className="relative z-10 flex gap-10">
-            <div>
-              <p className="text-2xl font-bold font-serif">15K+</p>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Active Campaigns</p>
-            </div>
-            <div>
-              <p className="text-2xl font-bold font-serif">2.4M</p>
-              <p className="text-xs text-slate-400 uppercase tracking-wider">Creators Indexed</p>
-            </div>
+          <div className="relative z-10 mt-auto max-w-sm space-y-3">
+            <h2 className="font-serif text-4xl font-bold leading-tight tracking-tight drop-shadow-lg">
+              Build your creator growth engine.
+            </h2>
+            <p className="text-base leading-relaxed text-slate-200 drop-shadow">
+              Launch faster, match smarter, and scale your partnerships with trusted creator insights.
+            </p>
           </div>
         </aside>
 
-        <CardContent className="flex flex-col justify-center bg-background p-8 md:p-12">
+        <CardContent className="flex flex-col justify-center bg-card p-8 md:p-12">
           <div className="mx-auto w-full max-w-sm space-y-8">
             {step === 0 ? (
               <>
@@ -207,7 +168,7 @@ export default function RegisterPage() {
                   <div className="flex items-center gap-2">
                     <input type="checkbox" required className="h-4 w-4 rounded border-input bg-background" id="terms" />
                     <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
-                      I agree to the <Link href="/terms" className="underline">Terms</Link> and <Link href="/privacy" className="underline">Privacy Policy</Link>.
+                      I agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</Link> and <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</Link>.
                     </Label>
                   </div>
                   <Button type="submit" className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">

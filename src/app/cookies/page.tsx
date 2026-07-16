@@ -1,26 +1,19 @@
 // ponytail: draft legal skeleton, NOT reviewed by counsel — do not ship without legal review.
 import type { Metadata } from "next";
-import { LegalPageLayout } from "@/components/legal-page-layout";
+import { LegalPageLayout, LegalSection as Section } from "@/components/legal-page-layout";
 
 export const metadata: Metadata = {
   title: "Cookie Policy | Inflique",
   description: "Inflique's Cookie Policy.",
 };
 
-function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="font-serif text-xl font-semibold text-foreground">
-        {n}. {title}
-      </h2>
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
-    </section>
-  );
-}
-
 export default function CookiesPage() {
   return (
-    <LegalPageLayout title="Cookie Policy" lastUpdated="2026-07-15">
+    <LegalPageLayout
+      title="Cookie Policy"
+      subtitle="Inflique keeps your session in local storage — not tracking cookies. Here's the full picture."
+      lastUpdated="2026-07-15"
+    >
       <Section n={1} title="Inflique Does Not Use Tracking Cookies">
         <p>
           Unlike many websites, Inflique does not set cookies to track you, and does not use

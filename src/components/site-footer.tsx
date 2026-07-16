@@ -69,13 +69,13 @@ export function SiteFooter() {
             © {new Date().getFullYear()} Inflique. All rights reserved.
           </p>
           <div className="flex items-center gap-6">
-            <Link href="/privacy" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
+            <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
               Privacy Policy
             </Link>
-            <Link href="/terms" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
+            <Link href="/terms" target="_blank" rel="noopener noreferrer" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
               Terms of Service
             </Link>
-            <Link href="/cookies" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
+            <Link href="/cookies" target="_blank" rel="noopener noreferrer" className="font-[family-name:var(--font-grotesk)] text-xs text-[var(--lp-muted)] transition hover:text-[var(--lp-ink)]">
               Cookie Policy
             </Link>
           </div>

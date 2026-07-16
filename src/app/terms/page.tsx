@@ -1,26 +1,19 @@
 // ponytail: draft legal skeleton, NOT reviewed by counsel — do not ship without legal review.
 import type { Metadata } from "next";
-import { LegalPageLayout } from "@/components/legal-page-layout";
+import { LegalPageLayout, LegalSection as Section } from "@/components/legal-page-layout";
 
 export const metadata: Metadata = {
   title: "Terms & Conditions | Inflique",
   description: "Inflique's Terms & Conditions.",
 };
 
-function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="font-serif text-xl font-semibold text-foreground">
-        {n}. {title}
-      </h2>
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
-    </section>
-  );
-}
-
 export default function TermsPage() {
   return (
-    <LegalPageLayout title="Terms & Conditions" lastUpdated="2026-07-15">
+    <LegalPageLayout
+      title="Terms & Conditions"
+      subtitle="How Inflique may be used by brands, agencies, and creators — the rules that apply to every account."
+      lastUpdated="2026-07-15"
+    >
       <Section n={1} title="Who This Applies To">
         <p>
           These Terms govern use of Inflique by all account holders: <strong>Brands</strong> (companies

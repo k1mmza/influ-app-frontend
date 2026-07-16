@@ -1,46 +1,81 @@
-import Link from "next/link";
-import { Button } from "@/components/ui/button";
+"use client";
+
+import { Sparkles, Compass, Link2, Upload, Activity, MessageSquare } from "lucide-react";
+import {
+  MarketingHero,
+  SectionHeading,
+  FeatureGrid,
+  ClosingCTA,
+  CtaPrimary,
+  CtaSecondary,
+  type Feature,
+} from "@/components/marketing-sections";
+
+const features: Feature[] = [
+  {
+    icon: Sparkles,
+    title: "Build a profile in minutes",
+    body: "Upload your media kit as a PDF and AI auto-fills your niche, platforms, and audience stats. No long form — your real numbers do the talking.",
+  },
+  {
+    icon: Compass,
+    title: "Find campaigns that fit",
+    body: "Browse open campaigns from brands and agencies and apply to the ones that match your content, instead of pitching into DMs and hoping for a reply.",
+  },
+  {
+    icon: Link2,
+    title: "Connect YouTube & TikTok",
+    body: "Link your accounts so your content is easy to submit and your numbers come from the source — not a screenshot.",
+  },
+  {
+    icon: Upload,
+    title: "Submit content by URL",
+    body: "Drop in a video link and move it through a clear draft-to-submitted approval flow, so both sides know exactly where a deliverable stands.",
+  },
+  {
+    icon: Activity,
+    title: "Prove your performance",
+    body: "Get tracked performance data on what you post (YouTube today), so your results are on record for the next brief instead of lost in your notifications.",
+  },
+  {
+    icon: MessageSquare,
+    title: "Talk to brands directly",
+    body: "Message brands and agencies inside the campaign — the conversation stays attached to the work, not buried in a comment section.",
+  },
+];
 
 export default function CreatorsPage() {
   return (
     <div>
-      {/* Hero */}
-      <section className="w-full bg-gradient-to-br from-[#0F172A] via-[#7C3AED] to-[#0369A1] px-4 py-32 text-center">
-        <h1 className="font-serif text-5xl font-medium text-white md:text-6xl">
-          For Creators
-        </h1>
-        <p className="mx-auto mt-6 max-w-xl text-lg text-white/70">
-          Grow your brand, land real campaigns, and get paid doing what you love.
-        </p>
-        <Button asChild className="mt-10 h-14 rounded-2xl bg-white px-10 text-base font-bold font-serif text-[#0F172A] shadow-xl hover:bg-white/90">
-          <Link href="/register">Join as a Creator</Link>
-        </Button>
-      </section>
+      <MarketingHero
+        eyebrow="For creators"
+        title="Get cast by brands"
+        highlight="that actually fit."
+        subtitle="Build a profile from your real numbers, apply to campaigns that match your content, and keep a track record brands can trust — more than a DM can carry."
+      >
+        <CtaPrimary href="/register">Join as a creator</CtaPrimary>
+        <CtaSecondary href="/discover">See the roster</CtaSecondary>
+      </MarketingHero>
 
-      {/* Placeholder benefits */}
-      <section className="mx-auto max-w-4xl px-4 py-24">
-        <div className="grid gap-8 md:grid-cols-3">
-          {[
-            { step: "01", title: "Build Your Profile",      description: "Placeholder — showcase your niche, platforms, audience stats, and past work to stand out to brands." },
-            { step: "02", title: "Apply to Campaigns",      description: "Placeholder — browse open campaigns from brands and agencies that match your content style and audience." },
-            { step: "03", title: "Get Paid & Grow",         description: "Placeholder — submit content, track approvals, and receive payments directly through the platform." },
-          ].map(({ step, title, description }) => (
-            <div key={step} className="rounded-2xl border border-border bg-card p-8">
-              <p className="font-serif text-4xl font-bold text-primary/30">{step}</p>
-              <h3 className="mt-4 font-serif text-xl font-semibold text-foreground">{title}</h3>
-              <p className="mt-3 text-sm leading-relaxed text-muted-foreground">{description}</p>
-            </div>
-          ))}
-        </div>
-
-        <div className="mt-16 rounded-2xl border border-dashed border-border bg-muted/30 p-12 text-center">
-          <p className="font-serif text-2xl font-medium text-foreground">More content coming soon</p>
-          <p className="mt-3 text-sm text-muted-foreground">This page is a placeholder — full content will be added in a future session.</p>
-          <Button asChild className="mt-8 rounded-full font-serif font-semibold">
-            <Link href="/">Back to Home</Link>
-          </Button>
+      <section className="w-full bg-[var(--lp-paper)] px-4 py-20">
+        <div className="mx-auto max-w-6xl">
+          <SectionHeading
+            eyebrow="What you get today"
+            title="More than a link in your bio."
+            intro="Every one of these works right now — set up a profile and you can start applying to real campaigns."
+          />
+          <FeatureGrid features={features} />
         </div>
       </section>
+
+      <ClosingCTA
+        title="Let the right campaigns find you."
+        subtitle="Free to join. Build your profile and start applying."
+        primaryHref="/register"
+        primaryLabel="Join as a creator"
+        secondaryHref="/how-it-works"
+        secondaryLabel="See how it works"
+      />
     </div>
   );
 }

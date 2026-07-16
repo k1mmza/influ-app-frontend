@@ -49,7 +49,7 @@ function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pag
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
-  const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
+  const isAuthPage = ["/forgot-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage =
     pathname === "/how-it-works" ||
     pathname === "/creators" ||
@@ -93,8 +93,8 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     return <main className="min-h-screen">{children}</main>;
   }
 
-  // A4: landing + public-info pages use the top-nav + footer layout.
-  if (isLandingPage || isPublicInfoPage) {
+  // A4: landing + public-info + login/register pages use the top-nav + footer layout.
+  if (isLandingPage || isPublicInfoPage || pathname === "/login" || pathname === "/register") {
     return (
       <main className="flex min-h-screen flex-col bg-[var(--lp-paper)]">
         <div className="mx-auto w-full max-w-7xl px-4 pt-6">

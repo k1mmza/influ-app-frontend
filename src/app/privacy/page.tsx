@@ -1,26 +1,19 @@
 // ponytail: draft legal skeleton, NOT reviewed by counsel — do not ship without legal review.
 import type { Metadata } from "next";
-import { LegalPageLayout } from "@/components/legal-page-layout";
+import { LegalPageLayout, LegalSection as Section } from "@/components/legal-page-layout";
 
 export const metadata: Metadata = {
   title: "Privacy Policy | Inflique",
   description: "Inflique's Privacy Policy.",
 };
 
-function Section({ n, title, children }: { n: number; title: string; children: React.ReactNode }) {
-  return (
-    <section>
-      <h2 className="font-serif text-xl font-semibold text-foreground">
-        {n}. {title}
-      </h2>
-      <div className="mt-3 space-y-3 text-sm leading-relaxed text-muted-foreground">{children}</div>
-    </section>
-  );
-}
-
 export default function PrivacyPage() {
   return (
-    <LegalPageLayout title="Privacy Policy" lastUpdated="2026-07-15">
+    <LegalPageLayout
+      title="Privacy Policy"
+      subtitle="What Inflique collects, how your session is stored, and the services your data is shared with."
+      lastUpdated="2026-07-15"
+    >
       <Section n={1} title="Information We Collect">
         <p>
           <strong>Account data</strong>: name, email, password (hashed) or OAuth identifier, and your

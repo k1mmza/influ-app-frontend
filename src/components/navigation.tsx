@@ -70,11 +70,16 @@ export function Navigation() {
   const isLandingPage = pathname === "/";
   const isPublicPage =
     isLandingPage ||
+    pathname === "/login" ||
+    pathname === "/register" ||
     pathname === "/how-it-works" ||
     pathname === "/creators" ||
     pathname === "/agencies" ||
+    pathname === "/terms" ||
+    pathname === "/privacy" ||
+    pathname === "/cookies" ||
     (pathname === "/discover" && !isLoggedIn);
-  const isAuthPage = ["/login", "/register", "/forgot-password", "/auth/callback"].includes(pathname);
+  const isAuthPage = ["/forgot-password", "/auth/callback"].includes(pathname);
 
   const collapsed = sidebar?.collapsed ?? false;
 
@@ -139,18 +144,22 @@ export function Navigation() {
             </Link>
           ) : (
             <>
-              <Link
-                href="/login"
-                className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
-              >
-                Log in
-              </Link>
-              <Link
-                href="/register"
-                className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
-              >
-                Get started
-              </Link>
+              {pathname !== "/login" && (
+                <Link
+                  href="/login"
+                  className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
+                >
+                  Log in
+                </Link>
+              )}
+              {pathname !== "/register" && (
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
+                >
+                  Get started
+                </Link>
+              )}
             </>
           )}
         </div>
