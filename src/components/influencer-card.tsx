@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { Influencer } from "@/lib/types";
 import { useShortlistStore } from "@/store/useShortlistStore";
+import { useUserStore } from "@/store/useUserStore";
 import type { IconType } from "react-icons";
 import { FaGlobe, FaLinkedinIn, FaMobileAlt } from "react-icons/fa";
 import {
@@ -90,6 +91,9 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
   const { toggle, has } = useShortlistStore();
   const saved = has(influencer.id);
+  // Shortlisting is an authed-only feature; logged-out visitors (public Discover
+  // reached from the landing page) don't get the heart.
+  const isLoggedIn = useUserStore((s) => s.isLoggedIn);
 
   return (
     <Card
@@ -117,17 +121,19 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         )}
         <div className="absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-900/15 to-transparent" />
 
-        {/* shortlist heart (top-left) */}
-        <button
-          onClick={(e) => { e.stopPropagation(); toggle(influencer.id, influencer); }}
-          className={cn(
-            "absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors cursor-pointer",
-            saved ? "bg-rose-500/90 text-white" : "bg-card/80 text-muted-foreground hover:text-rose-500",
-          )}
-          aria-label={saved ? "Remove from shortlist" : "Save to shortlist"}
-        >
-          <Heart className={cn("h-4 w-4", saved && "fill-current")} />
-        </button>
+        {/* shortlist heart (top-left) — authed users only */}
+        {isLoggedIn ? (
+          <button
+            onClick={(e) => { e.stopPropagation(); toggle(influencer.id, influencer); }}
+            className={cn(
+              "absolute left-2 top-2 flex h-7 w-7 items-center justify-center rounded-full backdrop-blur-sm transition-colors cursor-pointer",
+              saved ? "bg-rose-500/90 text-white" : "bg-card/80 text-muted-foreground hover:text-rose-500",
+            )}
+            aria-label={saved ? "Remove from shortlist" : "Save to shortlist"}
+          >
+            <Heart className={cn("h-4 w-4", saved && "fill-current")} />
+          </button>
+        ) : null}
 
         {/* score (top-right) */}
         <Badge className="absolute right-2 top-2 border-none bg-card/90 text-primary font-bold backdrop-blur-sm hover:bg-card">
@@ -191,13 +197,15 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
           </div>
         </div>
 
-        <Button
-          className="mt-auto w-full rounded-xl font-bold text-sm h-9 shadow-sm"
-          onClick={(e) => { e.stopPropagation(); onAddToCampaign?.(influencer); }}
-        >
-          <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
-          Add to Campaign
-        </Button>
+        {onAddToCampaign ? (
+          <Button
+            className="mt-auto w-full rounded-xl font-bold text-sm h-9 shadow-sm"
+            onClick={(e) => { e.stopPropagation(); onAddToCampaign(influencer); }}
+          >
+            <PlusCircle className="mr-1.5 h-3.5 w-3.5" />
+            Add to Campaign
+          </Button>
+        ) : null}
       </CardContent>
     </Card>
   );

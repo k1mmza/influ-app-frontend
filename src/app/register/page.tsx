@@ -123,27 +123,19 @@ export default function RegisterPage() {
                   <p className="text-sm text-muted-foreground">Join Inflique and start connecting with creators.</p>
                 </div>
 
-                <div className="grid grid-cols-2 gap-3">
-                  <Button
-                    variant="outline"
-                    className="rounded-xl cursor-pointer"
-                    onClick={() => { window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/google`; }}
-                  >
-                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
-                      <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-6.9 0-.7-.1-1.5-.2-2.2H12z" />
-                      <path fill="#34A853" d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.4-4H3.4v2.5A10 10 0 0 0 12 22z" />
-                      <path fill="#4A90E2" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.5H3.4A10 10 0 0 0 2.4 12c0 1.6.4 3.1 1 4.5L6.6 14z" />
-                      <path fill="#FBBC05" d="M12 6c1.4 0 2.6.5 3.5 1.4l2.6-2.6A10 10 0 0 0 3.4 7.5L6.6 10c.8-2.3 2.9-4 5.4-4z" />
-                    </svg>
-                    Google
-                  </Button>
-                  <Button variant="outline" className="rounded-xl opacity-50 cursor-not-allowed" disabled title="Coming soon">
-                    <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
-                      <path fill="currentColor" d="M17.6 12.7c0-2.4 2-3.6 2.1-3.7-1.2-1.7-3-1.9-3.6-1.9-1.5-.1-3 .9-3.8.9s-2-.9-3.3-.9c-1.7 0-3.2 1-4.1 2.4-1.8 3.1-.5 7.7 1.3 10.3.9 1.3 1.9 2.8 3.3 2.8 1.4-.1 1.9-.8 3.6-.8s2.1.8 3.6.8c1.5 0 2.4-1.3 3.3-2.6 1-1.5 1.4-2.9 1.4-3-.1-.1-2.7-1-2.8-4.3zM15.1 5.6c.7-.9 1.2-2.1 1.1-3.3-1 .1-2.2.7-2.9 1.6-.7.8-1.3 2-1.2 3.2 1.1.1 2.3-.6 3-1.5z" />
-                    </svg>
-                    Apple
-                  </Button>
-                </div>
+                <Button
+                  variant="outline"
+                  className="w-full rounded-xl cursor-pointer"
+                  onClick={() => { window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/google`; }}
+                >
+                  <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
+                    <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-6.9 0-.7-.1-1.5-.2-2.2H12z" />
+                    <path fill="#34A853" d="M12 22c2.6 0 4.8-.9 6.4-2.5l-3.1-2.4c-.9.6-2 .9-3.3.9-2.5 0-4.6-1.7-5.4-4H3.4v2.5A10 10 0 0 0 12 22z" />
+                    <path fill="#4A90E2" d="M6.6 14c-.2-.6-.3-1.3-.3-2s.1-1.4.3-2V7.5H3.4A10 10 0 0 0 2.4 12c0 1.6.4 3.1 1 4.5L6.6 14z" />
+                    <path fill="#FBBC05" d="M12 6c1.4 0 2.6.5 3.5 1.4l2.6-2.6A10 10 0 0 0 3.4 7.5L6.6 10c.8-2.3 2.9-4 5.4-4z" />
+                  </svg>
+                  Google
+                </Button>
 
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center"><Separator /></div>
@@ -171,7 +163,7 @@ export default function RegisterPage() {
                       I agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</Link> and <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</Link>.
                     </Label>
                   </div>
-                  <Button type="submit" className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all hover:translate-y-[-1px]">
+                  <Button type="submit" className="w-full rounded-xl py-6 text-base font-bold shadow-lg transition-all hover:translate-y-[-1px] bg-[var(--lp-accent)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06]">
                     Create Account
                   </Button>
                 </form>
@@ -190,8 +182,8 @@ export default function RegisterPage() {
                         key={r.id}
                         onClick={() => setSelectedRole(r.id)}
                         className={cn(
-                          "relative cursor-pointer rounded-2xl border-2 p-4 transition-all hover:border-primary/50",
-                          selectedRole === r.id ? "border-primary bg-primary/5" : "border-border bg-card"
+                          "relative cursor-pointer rounded-2xl border-2 p-4 transition-all hover:border-[var(--lp-accent-line)]",
+                          selectedRole === r.id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]" : "border-border bg-card"
                         )}
                       >
                         <div className="flex items-center gap-4">
@@ -203,8 +195,8 @@ export default function RegisterPage() {
                             <p className="text-xs text-muted-foreground">{r.desc}</p>
                           </div>
                           {selectedRole === r.id && (
-                            <div className="ml-auto h-5 w-5 rounded-full bg-primary flex items-center justify-center shrink-0">
-                              <svg className="h-3 w-3 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                            <div className="ml-auto h-5 w-5 rounded-full bg-[var(--lp-accent)] flex items-center justify-center shrink-0">
+                              <svg className="h-3 w-3 text-[var(--lp-accent-ink)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
                                 <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
                               </svg>
                             </div>
@@ -216,7 +208,7 @@ export default function RegisterPage() {
 
                   <div className="pt-4 space-y-3">
                     {error && <p className="text-sm font-medium text-destructive">{error}</p>}
-                    <Button disabled={loading} onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20">
+                    <Button disabled={loading} onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg bg-[var(--lp-accent)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06]">
                       {loading ? "Setting up…" : isOAuthMode ? "Continue to Dashboard" : "Complete Registration"}
                     </Button>
                     {!isOAuthMode && (
@@ -231,7 +223,7 @@ export default function RegisterPage() {
 
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link href="/login" className="font-bold text-primary hover:underline">
+              <Link href="/login" className="font-bold text-[var(--lp-accent)] hover:underline">
                 Log in
               </Link>
             </p>

@@ -3,6 +3,7 @@ import { Montserrat, Playfair_Display, Space_Grotesk, DM_Sans, Bricolage_Grotesq
 import "./globals.css";
 import { Providers } from "@/components/providers";
 import { AppShell } from "@/components/app-shell";
+import { CookieNotice } from "@/components/cookie-notice";
 import { READABLE_MODE_SCRIPT } from "@/components/readable-mode";
 
 const montserrat = Montserrat({
@@ -50,6 +51,7 @@ export default function RootLayout({
       <body className="font-sans antialiased">
         <Providers>
           <AppShell>{children}</AppShell>
+          <CookieNotice />
         </Providers>
       </body>
     </html>

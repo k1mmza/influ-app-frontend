@@ -184,9 +184,6 @@ export function Navigation() {
           className={cn("flex min-w-0 items-center", collapsed ? "justify-center" : "gap-3")}
           title={collapsed ? `Inflique — ${getSidebarWorkspaceLabel(role)}` : undefined}
         >
-          <span className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary to-secondary text-sm font-bold text-white shadow-lg shadow-primary/25">
-            IA
-          </span>
           {!collapsed ? (
             <div className="min-w-0">
               <p className="truncate text-base font-bold tracking-tight text-foreground font-serif">Inflique</p>

@@ -70,6 +70,7 @@ interface BrandCampaignVM {
   platform: string;
   objective: string;
   brandName: string | null;
+  coverImageUrl: string | null;
 }
 
 function toBrandCampaignVM(c: any): BrandCampaignVM {
@@ -78,6 +79,7 @@ function toBrandCampaignVM(c: any): BrandCampaignVM {
     name: c.name,
     visibility: c.visibility ? String(c.visibility).toLowerCase() : null,
     status: mapBrandStatus(c.status),
+    coverImageUrl: c.coverImageUrl ?? null,
     budget: c.budget ?? 0,
     spent: c.budgetSpent ?? 0, // name diff: budgetSpent → spent
     deadline: c.applyDeadline ? new Date(c.applyDeadline).toLocaleDateString() : "TBD",
@@ -173,8 +175,16 @@ function BrandCampaignCard({ raw, role }: { raw: any; role: string | null }) {
       href={`/campaigns/${c.id}`}
       className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
     >
-      {/* Role-tinted gradient cover (no image source in our API). */}
-      <div className={cn("relative h-24 w-full", roleCoverGradient(role))}>
+      {/* Campaign cover — same image as the campaign page; role-tinted gradient
+          fallback when the campaign has no uploaded cover. */}
+      <div className={cn("relative h-24 w-full", !c.coverImageUrl && roleCoverGradient(role))}>
+        {c.coverImageUrl ? (
+          <img
+            src={c.coverImageUrl}
+            alt={`${c.name} cover`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
         <span
           className={cn(

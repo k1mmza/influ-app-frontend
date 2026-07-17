@@ -7,6 +7,7 @@ import { getAvatarUrl } from "@/lib/avatar";
 import { getRoleLabel } from "@/lib/role-labels";
 import { getRoleTheme } from "@/lib/role-theme";
 import { cn } from "@/lib/utils";
+import { useProfileAvatar } from "@/lib/use-profile-avatar";
 import { useUserStore } from "@/store/useUserStore";
 
 /**
@@ -29,6 +30,11 @@ export function AccountSwitcher({ collapsed = false }: { collapsed?: boolean }) 
 
   const [open, setOpen] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // The active account's real uploaded avatar (null → fall back to generated).
+  // Only the active session's avatar is resolvable client-side; other stored
+  // accounts keep their generated avatar until switched to.
+  const activeAvatarUrl = useProfileAvatar();
 
   const active = accounts.find((a) => a.id === activeAccountId) ?? null;
 
@@ -100,7 +106,7 @@ export function AccountSwitcher({ collapsed = false }: { collapsed?: boolean }) 
         )}
       >
         <img
-          src={getAvatarUrl(active.name, active.role)}
+          src={activeAvatarUrl ?? getAvatarUrl(active.name, active.role)}
           alt=""
           className="h-7 w-7 shrink-0 rounded-full border border-black/10 object-cover"
         />
@@ -142,7 +148,7 @@ export function AccountSwitcher({ collapsed = false }: { collapsed?: boolean }) 
                     )}
                   >
                     <img
-                      src={getAvatarUrl(acct.name, acct.role)}
+                      src={isActive ? (activeAvatarUrl ?? getAvatarUrl(acct.name, acct.role)) : getAvatarUrl(acct.name, acct.role)}
                       alt=""
                       className="h-8 w-8 shrink-0 rounded-full border border-black/10 object-cover"
                     />

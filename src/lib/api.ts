@@ -772,6 +772,7 @@ export interface TrackingSummaryRow {
   id: string;
   name: string;
   status: string;
+  coverImageUrl: string | null;
   influencerCount: number;
   totalViews: number;
   avgEngagementRate: number;

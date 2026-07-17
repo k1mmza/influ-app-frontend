@@ -126,8 +126,16 @@ function CampaignCard({
         isSelected ? "border-nav-forest-800 ring-2 ring-nav-forest-200" : "border-border"
       )}
     >
-      {/* Role-tinted gradient cover placeholder (no image source in our API). */}
-      <div className={cn("relative h-24 w-full", roleCoverGradient(role))}>
+      {/* Campaign cover — same image as the campaign page; role-tinted gradient
+          fallback when the campaign has no uploaded cover. */}
+      <div className={cn("relative h-24 w-full", !c.coverImageUrl && roleCoverGradient(role))}>
+        {c.coverImageUrl ? (
+          <img
+            src={c.coverImageUrl}
+            alt={`${c.name} cover`}
+            className="absolute inset-0 h-full w-full object-cover"
+          />
+        ) : null}
         <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
         <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-semibold capitalize text-foreground shadow-sm backdrop-blur-sm">
           <Activity className="h-3 w-3 text-emerald-500" />

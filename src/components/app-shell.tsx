@@ -27,7 +27,7 @@ function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pag
       <div className="flex min-h-0 w-full flex-1 flex-col lg:min-h-svh lg:flex-row">
         <aside
           className={cn(
-            "flex w-full shrink-0 flex-col border-b border-border transition-[width] duration-300 lg:sticky lg:top-0 lg:h-screen lg:border-b-0 lg:border-r",
+            "flex w-full shrink-0 flex-col border-b border-border transition-[width] duration-300 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:border-b-0 lg:border-r",
             SIDEBAR_SURFACE_CLASS,
             collapsed ? "lg:w-16" : "lg:w-[calc(260px-1cm)]"
           )}

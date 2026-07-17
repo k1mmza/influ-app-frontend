@@ -142,7 +142,7 @@ export default function LoginPage() {
                   <Link
                     href="/forgot-password"
                     title="Reset your password"
-                    className="text-xs font-semibold text-primary hover:underline"
+                    className="text-xs font-semibold text-[var(--lp-accent)] hover:underline"
                   >
                     Forgot password?
                   </Link>
@@ -177,8 +177,8 @@ export default function LoginPage() {
                 type="submit"
                 disabled={loading}
                 className={cn(
-                  "group w-full rounded-xl py-6 text-base font-bold shadow-lg shadow-primary/20 transition-all",
-                  "hover:translate-y-[-1px]"
+                  "group w-full rounded-xl py-6 text-base font-bold shadow-lg transition-all",
+                  "bg-[var(--lp-accent)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06] hover:translate-y-[-1px]"
                 )}
               >
                 {loading ? "Signing In..." : "Sign In"}
@@ -192,7 +192,7 @@ export default function LoginPage() {
               Don&apos;t have an account?{" "}
               <Link
                 href="/register"
-                className="font-bold text-primary hover:underline"
+                className="font-bold text-[var(--lp-accent)] hover:underline"
               >
                 Sign up
               </Link>

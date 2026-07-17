@@ -10,6 +10,7 @@ import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, 
 import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 import { Camera } from "lucide-react";
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
+import { notifyAvatarUpdated } from "@/lib/use-profile-avatar";
 import { MediaKitImportPanel, type MediaKitImportHandle } from "@/components/media-kit-import-panel";
 
 // ─── Shared subcomponents ────────────────────────────────────────────────────
@@ -258,15 +259,18 @@ function BrandProfileView() {
                 onSelect={async (url) => {
                   await apiSetAvatarUrl(token, url);
                   setAvatarUrl(url);
+                  notifyAvatarUpdated();
                   setShowAvatarPicker(false);
                 }}
                 onUpload={async (file) => {
                   const { avatarUrl: url } = await apiUploadAvatar(token, file);
                   setAvatarUrl(url);
+                  notifyAvatarUpdated();
                 }}
                 onRemove={async () => {
                   await apiSetAvatarUrl(token, "");
                   setAvatarUrl(null);
+                  notifyAvatarUpdated();
                 }}
               />
             )}
@@ -756,15 +760,18 @@ Engagement rate:
               onSelect={async (url) => {
                 await apiSetAvatarUrl(token, url);
                 setAvatarUrl(url);
+                notifyAvatarUpdated();
                 setShowAvatarPicker(false);
               }}
               onUpload={async (file) => {
                 const { avatarUrl: url } = await apiUploadAvatar(token, file);
                 setAvatarUrl(url);
+                notifyAvatarUpdated();
               }}
               onRemove={async () => {
                 await apiSetAvatarUrl(token, "");
                 setAvatarUrl(null);
+                notifyAvatarUpdated();
               }}
             />
           )}

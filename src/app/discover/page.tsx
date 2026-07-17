@@ -32,6 +32,7 @@ import {
   X as XIcon,
 } from "lucide-react";
 import { AddToCampaignModal } from "@/components/add-to-campaign-modal";
+import { cn } from "@/lib/utils";
 
 type FollowerRange = "All" | "Nano" | "Micro" | "Mid" | "Macro" | "Mega";
 type InfluencerMeta = {
@@ -112,7 +113,11 @@ function DiscoverPageContent() {
   const processedSearchRef = useRef<string | null>(null);
   const [showFiltersPanel, setShowFiltersPanel] = useState(false);
 
-  const { token, role } = useUserStore();
+  const { token, role, isLoggedIn } = useUserStore();
+  // Logged-out visitors reach Discover straight from the landing page, so the
+  // public view wears the landing's "gallery" skin (paper/surface + persimmon +
+  // grotesk). The authenticated app keeps its own default chrome.
+  const publicSkin = !isLoggedIn;
   const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
   const [campaignPickerInfluencer, setCampaignPickerInfluencer] = useState<Influencer | null>(null);
   const [pickedCampaignId, setPickedCampaignId] = useState<string | null>(null);
@@ -598,18 +603,51 @@ function DiscoverPageContent() {
   }, [selectedInfluencer, selectedInfluencerId]);
 
   return (
-    <div className="space-y-6 rounded-3xl bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 p-4 lg:p-6 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-[#0284c7] to-[#075985] text-white overflow-hidden">
+    <div
+      className={cn(
+        "space-y-6 rounded-3xl p-4 lg:p-6",
+        publicSkin
+          ? "bg-[var(--lp-paper)]"
+          : "bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950"
+      )}
+    >
+      <Card
+        className={cn(
+          "overflow-hidden",
+          publicSkin
+            ? "border border-[var(--lp-line)] bg-[var(--lp-surface)] shadow-none"
+            : "border-none shadow-sm bg-gradient-to-r from-[#0284c7] to-[#075985] text-white"
+        )}
+      >
         <CardContent className="p-8 relative">
-          <div className="absolute top-0 right-0 p-8 opacity-10">
+          <div className={cn("absolute top-0 right-0 p-8", publicSkin ? "text-[var(--lp-accent)] opacity-[0.08]" : "opacity-10")}>
             <Globe className="h-32 w-32" />
           </div>
           <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
             <div>
-              <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Influencers</h1>
-              <p className="mt-2 text-primary-foreground/80 font-medium">Find campaign-fit creators with smart filters and audience signals.</p>
+              <h1
+                className={cn(
+                  "tracking-tight",
+                  publicSkin
+                    ? "font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--lp-ink)] md:text-4xl"
+                    : "text-3xl font-extrabold font-serif"
+                )}
+              >
+                Discover Influencers
+              </h1>
+              <p className={cn("mt-2", publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-ink-soft)]" : "text-primary-foreground/80 font-medium")}>
+                Find campaign-fit creators with smart filters and audience signals.
+              </p>
             </div>
-            <Badge variant="outline" className="w-fit border-white/30 bg-card/10 text-white font-bold px-4 py-1.5 backdrop-blur-sm">
+            <Badge
+              variant="outline"
+              className={cn(
+                "w-fit font-bold px-4 py-1.5",
+                publicSkin
+                  ? "border-[var(--lp-accent-line)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] font-[family-name:var(--font-grotesk)]"
+                  : "border-white/30 bg-card/10 text-white backdrop-blur-sm"
+              )}
+            >
               {totalCount} matches found
             </Badge>
           </div>
@@ -620,22 +658,25 @@ function DiscoverPageContent() {
           search bar, not in the sidebar). The SlidersHorizontal button toggles
           the panel below and badges the active-filter count. */}
       <div className="space-y-4">
-        <Card className="border-none shadow-sm overflow-hidden">
+        <Card className={cn("overflow-hidden", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)] shadow-none" : "border-none shadow-sm")}>
           <CardContent className="p-1">
             <div className="flex flex-col gap-1 md:flex-row">
               <div className="relative flex-1">
-                <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                <Search className={cn("absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2", publicSkin ? "text-[var(--lp-muted)]" : "text-muted-foreground")} />
                 <Input
                   value={unifiedSearchInput}
                   onChange={(e) => setUnifiedSearchInput(e.target.value)}
                   placeholder="Enter creator URL or type keywords for Smart Search..."
-                  className="h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm"
+                  className={cn("h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm", publicSkin && "bg-transparent font-[family-name:var(--font-grotesk)] text-[var(--lp-ink)] placeholder:text-[var(--lp-muted)]")}
                 />
               </div>
               <Button
                 onClick={handleUnifiedSearch}
                 disabled={isUrlSearching}
-                className="h-12 rounded-none px-8 font-bold text-sm shadow-none"
+                className={cn(
+                  "h-12 rounded-none px-8 font-bold text-sm shadow-none",
+                  publicSkin && "bg-[var(--lp-accent)] font-[family-name:var(--font-grotesk)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06]"
+                )}
               >
                 {isUrlSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
               </Button>
@@ -1070,7 +1111,7 @@ function DiscoverPageContent() {
                 influencer={generatedInfluencer}
                 isActive={selectedInfluencerId === generatedInfluencer.id}
                 onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-                onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+                onAddToCampaign={publicSkin ? undefined : (inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
               />
             </div>
           </div>
@@ -1078,18 +1119,18 @@ function DiscoverPageContent() {
 
         {/* Section 1 — hero grey box: the single Top Ten Trending shelf. */}
         {poolLoading ? (
-          <div className="flex min-h-[200px] items-center justify-center rounded-2xl bg-muted/30">
+          <div className={cn("flex min-h-[200px] items-center justify-center rounded-2xl", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
             <Loader2 className="h-8 w-8 animate-spin text-primary" />
           </div>
         ) : poolInfluencers.length > 0 ? (
-          <div className="rounded-2xl bg-muted/30 p-4 sm:p-5">
+          <div className={cn("rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
             <InfluencerShelf
               title="Top Ten Trending"
               subtitle="Highest-performing creators by reach and campaign score"
               influencers={trendingInfluencers}
               selectedId={selectedInfluencerId}
               onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-              onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+              onAddToCampaign={publicSkin ? undefined : (inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
               showRank
               emptyMessage="No influencers matched these filters. Try broadening your criteria."
             />
@@ -1097,24 +1138,24 @@ function DiscoverPageContent() {
         ) : null}
 
         {/* Section 2 — All matches grey box: paginated browse grid (5-up on wide). */}
-        <div className="space-y-4 rounded-2xl bg-muted/30 p-4 sm:p-5">
+        <div className={cn("space-y-4 rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
           <div className="flex items-center justify-between">
-            <h2 className="text-lg font-bold font-serif text-foreground">All Influencers</h2>
-            {!loading && <span className="text-sm font-medium text-muted-foreground">{totalCount} creators</span>}
+            <h2 className={cn("text-lg font-bold text-foreground", publicSkin ? "font-[family-name:var(--font-display)]" : "font-serif")}>All Influencers</h2>
+            {!loading && <span className={cn("text-sm font-medium", publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-muted)]" : "text-muted-foreground")}>{totalCount} creators</span>}
           </div>
           {loading ? (
             <div className="flex min-h-[300px] items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", publicSkin ? "gap-6 lg:gap-8" : "gap-4 xl:grid-cols-4")}>
               {influencers.map((influencer) => (
                 <InfluencerCard
                   key={influencer.id}
                   influencer={influencer}
                   isActive={selectedInfluencerId === influencer.id}
                   onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-                  onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+                  onAddToCampaign={publicSkin ? undefined : (inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
                 />
               ))}
               {influencers.length === 0 && (
@@ -1186,7 +1227,7 @@ function DiscoverPageContent() {
           influencer={selectedInfluencer}
           meta={selectedInfluencerMeta}
           onClose={() => setSelectedInfluencerId(null)}
-          onAddToCampaign={(inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
+          onAddToCampaign={publicSkin ? undefined : (inf) => { setCampaignPickerInfluencer(inf); setPickedCampaignId(null); setAddConfirmed(false); setInviteError(null); }}
           onMessage={(inf) => { setMessagePickerInfluencer(inf); setMessagePickedCampaignId(null); }}
         />
       )}
