@@ -99,15 +99,14 @@ export function Navigation() {
     ];
 
     return (
-      <nav className="sticky top-6 z-50 mb-8 flex items-center justify-between gap-6 rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-paper)]/85 px-4 py-2.5 shadow-[0_10px_30px_-22px_rgba(0,0,0,0.35)] backdrop-blur-md sm:px-5">
-        <div className="flex items-center gap-2">
-          <Link
-            href="/"
-            className="shrink-0 rounded-md px-1 font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-[var(--lp-ink)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
-          >
-            Inflique
-          </Link>
-          <div className="ml-4 hidden items-center gap-0.5 md:flex">
+      <nav className="sticky top-0 z-50 mb-8 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-6 bg-[var(--lp-surface)] px-6 py-4 shadow-[0_2px_16px_-10px_rgba(0,0,0,0.35)] sm:px-8">
+        <Link
+          href="/"
+          className="justify-self-start shrink-0 rounded-md px-1 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--lp-ink)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
+        >
+          Inflique
+        </Link>
+        <div className="hidden items-center justify-center gap-3 md:flex">
             {publicNavLinks.map(({ href, label, tip }) => {
               const active = pathname === href;
               return (
@@ -115,7 +114,7 @@ export function Navigation() {
                   <Link
                     href={href}
                     className={cn(
-                      "inline-flex items-center rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]",
+                      "inline-flex items-center rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]",
                       active
                         ? "bg-[var(--lp-ink)] text-[var(--lp-paper)]"
                         : "text-[var(--lp-ink-soft)] hover:bg-[var(--lp-surface-2)] hover:text-[var(--lp-ink)]"
@@ -130,10 +129,9 @@ export function Navigation() {
                 </div>
               );
             })}
-          </div>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-2">
           <ReadableToggle />
           <ThemeToggle />
           {isLoggedIn ? (
@@ -147,7 +145,7 @@ export function Navigation() {
               {pathname !== "/login" && (
                 <Link
                   href="/login"
-                  className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
+                  className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
                 >
                   Log in
                 </Link>
@@ -155,7 +153,7 @@ export function Navigation() {
               {pathname !== "/register" && (
                 <Link
                   href="/register"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
+                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
                 >
                   Get started
                 </Link>

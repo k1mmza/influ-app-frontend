@@ -1,16 +1,16 @@
 "use client";
 
 import Link from "next/link";
-import Image from "next/image";
 import { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { Building2, Heart, MessageSquare, ShoppingBag, Sparkles, Users, type LucideIcon } from "lucide-react";
 import { useUserStore } from "@/store/useUserStore";
 import { apiSelectRole } from "@/lib/api";
-import { Role } from "@/lib/types";
+import { apiGetInfluencers } from "@/lib/influencers";
+import { Role, Influencer } from "@/lib/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 
@@ -18,28 +18,308 @@ const ROLES = [
   {
     id: "agency" as Role,
     label: "Agency",
-    heading: "Power your entire talent operation.",
     desc: "Manage multiple top-tier talents.",
-    detail: "Oversee campaigns, talent rosters, and brand partnerships — all from a single dashboard built for agency teams.",
-    icon: "🏢",
+    icon: Building2,
+    tone: "var(--lp-agency)",
   },
   {
     id: "brand" as Role,
     label: "Brand",
-    heading: "Find the creator your brand deserves.",
     desc: "Discover perfect creator matches.",
-    detail: "Find and vet creators by niche, audience, and performance. Launch campaigns and track ROI in real time.",
-    icon: "🛍️",
+    icon: ShoppingBag,
+    tone: "var(--lp-brand)",
   },
   {
     id: "influencer" as Role,
     label: "Influencer",
-    heading: "Turn your audience into your business.",
     desc: "Share stories and build community.",
-    detail: "Showcase your media kit, connect with brands, and manage collabs — everything a creator needs to grow.",
-    icon: "✨",
+    icon: Sparkles,
+    tone: "var(--lp-creator)",
   },
 ];
+
+/* ── Signature moment ─────────────────────────────────────────────────
+   A constellation of REAL platform creators — avatars pulled from the same
+   public roster endpoint the landing page uses — connected by graphite
+   hairlines. The floating engagement badges + emoji (BADGES/EMOJI below) are
+   deliberately decorative placeholder UI matching the stakeholder mock; they
+   are NOT sourced metrics. The avatars themselves remain real. */
+
+type NodeSize = "center" | "md" | "sm";
+
+// Nodes are clustered center-right so the bottom-left stays clear for the
+// value-prop text overlay (avoids avatars stacking on the copy).
+const NODES: { x: number; y: number; size: NodeSize; accent?: boolean }[] = [
+  { x: 54, y: 44, size: "center" },
+  { x: 33, y: 18, size: "sm" },
+  { x: 73, y: 15, size: "md", accent: true },
+  { x: 90, y: 44, size: "sm" },
+  { x: 82, y: 76, size: "md" },
+  { x: 57, y: 83, size: "sm" },
+  { x: 31, y: 33, size: "md" },
+];
+
+// Extra satellite-to-satellite links for a denser web (indices into NODES).
+const LINKS: [number, number][] = [
+  [1, 6],
+  [2, 3],
+  [4, 5],
+];
+
+const SIZE_CLASS: Record<NodeSize, string> = {
+  center: "h-32 w-32 lg:h-44 lg:w-44",
+  md: "h-20 w-20 lg:h-28 lg:w-28",
+  sm: "h-14 w-14 lg:h-20 lg:w-20",
+};
+
+// Floating engagement badges + emoji reactions — decorative placeholder mock UI
+// (per stakeholder reference), not sourced metrics.
+const BADGES: { icon: LucideIcon; value: string; x: number; y: number }[] = [
+  { icon: Heart, value: "1000", x: 62, y: 26 },
+  { icon: Users, value: "10", x: 42, y: 38 },
+  { icon: MessageSquare, value: "100", x: 66, y: 54 },
+];
+
+const EMOJI: { char: string; x: number; y: number }[] = [
+  { char: "😍", x: 24, y: 22 },
+  { char: "🙂", x: 90, y: 28 },
+  { char: "😃", x: 48, y: 82 },
+];
+
+function getAvatarUrl(influencer: Influencer): string | null {
+  return (
+    influencer.avatarUrl ??
+    Object.values(influencer.avatarByPlatform ?? {}).find(Boolean) ??
+    null
+  );
+}
+
+function getInitials(name: string): string {
+  return name
+    .split(" ")
+    .map((w) => w[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+/** One creator node. Falls back to initials (never a broken-image icon), and
+ *  to a quiet pulsing placeholder while the roster is still loading. */
+function ConstellationNode({
+  influencer,
+  size,
+  loading,
+}: {
+  influencer: Influencer | null;
+  size: NodeSize;
+  loading: boolean;
+}) {
+  const [failed, setFailed] = useState(false);
+  const url = influencer ? getAvatarUrl(influencer) : null;
+  const ring =
+    "rounded-full border border-[var(--lp-line)] bg-[var(--lp-surface-2)] shadow-sm ring-4 ring-[var(--lp-paper)]";
+
+  if (loading || !influencer) {
+    return (
+      <div
+        className={cn(
+          SIZE_CLASS[size],
+          ring,
+          loading && "motion-safe:animate-pulse"
+        )}
+        aria-hidden="true"
+      />
+    );
+  }
+
+  if (!url || failed) {
+    return (
+      <div
+        className={cn(
+          SIZE_CLASS[size],
+          ring,
+          "flex items-center justify-center font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-ink)]"
+        )}
+        title={influencer.name}
+      >
+        {getInitials(influencer.name)}
+      </div>
+    );
+  }
+
+  return (
+    // eslint-disable-next-line @next/next/no-img-element -- avatars are arbitrary remote hosts; plain img avoids next/image domain config
+    <img
+      src={url}
+      alt={influencer.name}
+      loading="lazy"
+      onError={() => setFailed(true)}
+      className={cn(SIZE_CLASS[size], ring, "object-cover")}
+    />
+  );
+}
+
+function CreatorConstellation() {
+  const [influencers, setInfluencers] = useState<Influencer[]>([]);
+  const [total, setTotal] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+    apiGetInfluencers({ limit: NODES.length })
+      .then((res) => {
+        if (!cancelled) {
+          setInfluencers(res.data);
+          setTotal(res.total);
+        }
+      })
+      .catch(() => {
+        if (!cancelled) setInfluencers([]);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  // Trigger the entrance transition after first paint. Under reduced motion the
+  // motion-safe: starting styles never apply, so nodes render static instantly.
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setMounted(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+
+  // Reuse roster entries if the platform has fewer creators than nodes, so the
+  // web never shows a visible gap.
+  const nodeInfluencer = (i: number): Influencer | null =>
+    influencers.length ? influencers[i % influencers.length] : null;
+
+  return (
+    <div className="relative h-full w-full overflow-hidden bg-[var(--lp-paper)]">
+      {/* soft persimmon glow behind the central node */}
+      <div
+        className="pointer-events-none absolute left-1/2 top-1/2 h-72 w-72 -translate-x-1/2 -translate-y-1/2 rounded-full blur-3xl"
+        style={{ background: "var(--lp-accent-soft)" }}
+        aria-hidden="true"
+      />
+
+      {/* connecting hairlines */}
+      <svg
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+        className={cn(
+          "absolute inset-0 h-full w-full transition-opacity duration-700",
+          !mounted && "motion-safe:opacity-0"
+        )}
+        aria-hidden="true"
+      >
+        {NODES.slice(1).map((n, i) => (
+          <line
+            key={`spoke-${i}`}
+            x1={NODES[0].x}
+            y1={NODES[0].y}
+            x2={n.x}
+            y2={n.y}
+            stroke={n.accent ? "var(--lp-accent-line)" : "var(--lp-line)"}
+            strokeWidth={n.accent ? 1.5 : 1}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+        {LINKS.map(([a, b], i) => (
+          <line
+            key={`link-${i}`}
+            x1={NODES[a].x}
+            y1={NODES[a].y}
+            x2={NODES[b].x}
+            y2={NODES[b].y}
+            stroke="var(--lp-line)"
+            strokeWidth={1}
+            vectorEffect="non-scaling-stroke"
+          />
+        ))}
+      </svg>
+
+      {/* creator avatars */}
+      {NODES.map((n, i) => (
+        <div
+          key={`node-${i}`}
+          className={cn(
+            "absolute z-10 -translate-x-1/2 -translate-y-1/2 transition-all duration-500 ease-out",
+            !mounted && "motion-safe:scale-90 motion-safe:opacity-0"
+          )}
+          style={{
+            left: `${n.x}%`,
+            top: `${n.y}%`,
+            transitionDelay: `${i * 70}ms`,
+          }}
+        >
+          <ConstellationNode
+            influencer={nodeInfluencer(i)}
+            size={n.size}
+            loading={loading}
+          />
+        </div>
+      ))}
+
+      {/* floating engagement badges (decorative mock) */}
+      {BADGES.map((b, i) => {
+        const Icon = b.icon;
+        return (
+          <div
+            key={`badge-${i}`}
+            className={cn(
+              "absolute z-20 flex -translate-x-1/2 -translate-y-1/2 items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-3 py-1.5 font-[family-name:var(--font-grotesk)] text-sm font-bold text-[var(--lp-accent-ink)] shadow-lg transition-all duration-500",
+              !mounted && "motion-safe:scale-90 motion-safe:opacity-0"
+            )}
+            style={{ left: `${b.x}%`, top: `${b.y}%`, transitionDelay: `${320 + i * 90}ms` }}
+            aria-hidden="true"
+          >
+            <Icon className="h-3.5 w-3.5" strokeWidth={2.5} />
+            {b.value}
+          </div>
+        );
+      })}
+
+      {/* emoji reactions (decorative mock) */}
+      {EMOJI.map((e, i) => (
+        <div
+          key={`emoji-${i}`}
+          className={cn(
+            "absolute z-20 flex h-11 w-11 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-2xl bg-[var(--lp-surface)] text-xl shadow-md ring-1 ring-[var(--lp-line)] transition-all duration-500",
+            !mounted && "motion-safe:scale-90 motion-safe:opacity-0"
+          )}
+          style={{ left: `${e.x}%`, top: `${e.y}%`, transitionDelay: `${420 + i * 90}ms` }}
+          aria-hidden="true"
+        >
+          {e.char}
+        </div>
+      ))}
+
+      {/* value proposition — bottom-left */}
+      <div className="absolute bottom-8 left-8 z-30 max-w-sm lg:bottom-12 lg:left-12">
+        <h2 className="font-[family-name:var(--font-display)] text-2xl font-semibold leading-[1.1] tracking-tight text-[var(--lp-ink)] lg:text-3xl">
+          Launch faster, match smarter, and scale your{" "}
+          <span className="text-[var(--lp-accent)]">partnerships</span>
+        </h2>
+        <p className="mt-3 font-[family-name:var(--font-grotesk)] text-base text-[var(--lp-ink-soft)]">
+          with trusted creator insights.
+        </p>
+        <div className="mt-5 h-1 w-16 rounded-full bg-[var(--lp-accent)]" />
+        <p className="mt-5 max-w-xs text-sm leading-relaxed text-[var(--lp-muted)]">
+          Find the right creators, track performance, and build powerful collaborations all in one place.
+        </p>
+        {total !== null && total > 0 && (
+          <p className="mt-6 font-[family-name:var(--font-grotesk)] text-xs font-medium uppercase tracking-[0.2em] text-[var(--lp-muted)]">
+            {total.toLocaleString()} creators already on Inflique
+          </p>
+        )}
+      </div>
+    </div>
+  );
+}
 
 export default function RegisterPage() {
   const [step, setStep] = useState(0);
@@ -88,45 +368,33 @@ export default function RegisterPage() {
   };
 
   return (
-    <div className="flex min-h-[calc(100vh-16rem)] items-center justify-center px-4 py-12">
-      <Card className="grid w-full max-w-5xl overflow-hidden border shadow-2xl md:grid-cols-2">
-        {/* ─── Brand image panel ───────────────────────────────── */}
-        <aside className="relative hidden flex-col justify-between overflow-hidden bg-slate-950 p-10 text-white md:flex">
-          {/* Full-bleed related photo */}
-          <Image
-            src="/pictures/influencer.jpg"
-            alt="Creator filming content outdoors"
-            fill
-            priority
-            sizes="(min-width: 768px) 50vw, 0px"
-            className="object-cover"
-          />
-          {/* Gradient scrim for legibility */}
-          <div className="pointer-events-none absolute inset-0 bg-gradient-to-t from-slate-950/85 via-slate-950/25 to-slate-950/40" />
-
-          <div className="relative z-10 mt-auto max-w-sm space-y-3">
-            <h2 className="font-serif text-4xl font-bold leading-tight tracking-tight drop-shadow-lg">
-              Build your creator growth engine.
-            </h2>
-            <p className="text-base leading-relaxed text-slate-200 drop-shadow">
-              Launch faster, match smarter, and scale your partnerships with trusted creator insights.
-            </p>
-          </div>
+    <div className="relative min-h-[44rem] w-full overflow-hidden bg-[var(--lp-paper)]">
+      <div className="grid min-h-[44rem] md:grid-cols-[7fr_3fr]">
+        {/* ─── Real-creator constellation (signature panel) ───────── */}
+        <aside className="relative hidden md:block">
+          <CreatorConstellation />
         </aside>
 
-        <CardContent className="flex flex-col justify-center bg-card p-8 md:p-12">
-          <div className="mx-auto w-full max-w-sm space-y-8">
+        <div className="flex items-center justify-center p-6 lg:p-10">
+          <div className="w-full max-w-md rounded-3xl bg-[var(--lp-surface)] p-8 shadow-2xl lg:p-10">
+            <div className="mx-auto w-full max-w-sm space-y-8">
             {step === 0 ? (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tight font-serif">Create your account</h1>
-                  <p className="text-sm text-muted-foreground">Join Inflique and start connecting with creators.</p>
+                  <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--lp-ink)]">
+                    Create your account
+                  </h1>
+                  <p className="text-sm text-[var(--lp-muted)]">
+                    Join Inflique and start connecting with creators.
+                  </p>
                 </div>
 
                 <Button
                   variant="outline"
-                  className="w-full rounded-xl cursor-pointer"
-                  onClick={() => { window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/google`; }}
+                  className="w-full cursor-pointer rounded-xl border-[var(--lp-line)]"
+                  onClick={() => {
+                    window.location.href = `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}/auth/google`;
+                  }}
                 >
                   <svg viewBox="0 0 24 24" className="mr-2 h-4 w-4" aria-hidden="true">
                     <path fill="#EA4335" d="M12 10.2v3.9h5.5c-.2 1.2-.9 2.2-1.9 2.9l3.1 2.4c1.8-1.7 2.9-4.1 2.9-6.9 0-.7-.1-1.5-.2-2.2H12z" />
@@ -138,9 +406,9 @@ export default function RegisterPage() {
                 </Button>
 
                 <div className="relative">
-                  <div className="absolute inset-0 flex items-center"><Separator /></div>
+                  <div className="absolute inset-0 flex items-center"><Separator className="bg-[var(--lp-line)]" /></div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-background px-2 text-muted-foreground font-medium">Or continue with email</span>
+                    <span className="bg-[var(--lp-surface)] px-2 font-medium text-[var(--lp-muted)]">Or continue with email</span>
                   </div>
                 </div>
 
@@ -159,7 +427,7 @@ export default function RegisterPage() {
                   </div>
                   <div className="flex items-center gap-2">
                     <input type="checkbox" required className="h-4 w-4 rounded border-input bg-background" id="terms" />
-                    <Label htmlFor="terms" className="text-xs text-muted-foreground font-normal">
+                    <Label htmlFor="terms" className="text-xs font-normal text-[var(--lp-muted)]">
                       I agree to the <Link href="/terms" target="_blank" rel="noopener noreferrer" className="underline">Terms</Link> and <Link href="/privacy" target="_blank" rel="noopener noreferrer" className="underline">Privacy Policy</Link>.
                     </Label>
                   </div>
@@ -171,42 +439,51 @@ export default function RegisterPage() {
             ) : (
               <>
                 <div className="space-y-2">
-                  <h1 className="text-3xl font-bold tracking-tight font-serif">Select your role</h1>
-                  <p className="text-sm text-muted-foreground">Choose how you will use Inflique.</p>
+                  <h1 className="font-[family-name:var(--font-display)] text-3xl font-semibold tracking-tight text-[var(--lp-ink)]">
+                    Select your role
+                  </h1>
+                  <p className="text-sm text-[var(--lp-muted)]">Choose how you will use Inflique.</p>
                 </div>
 
                 <div className="space-y-4">
                   <div className="grid gap-4">
-                    {ROLES.map((r) => (
-                      <div
-                        key={r.id}
-                        onClick={() => setSelectedRole(r.id)}
-                        className={cn(
-                          "relative cursor-pointer rounded-2xl border-2 p-4 transition-all hover:border-[var(--lp-accent-line)]",
-                          selectedRole === r.id ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]" : "border-border bg-card"
-                        )}
-                      >
-                        <div className="flex items-center gap-4">
-                          <div className="flex h-12 w-12 items-center justify-center rounded-xl bg-background text-2xl shadow-sm select-none">
-                            {r.icon}
-                          </div>
-                          <div>
-                            <p className="font-bold text-foreground">{r.label}</p>
-                            <p className="text-xs text-muted-foreground">{r.desc}</p>
-                          </div>
-                          {selectedRole === r.id && (
-                            <div className="ml-auto h-5 w-5 rounded-full bg-[var(--lp-accent)] flex items-center justify-center shrink-0">
-                              <svg className="h-3 w-3 text-[var(--lp-accent-ink)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
-                                <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
-                              </svg>
-                            </div>
+                    {ROLES.map((r) => {
+                      const Icon = r.icon;
+                      const active = selectedRole === r.id;
+                      return (
+                        <div
+                          key={r.id}
+                          onClick={() => setSelectedRole(r.id)}
+                          className={cn(
+                            "relative cursor-pointer rounded-2xl border-2 p-4 transition-all hover:border-[var(--lp-accent-line)]",
+                            active ? "border-[var(--lp-accent)] bg-[var(--lp-accent-soft)]" : "border-[var(--lp-line)] bg-[var(--lp-surface)]"
                           )}
+                        >
+                          <div className="flex items-center gap-4">
+                            <div
+                              className="flex h-12 w-12 items-center justify-center rounded-xl"
+                              style={{ backgroundColor: `color-mix(in srgb, ${r.tone} 12%, transparent)`, color: r.tone }}
+                            >
+                              <Icon className="h-5 w-5" strokeWidth={2} />
+                            </div>
+                            <div>
+                              <p className="font-bold text-[var(--lp-ink)]">{r.label}</p>
+                              <p className="text-xs text-[var(--lp-muted)]">{r.desc}</p>
+                            </div>
+                            {active && (
+                              <div className="ml-auto flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[var(--lp-accent)]">
+                                <svg className="h-3 w-3 text-[var(--lp-accent-ink)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={4}>
+                                  <path d="M5 13l4 4L19 7" strokeLinecap="round" strokeLinejoin="round" />
+                                </svg>
+                              </div>
+                            )}
+                          </div>
                         </div>
-                      </div>
-                    ))}
+                      );
+                    })}
                   </div>
 
-                  <div className="pt-4 space-y-3">
+                  <div className="space-y-3 pt-4">
                     {error && <p className="text-sm font-medium text-destructive">{error}</p>}
                     <Button disabled={loading} onClick={handleCompleteRegistration} className="w-full rounded-xl py-6 text-base font-bold shadow-lg bg-[var(--lp-accent)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06]">
                       {loading ? "Setting up…" : isOAuthMode ? "Continue to Dashboard" : "Complete Registration"}
@@ -221,15 +498,16 @@ export default function RegisterPage() {
               </>
             )}
 
-            <p className="text-center text-sm text-muted-foreground">
+            <p className="text-center text-sm text-[var(--lp-muted)]">
               Already have an account?{" "}
               <Link href="/login" className="font-bold text-[var(--lp-accent)] hover:underline">
                 Log in
               </Link>
             </p>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

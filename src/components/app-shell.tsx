@@ -97,9 +97,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (isLandingPage || isPublicInfoPage || pathname === "/login" || pathname === "/register") {
     return (
       <main className="flex min-h-screen flex-col bg-[var(--lp-paper)]">
-        <div className="mx-auto w-full max-w-7xl px-4 pt-6">
-          <Navigation />
-        </div>
+        <Navigation />
         <div className="flex-1">{children}</div>
         <div className="mx-auto w-full max-w-6xl px-4 pb-6">
           <SiteFooter />
@@ -114,9 +112,7 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   if (pathname === "/discover" && !isLoggedIn) {
     return (
       <main className="flex min-h-screen flex-col bg-muted/50">
-        <div className="mx-auto w-full max-w-7xl px-4 pt-6 lg:px-8">
-          <Navigation />
-        </div>
+        <Navigation />
         <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8">
           <section className="min-h-[calc(100vh-3rem)]">{children}</section>
         </div>
