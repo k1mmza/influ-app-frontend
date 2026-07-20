@@ -79,7 +79,7 @@ export function Navigation() {
     pathname === "/privacy" ||
     pathname === "/cookies" ||
     (pathname === "/discover" && !isLoggedIn);
-  const isAuthPage = ["/forgot-password", "/auth/callback"].includes(pathname);
+  const isAuthPage = ["/forgot-password", "/reset-password", "/auth/callback"].includes(pathname);
 
   const collapsed = sidebar?.collapsed ?? false;
 

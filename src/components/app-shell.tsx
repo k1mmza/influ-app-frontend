@@ -49,7 +49,7 @@ function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pag
 export function AppShell({ children }: { children: React.ReactNode }) {
   const pathname = usePathname() ?? "";
   const isLandingPage = pathname === "/";
-  const isAuthPage = ["/forgot-password", "/auth/callback"].includes(pathname);
+  const isAuthPage = ["/forgot-password", "/reset-password", "/auth/callback"].includes(pathname);
   const isPublicInfoPage =
     pathname === "/how-it-works" ||
     pathname === "/creators" ||

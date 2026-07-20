@@ -110,6 +110,38 @@ export async function apiLogin(email: string, password: string) {
   return res.json();
 }
 
+/**
+ * Request a password-reset link. The backend always returns a generic success
+ * (whether or not the email maps to an account) to avoid account enumeration,
+ * so this resolves on any 2xx and surfaces only genuine network/server errors.
+ */
+export async function apiForgotPassword(email: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/forgot-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ email }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "Could not send reset link. Please try again."));
+  }
+}
+
+/**
+ * Complete a password reset with the single-use token from the emailed link.
+ * Throws on an invalid/expired/used token (400) so the page can prompt the user
+ * to request a new link.
+ */
+export async function apiResetPassword(token: string, password: string): Promise<void> {
+  const res = await fetch(`${API_URL}/auth/reset-password`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ token, password }),
+  });
+  if (!res.ok) {
+    throw new Error(await readApiError(res, "This password reset link is invalid or has expired."));
+  }
+}
+
 export async function apiSelectRole(token: string, role: Role) {
   const res = await authFetch(`${API_URL}/auth/select-role`, {
     method: "POST",

@@ -12,6 +12,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { cn } from "@/lib/utils";
 import { ArrowRight, Eye, EyeOff, Lock, Mail } from "lucide-react";
+import { ForgotPasswordModal } from "@/components/auth/forgot-password-modal";
 
 export default function LoginPage() {
   const router = useRouter();
@@ -21,6 +22,7 @@ export default function LoginPage() {
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [forgotOpen, setForgotOpen] = useState(false);
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -139,13 +141,14 @@ export default function LoginPage() {
               <div className="space-y-2">
                 <div className="flex items-center justify-between">
                   <Label htmlFor="password">Password</Label>
-                  <Link
-                    href="/forgot-password"
+                  <button
+                    type="button"
+                    onClick={() => setForgotOpen(true)}
                     title="Reset your password"
-                    className="text-xs font-semibold text-[var(--lp-accent)] hover:underline"
+                    className="cursor-pointer text-xs font-semibold text-[var(--lp-accent)] hover:underline"
                   >
                     Forgot password?
-                  </Link>
+                  </button>
                 </div>
                 <div className="relative">
                   <Lock className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
@@ -200,6 +203,13 @@ export default function LoginPage() {
           </div>
         </CardContent>
       </Card>
+
+      {forgotOpen && (
+        <ForgotPasswordModal
+          initialEmail={email}
+          onClose={() => setForgotOpen(false)}
+        />
+      )}
     </div>
   );
 }
