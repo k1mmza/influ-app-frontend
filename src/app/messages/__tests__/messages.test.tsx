@@ -69,6 +69,7 @@ const mockApiMarkConversationRead = jest.fn();
 const mockApiSendMessage = jest.fn();
 const mockApiMarkPhaseReady = jest.fn();
 const mockApiUploadConversationFile = jest.fn();
+const mockApiGetConversationBrief = jest.fn();
 
 jest.mock('@/lib/api', () => ({
   apiGetConversations: (...args: any[]) => mockApiGetConversations(...args),
@@ -78,6 +79,7 @@ jest.mock('@/lib/api', () => ({
   apiSendMessage: (...args: any[]) => mockApiSendMessage(...args),
   apiMarkPhaseReady: (...args: any[]) => mockApiMarkPhaseReady(...args),
   apiUploadConversationFile: (...args: any[]) => mockApiUploadConversationFile(...args),
+  apiGetConversationBrief: (...args: any[]) => mockApiGetConversationBrief(...args),
 }));
 
 // ─── Test data ────────────────────────────────────────────────────────────────
