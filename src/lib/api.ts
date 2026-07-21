@@ -558,6 +558,29 @@ export async function apiGetCampaigns(token: string): Promise<any[]> {
   return res.json();
 }
 
+/** ADMIN only — all campaigns across every brand/agency. 403s for other roles. */
+export async function apiGetAllCampaignsAdmin(
+  token: string,
+  page = 1,
+  pageSize = 20,
+): Promise<PaginatedResponse<any>> {
+  const res = await authFetch(
+    `${API_URL}/admin/campaigns?page=${page}&pageSize=${pageSize}`,
+    { headers: { Authorization: `Bearer ${token}` } },
+  );
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch campaigns"));
+  return res.json();
+}
+
+/** ADMIN only — platform-wide counts. 403s for other roles. */
+export async function apiGetAdminDashboard(token: string): Promise<any> {
+  const res = await authFetch(`${API_URL}/admin/dashboard`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to fetch dashboard"));
+  return res.json();
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

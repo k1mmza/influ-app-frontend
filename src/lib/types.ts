@@ -1,4 +1,5 @@
-export type Role = "agency" | "brand" | "influencer";
+/** "admin" is provisioned server-side only — it is never offered at signup. */
+export type Role = "agency" | "brand" | "influencer" | "admin";
 
 export interface AudienceInsightData {
   malePct: number | null;

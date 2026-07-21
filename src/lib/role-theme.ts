@@ -25,7 +25,7 @@ export interface RoleTheme {
   profileNotice: string;
 }
 
-const ROLE_THEMES: Record<Role, RoleTheme> = {
+const BASE_THEMES: Record<Exclude<Role, "admin">, RoleTheme> = {
   brand: {
     pageBg: "bg-role-navy-50 dark:bg-role-navy/10",
     profileChip: "bg-role-navy/10 text-role-navy hover:bg-role-navy/15 dark:bg-role-navy/20 dark:text-role-navy-50 dark:hover:bg-role-navy/30",
@@ -59,6 +59,14 @@ const ROLE_THEMES: Record<Role, RoleTheme> = {
     profileOutlineButton: "border border-role-coral/30 bg-background text-foreground hover:bg-role-coral-50 dark:hover:bg-role-coral/15",
     profileNotice: "border border-role-coral/25 bg-role-coral-50 text-foreground dark:bg-role-coral/10"
   }
+};
+
+/** Admin has no profile surfaces of its own (no profile page, no profile chip),
+ *  so it borrows the navy palette rather than introducing a token MASTER.md
+ *  doesn't define. */
+const ROLE_THEMES: Record<Role, RoleTheme> = {
+  ...BASE_THEMES,
+  admin: BASE_THEMES.brand
 };
 
 export function getRoleTheme(role: Role | null | undefined): RoleTheme {

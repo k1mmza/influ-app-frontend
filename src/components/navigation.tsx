@@ -45,6 +45,13 @@ const navLinksByRole: Record<Role, NavLink[]> = {
     { href: "/campaigns", label: "Campaign", icon: Megaphone },
     { href: "/messages", label: "Message", icon: MessageSquare },
   ],
+  // Admin is read-only oversight: dashboard + all-campaigns, nothing else.
+  // Discover/Shortlist/Smart Plan/Messages/Tracking are all owner-scoped and
+  // have no admin backing endpoints.
+  admin: [
+    { href: "/dashboard", label: "Dashboard", icon: LayoutDashboard },
+    { href: "/campaigns", label: "Campaign", icon: Megaphone },
+  ],
 };
 
 function isNavActive(pathname: string, href: string) {
