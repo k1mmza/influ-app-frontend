@@ -17,7 +17,8 @@ import {
   apiUploadConversationFile,
   type ConversationBrief,
 } from "@/lib/api";
-import { Loader2, Send } from "lucide-react";
+import { Send } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
 
@@ -234,9 +235,25 @@ function MessagesView({ role }: { role: string }) {
 
   if (loadingConv) {
     return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
+      <section className="space-y-6">
+        <div className="rounded-2xl bg-gradient-to-r from-[#0f766e] to-[#134e4a] p-6 text-white shadow-sm">
+          <h1 className="text-2xl font-bold font-serif">Messages</h1>
+          <p className="mt-1 text-sm text-white/70">Manage active conversations, files, and campaign workflow in one place.</p>
+        </div>
+        <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
+          <div className="rounded-2xl bg-card p-4 shadow-sm h-[600px] flex flex-col gap-3">
+            {[0, 1, 2, 3, 4].map((i) => (
+              <Skeleton key={i} className="h-16 w-full rounded-xl" />
+            ))}
+          </div>
+          <div className="rounded-2xl bg-card p-4 shadow-sm h-[600px] flex flex-col gap-3">
+            <Skeleton className="h-12 w-1/2" />
+            <Skeleton className="h-10 w-2/3 rounded-2xl" />
+            <Skeleton className="ml-auto h-10 w-1/2 rounded-2xl" />
+            <Skeleton className="h-10 w-2/3 rounded-2xl" />
+          </div>
+        </div>
+      </section>
     );
   }
 
@@ -363,8 +380,12 @@ function MessagesView({ role }: { role: string }) {
 
               <div className="flex-1 overflow-y-auto rounded-2xl bg-muted/30 p-4 space-y-4">
                 {loadingMessages ? (
-                  <div className="flex h-full items-center justify-center">
-                    <Loader2 className="h-6 w-6 animate-spin text-primary" />
+                  <div className="space-y-3">
+                    <Skeleton className="h-10 w-1/2 rounded-2xl" />
+                    <Skeleton className="ml-auto h-10 w-2/3 rounded-2xl" />
+                    <Skeleton className="h-10 w-1/3 rounded-2xl" />
+                    <Skeleton className="ml-auto h-10 w-1/2 rounded-2xl" />
+                    <Skeleton className="h-10 w-2/3 rounded-2xl" />
                   </div>
                 ) : (
                   <>

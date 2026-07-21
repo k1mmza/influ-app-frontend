@@ -18,6 +18,7 @@ import {
   type GeneratePlanResponse,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
@@ -767,11 +768,11 @@ export default function SmartPlanPage() {
               {[0, 1].map((i) => (
                 <Card key={i} className="border-none shadow-sm">
                   <CardContent className="p-6 space-y-3">
-                    <div className="h-4 w-2/3 rounded bg-muted animate-pulse" />
-                    <div className="h-3 w-1/3 rounded bg-muted animate-pulse" />
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/3" />
                     <div className="grid grid-cols-2 gap-3 pt-2">
-                      <div className="h-6 rounded bg-muted animate-pulse" />
-                      <div className="h-6 rounded bg-muted animate-pulse" />
+                      <Skeleton className="h-6" />
+                      <Skeleton className="h-6" />
                     </div>
                   </CardContent>
                 </Card>

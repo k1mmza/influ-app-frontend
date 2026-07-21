@@ -11,6 +11,7 @@ import { useUserStore } from "@/store/useUserStore";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Suspense, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -1193,8 +1194,12 @@ function DiscoverPageContent() {
 
         {/* Section 1 — hero grey box: the single Top Ten Trending shelf. */}
         {poolLoading ? (
-          <div className={cn("flex min-h-[200px] items-center justify-center rounded-2xl", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
-            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          <div className={cn("min-h-[200px] overflow-hidden rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
+            <div className="flex gap-4 overflow-hidden">
+              {[0, 1, 2, 3, 4].map((i) => (
+                <Skeleton key={i} className="h-64 w-48 shrink-0 rounded-2xl" />
+              ))}
+            </div>
           </div>
         ) : poolInfluencers.length > 0 ? (
           <div className={cn("rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
@@ -1234,8 +1239,14 @@ function DiscoverPageContent() {
             )}
           </div>
           {loading ? (
-            <div className="flex min-h-[300px] items-center justify-center">
-              <Loader2 className="h-8 w-8 animate-spin text-primary" />
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", publicSkin ? "gap-6 lg:gap-8" : "gap-4 xl:grid-cols-4")}>
+              {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
+                <div key={i} className="space-y-2">
+                  <Skeleton className="h-40 w-full rounded-2xl" />
+                  <Skeleton className="h-4 w-2/3" />
+                  <Skeleton className="h-3 w-1/2" />
+                </div>
+              ))}
             </div>
           ) : (
             <div className={cn("grid grid-cols-1 sm:grid-cols-2", publicSkin ? "gap-tv-gutter lg:grid-cols-4" : "gap-4 lg:grid-cols-3 xl:grid-cols-4")}>
