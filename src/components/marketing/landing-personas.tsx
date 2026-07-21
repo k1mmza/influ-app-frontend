@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { ArrowUpRight } from "lucide-react";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 
 // The one place the app's persona identity colours appear on the marketing page —
 // as a restrained tick + label only, never as a fill or the page palette.

@@ -1,6 +1,6 @@
 // ponytail: draft legal skeleton, NOT reviewed by counsel — do not ship without legal review.
 import type { Metadata } from "next";
-import { LegalPageLayout, LegalSection as Section } from "@/components/legal-page-layout";
+import { LegalPageLayout, LegalSection as Section } from "@/components/marketing/legal-page-layout";
 
 export const metadata: Metadata = {
   title: "Cookie Policy | Inflique",

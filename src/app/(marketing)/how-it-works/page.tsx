@@ -11,7 +11,7 @@ import {
   CtaSecondary,
   type LaneStep,
   type Feature,
-} from "@/components/marketing-sections";
+} from "@/components/marketing/marketing-sections";
 
 const brandSteps: LaneStep[] = [
   {

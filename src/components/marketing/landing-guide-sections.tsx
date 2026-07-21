@@ -2,13 +2,13 @@
 
 import Image from "next/image";
 import { cn } from "@/lib/utils";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 import { Search, BarChart3, ShieldCheck, Globe, Zap, Award } from "lucide-react";
 import {
   LandingFeatureList,
   LandingSectionTitle,
   type LandingFeatureItem
-} from "@/components/landing-section";
+} from "@/components/marketing/landing-section";
 
 const agencyFeatures: LandingFeatureItem[] = [
   {

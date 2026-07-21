@@ -2,10 +2,10 @@
 
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { LandingHero } from "@/components/landing-hero";
-import { LandingFeatured } from "@/components/landing-featured";
-import { LandingPersonas } from "@/components/landing-personas";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingHero } from "@/components/marketing/landing-hero";
+import { LandingFeatured } from "@/components/marketing/landing-featured";
+import { LandingPersonas } from "@/components/marketing/landing-personas";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 
 export default function HomePage() {
   return (

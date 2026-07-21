@@ -1,6 +1,6 @@
 // ponytail: draft legal skeleton, NOT reviewed by counsel — do not ship without legal review.
 import type { ReactNode } from "react";
-import { MarketingHero } from "@/components/marketing-sections";
+import { MarketingHero } from "@/components/marketing/marketing-sections";
 
 export function LegalPageLayout({
   title,

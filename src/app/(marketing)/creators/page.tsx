@@ -9,7 +9,7 @@ import {
   CtaPrimary,
   CtaSecondary,
   type Feature,
-} from "@/components/marketing-sections";
+} from "@/components/marketing/marketing-sections";
 
 const features: Feature[] = [
   {

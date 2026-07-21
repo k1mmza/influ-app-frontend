@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 import { apiGetInfluencers } from "@/lib/influencers";
 import { Influencer } from "@/lib/types";
 

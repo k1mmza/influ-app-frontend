@@ -2,7 +2,7 @@
 
 import { Check } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 import { Card, CardContent } from "@/components/ui/card";
 
 export type LandingFeatureItem = {

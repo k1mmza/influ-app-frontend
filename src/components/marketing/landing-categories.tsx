@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 
 // A quiet directory index on ink — the one dark, gallery-like moment on the page.
 const CATEGORY_ITEMS: { name: string; href: string }[] = [

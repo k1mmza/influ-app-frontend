@@ -7,7 +7,7 @@
 // inventing new layout language. Reveal-on-scroll reuses LandingAnimate.
 import Link from "next/link";
 import { ArrowRight, type LucideIcon } from "lucide-react";
-import { LandingAnimate } from "@/components/landing-motion";
+import { LandingAnimate } from "@/components/marketing/landing-motion";
 
 // Barely-there "catalog" index grid — the landing hero's signature texture,
 // reused subtly so the info-page heroes feel of a piece with it.

@@ -1,0 +1,50 @@
+/**
+ * Travelogue theme stylesheet — loaded only by the (marketing) route group.
+ *
+ * @config binds this file to the scoped token set. Everything emitted here is
+ * tv-* prefixed, so it layers on top of globals.css without touching a single
+ * existing utility. No `@tailwind base` — preflight is off in the config and
+ * globals.css already owns the resets.
+ */
+@config "../../../tailwind.marketing.config.ts";
+
+@tailwind components;
+@tailwind utilities;
+
+/**
+ * Travelogue re-skin of the existing marketing components.
+ *
+ * The components in components/marketing/ are already driven entirely by the
+ * --lp-* token set, so rebinding those variables re-themes all nine of them
+ * without touching a single className. Scoped to .tv-scope (set on the
+ * (marketing) layout), so the cascade reaches only what renders inside that
+ * subtree — /discover, /forgot-password, /reset-password and the auth modal all
+ * consume --lp-* too and are deliberately left on the porcelain values.
+ *
+ * LIGHT MODE ONLY, by necessity: the Stitch export ships no dark palette, so
+ * there are no travelogue dark values to map. Under .dark these rules don't
+ * apply and marketing pages keep the existing porcelain-dark design.
+ *
+ * Token values: /design-tokens.md at the repo root.
+ */
+:root:not(.dark) .tv-scope {
+  --lp-paper: #fcf9f4;        /* surface / background — warm sand      */
+  --lp-surface: #ffffff;      /* surface-container-lowest — raised     */
+  --lp-surface-2: #f0ede8;    /* surface-container — recessed          */
+  --lp-ink: #1c1c19;          /* on-surface — charcoal                 */
+  --lp-ink-soft: #56423d;     /* on-surface-variant                    */
+  --lp-muted: #89726c;        /* outline                               */
+  --lp-line: #ddc0b9;         /* outline-variant — hairlines           */
+  --lp-accent: #9b3f25;       /* primary — terracotta                  */
+  --lp-accent-ink: #ffffff;   /* on-primary                            */
+  --lp-accent-soft: rgba(155, 63, 37, 0.1);
+  --lp-accent-line: rgba(155, 63, 37, 0.28);
+
+  /* Typography: Playfair Display for display faces, Fira Sans for body.
+     --font-serif is already loaded at the root layout; --font-tv-body is
+     loaded by the (marketing) layout. Role identity colors (--lp-brand /
+     --lp-agency / --lp-creator) are deliberately NOT remapped: they encode
+     brand/agency/creator identity, not theme. */
+  --font-display: var(--font-serif);
+  --font-grotesk: var(--font-tv-body);
+}
