@@ -4,7 +4,10 @@ import type { Role } from "@/lib/types";
 export const DEMO_PARTNER_BY_ROLE: Record<Role, string> = {
   brand: "David Kim",
   agency: "Sarah Chen",
-  influencer: "Lina Park"
+  influencer: "Lina Park",
+  // Admin is never a campaign participant — present only to keep the Record
+  // exhaustive over Role.
+  admin: "Admin"
 };
 
 export function participantKey(role: Role, displayName: string): string {

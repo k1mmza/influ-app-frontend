@@ -5,6 +5,7 @@ import type { Role } from "@/lib/types";
 export function getRoleLabel(role: Role | string | null | undefined): string {
   if (role === "brand") return "Brand";
   if (role === "influencer") return "Creator";
+  if (role === "admin") return "Admin";
   return "Agency";
 }
 

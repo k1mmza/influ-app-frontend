@@ -131,17 +131,14 @@ export function LandingHero() {
         </div>
 
         {/* ── Right column: the tilted "postcard" ──────────────────────────────
-            Photo is the Stitch mockup's own hero image, pulled down from the
-            googleusercontent URL in stitch-export/landing-page/index.html and
-            committed to /public so there is no external runtime dependency.
-            Largest available is 1408x768 — the export embeds a 512px thumbnail;
-            the `=w1600` size parameter gets the full one.
+            Photo is /public/pictures/travel.png — a real photograph, natively
+            3648x4560 (exactly 4:5), so it fills this frame with no crop and no
+            object-position tuning. Replaces the Stitch mockup's AI-generated
+            hero, which had "InfluApp" (the old product name) printed on props
+            in-shot and had to be crop-dodged.
 
-            ⚠️ It is AI-generated and has "InfluApp" (the OLD product name)
-            printed on the tote bag and the table card. A centred 4:5 crop puts
-            both outside the frame, which is why object-center is deliberate
-            here. Re-check the crop before changing this frame's aspect ratio or
-            object-position, or the wrong brand name comes into view. */}
+            The bottom of the frame is a bright amber floor reflection, so the
+            wordmark below sits on a scrim rather than trusting the image. */}
         {/* LandingAnimate renders the flex child itself, so the sizing has to go
             HERE. Putting flex-1 on a div inside it collapsed this column to zero
             width and the fill-image rendered nothing at all. */}
@@ -149,8 +146,8 @@ export function LandingHero() {
           <div className="relative w-full">
             <div className="relative aspect-[4/5] w-full -rotate-2 overflow-hidden border border-tv-outline-variant bg-tv-surface-container">
               <Image
-                src="/pictures/stitch-hero.jpg"
-                alt="A creator smiling while writing in a notebook at a sunlit Mediterranean cafe table."
+                src="/pictures/travel.png"
+                alt="A traveller silhouetted against an airport window at sunset, suitcase in hand, watching a plane take off."
                 fill
                 priority
                 sizes="(max-width: 768px) 100vw, 45vw"

@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import { BrandDashboard } from "@/components/brand-dashboard";
 import { useUserStore } from "@/store/useUserStore";
 import {
+  apiGetAdminDashboard,
   apiGetDashboard,
   apiGetInvitations,
   apiAcceptInvitation,
@@ -304,6 +305,70 @@ function InfluencerDashboard({ data }: { data: any }) {
   );
 }
 
+/** Platform-wide counts. Fetches its own data: the shared /dashboard endpoint is
+ *  role-scoped and returns a "not implemented for this role" payload for ADMIN. */
+function AdminDashboard() {
+  const { token } = useUserStore();
+  const [data, setData] = useState<any>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    apiGetAdminDashboard(token)
+      .then(setData)
+      .catch((err) => setError(err.message));
+  }, [token]);
+
+  if (error) {
+    return (
+      <p className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        {error}
+      </p>
+    );
+  }
+
+  const tiles = [
+    { label: "Campaigns", value: data?.campaigns, icon: Rocket },
+    { label: "Active campaigns", value: data?.activeCampaigns, icon: CheckCircle2 },
+    { label: "Brands", value: data?.brands, icon: FileText },
+    { label: "Agencies", value: data?.agencies, icon: FileText },
+    { label: "Creators", value: data?.influencers, icon: MessageSquare },
+    { label: "Total users", value: data?.users, icon: Bell },
+  ];
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-serif text-2xl font-bold text-foreground">Platform overview</h1>
+        <p className="mt-1 text-sm text-muted-foreground">Read-only view across all brands and agencies</p>
+      </div>
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {tiles.map(({ label, value, icon: Icon }) => (
+          <Card key={label} className="border-none shadow-sm">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between">
+                <p className="text-sm text-muted-foreground">{label}</p>
+                <Icon className="h-4 w-4 text-muted-foreground" />
+              </div>
+              {data ? (
+                <p className="mt-2 text-2xl font-bold text-foreground">{value ?? 0}</p>
+              ) : (
+                <Skeleton className="mt-2 h-7 w-2/3" />
+              )}
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+      <Link
+        href="/campaigns"
+        className="inline-block cursor-pointer text-sm font-semibold text-secondary hover:underline"
+      >
+        View all campaigns →
+      </Link>
+    </div>
+  );
+}
+
 export default function DashboardPage() {
   const { role, token, logout, hasHydrated } = useUserStore();
   const router = useRouter();
@@ -362,6 +427,9 @@ export default function DashboardPage() {
     );
   }
 
+  // Before the fallthrough: an unhandled role silently renders the agency
+  // dashboard, which for an admin would be wrong rather than merely empty.
+  if (role === "admin") return <AdminDashboard />;
   if (role === "brand") return <BrandDashboard data={data} />;
   if (role === "influencer") return <InfluencerDashboard data={data} />;
   return <BrandDashboard data={data} variant="agency" />;

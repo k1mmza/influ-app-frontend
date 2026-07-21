@@ -5,7 +5,13 @@ import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
-import { apiApplyToCampaign, apiGetCampaigns, apiGetPublicCampaigns } from "@/lib/api";
+import {
+  apiApplyToCampaign,
+  apiGetAllCampaignsAdmin,
+  apiGetCampaigns,
+  apiGetPublicCampaigns,
+  type PaginatedResponse,
+} from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
@@ -810,8 +816,109 @@ function AgencyCampaignsView() {
   );
 }
 
+// Admin oversight: every campaign on the platform, regardless of owner. Read
+// only — cards are intentionally not links, because GET /campaigns/:id is still
+// ownership-scoped and would 403 for an admin. Server-side paginated (unlike the
+// brand/agency views, which fetch their own campaigns flat).
+function AdminCampaignsView() {
+  const { token, role } = useUserStore();
+  const [page, setPage] = useState(1);
+  const [result, setResult] = useState<PaginatedResponse<any> | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!token) return;
+    setLoading(true);
+    apiGetAllCampaignsAdmin(token, page)
+      .then(setResult)
+      .catch((err) => setError(err.message))
+      .finally(() => setLoading(false));
+  }, [token, page]);
+
+  if (loading && !result) {
+    return (
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Skeleton key={i} className="h-64 w-full rounded-2xl" />
+        ))}
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <p className="rounded-2xl border border-destructive/30 bg-destructive/10 p-4 text-sm text-destructive">
+        {error}
+      </p>
+    );
+  }
+
+  const campaigns = result?.data ?? [];
+  const totalPages = result?.totalPages ?? 0;
+
+  return (
+    <div className="space-y-6">
+      <div>
+        <h1 className="font-serif text-2xl font-bold text-foreground">All campaigns</h1>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {result?.total ?? 0} campaign{result?.total === 1 ? "" : "s"} across every brand and agency
+        </p>
+      </div>
+
+      {campaigns.length === 0 ? (
+        <p className="rounded-2xl border border-border bg-card p-8 text-center text-sm text-muted-foreground">
+          No campaigns yet.
+        </p>
+      ) : (
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {campaigns.map((raw) => (
+            <div key={raw.id} className="space-y-1">
+              {/* Owner is the column brand/agency views don't need — it is the
+                  whole point of the admin view. */}
+              <p className="px-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                {raw.clientBrand?.brandName ?? "—"}
+              </p>
+              <div className="pointer-events-none">
+                <BrandCampaignCard raw={raw} role={role} />
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {totalPages > 1 && (
+        <div className="flex items-center justify-center gap-3">
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            disabled={page <= 1 || loading}
+            onClick={() => setPage((p) => Math.max(1, p - 1))}
+          >
+            Previous
+          </Button>
+          <span className="text-sm text-muted-foreground">
+            Page {page} of {totalPages}
+          </span>
+          <Button
+            variant="outline"
+            size="sm"
+            className="cursor-pointer"
+            disabled={page >= totalPages || loading}
+            onClick={() => setPage((p) => p + 1)}
+          >
+            Next
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
 function CampaignsPageInner() {
   const { role } = useUserStore();
+  if (role === "admin") return <AdminCampaignsView />;
   if (role === "agency") return <AgencyCampaignsView />;
   if (role === "brand") return <BrandCampaignsView />;
   return <InfluencerDiscoverCampaignsView />;
