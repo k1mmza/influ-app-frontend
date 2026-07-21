@@ -7,6 +7,7 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useUserStore } from "@/store/useUserStore";
 import { apiApplyToCampaign, apiGetCampaigns, apiGetPublicCampaigns } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
@@ -234,6 +235,30 @@ function BrandCampaignCard({ raw, role }: { raw: any; role: string | null }) {
   );
 }
 
+function CampaignCardsSkeleton() {
+  return (
+    <div className="space-y-6">
+      <Card className="border-none shadow-sm">
+        <CardContent className="p-8 space-y-3">
+          <Skeleton className="h-8 w-1/3" />
+          <Skeleton className="h-4 w-2/3" />
+        </CardContent>
+      </Card>
+      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+        {[0, 1, 2, 3, 4, 5].map((i) => (
+          <Card key={i} className="border-none shadow-sm">
+            <CardContent className="p-6 space-y-3">
+              <Skeleton className="h-5 w-2/3" />
+              <Skeleton className="h-4 w-1/2" />
+              <Skeleton className="h-4 w-1/3" />
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 function BrandCampaignsView() {
   const { token, role } = useUserStore();
   const searchParams = useSearchParams();
@@ -294,11 +319,7 @@ function BrandCampaignsView() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <CampaignCardsSkeleton />;
   }
 
   return (
@@ -494,11 +515,7 @@ function InfluencerDiscoverCampaignsView() {
   };
 
   if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <CampaignCardsSkeleton />;
   }
 
   return (
@@ -694,11 +711,7 @@ function AgencyCampaignsView() {
   );
 
   if (loading) {
-    return (
-      <div className="flex h-[50vh] items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
-      </div>
-    );
+    return <CampaignCardsSkeleton />;
   }
 
   return (
