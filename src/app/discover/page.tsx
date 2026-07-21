@@ -180,7 +180,10 @@ function DiscoverPageContent() {
 
   // Pagination — 12 per page. 12 divides 2/3/4 so the responsive grid
   // (sm:2, lg:3, xl:4 cols) has a full last row at every breakpoint.
-  const PAGE_SIZE = 12;
+  // Logged-out Discover follows the Stitch roster: a single 4-across row per
+  // page. The authenticated grid keeps 12 — it is a working tool, and paging
+  // every four creators would make it unusable.
+  const PAGE_SIZE = publicSkin ? 4 : 12;
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [totalCount, setTotalCount] = useState(0);
@@ -611,6 +614,21 @@ function DiscoverPageContent() {
           : "bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950"
       )}
     >
+      {publicSkin ? (
+        /* Logged-out masthead — Stitch "Discover the Roster" composition:
+           no card, italic serif title in accent, count as a plain rule line.
+           Subtitle keeps the app's own wording rather than the mockup's
+           "curated ... narrative" copy, which implies editorial curation the
+           roster doesn't actually do. */
+        <section className="pb-4">
+          <h1 className="font-[family-name:var(--font-display)] text-4xl italic text-[var(--lp-accent)] md:text-5xl">
+            Discover the Roster
+          </h1>
+          <p className="mt-4 max-w-2xl font-[family-name:var(--font-grotesk)] text-lg text-[var(--lp-ink-soft)]">
+            Find campaign-fit creators with smart filters and audience signals.
+          </p>
+        </section>
+      ) : (
       <Card
         className={cn(
           "overflow-hidden",
@@ -653,11 +671,65 @@ function DiscoverPageContent() {
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Search bar with inline filters (design parity: filters live at the
           search bar, not in the sidebar). The SlidersHorizontal button toggles
           the panel below and badges the active-filter count. */}
       <div className="space-y-4">
+        {publicSkin ? (
+          /* Journal-style search — the Stitch treatment: a labelled bottom rule
+             instead of a boxed input, oversized italic serif entry, rule turns
+             accent on focus. Same state and handlers as the boxed version:
+             unifiedSearchInput / handleUnifiedSearch / showFiltersPanel. */
+          <div className="flex flex-col items-end gap-8 border-b border-[var(--lp-line)] py-8 md:flex-row">
+            <div className="relative flex-grow">
+              <label
+                htmlFor="roster-search"
+                className="mb-2 block font-[family-name:var(--font-grotesk)] text-[10px] font-semibold uppercase tracking-widest text-[var(--lp-muted)]"
+              >
+                Search the archive
+              </label>
+              <div className="relative">
+                <input
+                  id="roster-search"
+                  type="text"
+                  value={unifiedSearchInput}
+                  onChange={(e) => setUnifiedSearchInput(e.target.value)}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleUnifiedSearch(); }}
+                  placeholder="Enter a creator name, keyword, or profile URL..."
+                  className="w-full border-0 border-b border-[var(--lp-line)] bg-transparent px-0 py-4 font-[family-name:var(--font-display)] text-xl italic text-[var(--lp-ink)] outline-none transition-colors placeholder:text-[var(--lp-muted)] focus:border-[var(--lp-accent)]"
+                />
+                <Search className="pointer-events-none absolute bottom-5 right-0 h-5 w-5 text-[var(--lp-accent)]" />
+              </div>
+            </div>
+            <div className="flex flex-none items-center gap-2">
+              <Button
+                onClick={handleUnifiedSearch}
+                disabled={isUrlSearching}
+                className="h-12 rounded-none bg-[var(--lp-accent)] px-8 font-[family-name:var(--font-grotesk)] text-xs font-semibold uppercase tracking-widest text-[var(--lp-accent-ink)] shadow-none hover:bg-[var(--lp-accent)] hover:brightness-[1.06]"
+              >
+                {isUrlSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setShowFiltersPanel((v) => !v)}
+                aria-expanded={showFiltersPanel}
+                aria-label={showFiltersPanel ? "Hide filters" : "Show filters"}
+                className="h-12 rounded-none border-[var(--lp-line)] px-5 font-[family-name:var(--font-grotesk)] text-xs font-semibold uppercase tracking-widest text-[var(--lp-ink)] shadow-none"
+              >
+                <SlidersHorizontal className="h-4 w-4 md:mr-2" />
+                <span className="hidden md:inline">Filters</span>
+                {activeChips.length > 0 && (
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-[var(--lp-accent-soft)] px-1 text-xs font-bold leading-none text-[var(--lp-accent)]">
+                    {activeChips.length}
+                  </span>
+                )}
+              </Button>
+            </div>
+          </div>
+        ) : (
         <Card className={cn("overflow-hidden", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)] shadow-none" : "border-none shadow-sm")}>
           <CardContent className="p-1">
             <div className="flex flex-col gap-1 md:flex-row">
@@ -699,6 +771,7 @@ function DiscoverPageContent() {
             </div>
           </CardContent>
         </Card>
+        )}
 
         {showFiltersPanel && (
             <Card className="border-none shadow-sm bg-background">
@@ -1108,6 +1181,7 @@ function DiscoverPageContent() {
                 </div>
               )}
               <InfluencerCard
+                skin={publicSkin ? "travelogue" : "default"}
                 influencer={generatedInfluencer}
                 isActive={selectedInfluencerId === generatedInfluencer.id}
                 onSelect={(selected) => setSelectedInfluencerId(selected.id)}
@@ -1125,6 +1199,7 @@ function DiscoverPageContent() {
         ) : poolInfluencers.length > 0 ? (
           <div className={cn("rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
             <InfluencerShelf
+              skin={publicSkin ? "travelogue" : "default"}
               title="Top Ten Trending"
               subtitle="Highest-performing creators by reach and campaign score"
               titleClassName={publicSkin ? "font-[family-name:var(--font-display)] text-[var(--lp-ink)]" : undefined}
@@ -1140,19 +1215,33 @@ function DiscoverPageContent() {
         ) : null}
 
         {/* Section 2 — All matches grey box: paginated browse grid (5-up on wide). */}
-        <div className={cn("space-y-4 rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
+        <div className={cn("space-y-4", publicSkin ? "" : "rounded-2xl bg-muted/30 p-4 sm:p-5")}>
           <div className="flex items-center justify-between">
-            <h2 className={cn("text-lg font-bold text-foreground", publicSkin ? "font-[family-name:var(--font-display)]" : "font-serif")}>All Influencers</h2>
-            {!loading && <span className={cn("text-sm font-medium", publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-muted)]" : "text-muted-foreground")}>{totalCount} creators</span>}
+            {publicSkin ? (
+              <h2 className="font-[family-name:var(--font-display)] text-3xl text-[var(--lp-ink)]">
+                The Full Roster
+                {!loading && (
+                  <span className="ml-3 font-[family-name:var(--font-grotesk)] text-base font-normal text-[var(--lp-muted)]">
+                    / {totalCount} found
+                  </span>
+                )}
+              </h2>
+            ) : (
+              <>
+                <h2 className="font-serif text-lg font-bold text-foreground">All Influencers</h2>
+                {!loading && <span className="text-sm font-medium text-muted-foreground">{totalCount} creators</span>}
+              </>
+            )}
           </div>
           {loading ? (
             <div className="flex min-h-[300px] items-center justify-center">
               <Loader2 className="h-8 w-8 animate-spin text-primary" />
             </div>
           ) : (
-            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", publicSkin ? "gap-6 lg:gap-8" : "gap-4 xl:grid-cols-4")}>
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2", publicSkin ? "gap-tv-gutter lg:grid-cols-4" : "gap-4 lg:grid-cols-3 xl:grid-cols-4")}>
               {influencers.map((influencer) => (
                 <InfluencerCard
+                skin={publicSkin ? "travelogue" : "default"}
                   key={influencer.id}
                   influencer={influencer}
                   isActive={selectedInfluencerId === influencer.id}

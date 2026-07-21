@@ -190,3 +190,155 @@ html.readable {
     @apply bg-background text-foreground;
   }
 }
+
+/* ═══════════════════════════════════════════════════════════════════════════
+   TRAVELOGUE THEME ("The Traveler's Ledger")
+   Moved here from (marketing)/marketing.css so it is available on every route
+   that opts in, not just the (marketing) route group. Logged-out /discover
+   lives outside that group but carries .tv-scope, and without these definitions
+   loaded it rendered in the porcelain palette regardless of its markup.
+   Every rule below is .tv-scope-scoped, so it is inert unless AppShell puts
+   that class on the layout — authenticated pages are unaffected.
+   ═══════════════════════════════════════════════════════════════════════════ */
+/* ── Travelogue palette: light ─────────────────────────────────────────── */
+.tv-scope {
+  --tv-background: 252 249 244;
+  --tv-error: 186 26 26;
+  --tv-error-container: 255 218 214;
+  --tv-inverse-on-surface: 243 240 235;
+  --tv-inverse-primary: 255 181 161;
+  --tv-inverse-surface: 49 48 45;
+  --tv-muted-text: 120 96 89;
+  --tv-on-background: 28 28 25;
+  --tv-on-error: 255 255 255;
+  --tv-on-error-container: 147 0 10;
+  --tv-on-primary: 255 255 255;
+  --tv-on-primary-container: 255 251 255;
+  --tv-on-primary-fixed: 59 8 0;
+  --tv-on-primary-fixed-variant: 127 42 18;
+  --tv-on-secondary: 255 255 255;
+  --tv-on-secondary-container: 91 105 76;
+  --tv-on-secondary-fixed: 19 31 9;
+  --tv-on-secondary-fixed-variant: 62 75 49;
+  --tv-on-surface: 28 28 25;
+  --tv-on-surface-variant: 86 66 61;
+  --tv-on-tertiary: 255 255 255;
+  --tv-on-tertiary-container: 79 62 0;
+  --tv-on-tertiary-fixed: 36 26 0;
+  --tv-on-tertiary-fixed-variant: 87 69 0;
+  --tv-outline: 137 114 108;
+  --tv-outline-variant: 221 192 185;
+  --tv-primary: 155 63 37;
+  --tv-primary-container: 187 86 59;
+  --tv-primary-fixed: 255 219 209;
+  --tv-primary-fixed-dim: 255 181 161;
+  --tv-secondary: 85 99 71;
+  --tv-secondary-container: 216 232 197;
+  --tv-secondary-fixed: 216 232 197;
+  --tv-secondary-fixed-dim: 189 204 170;
+  --tv-surface: 252 249 244;
+  --tv-surface-bright: 252 249 244;
+  --tv-surface-container: 240 237 232;
+  --tv-surface-container-high: 235 232 227;
+  --tv-surface-container-highest: 229 226 221;
+  --tv-surface-container-low: 246 243 238;
+  --tv-surface-container-lowest: 255 255 255;
+  --tv-surface-dim: 220 218 213;
+  --tv-surface-tint: 158 65 39;
+  --tv-surface-variant: 229 226 221;
+  --tv-tertiary: 115 92 0;
+  --tv-tertiary-container: 204 168 48;
+  --tv-tertiary-fixed: 255 224 136;
+  --tv-tertiary-fixed-dim: 233 195 73;
+}
+
+/* ── Travelogue palette: dark ──────────────────────────────────────────────
+   From the Stitch dark-mode export. One deliberate correction: Stitch defines
+   `secondary-container` and `on-secondary-fixed-variant` as the SAME hex
+   (#474746) in dark, which would render the eyebrow badge label invisible.
+   The badge uses on-surface instead — see EyebrowBadge in marketing-sections. */
+.dark .tv-scope {
+  --tv-background: 19 19 19;
+  --tv-error: 255 180 171;
+  --tv-error-container: 147 0 10;
+  --tv-inverse-on-surface: 49 48 48;
+  --tv-inverse-primary: 159 65 39;
+  --tv-inverse-surface: 229 226 225;
+  --tv-muted-text: 197 179 173;
+  --tv-on-background: 229 226 225;
+  --tv-on-error: 105 0 5;
+  --tv-on-error-container: 255 218 214;
+  --tv-on-primary: 96 20 0;
+  --tv-on-primary-container: 85 16 0;
+  --tv-on-primary-fixed: 60 8 0;
+  --tv-on-primary-fixed-variant: 127 42 18;
+  --tv-on-secondary: 48 48 48;
+  --tv-on-secondary-container: 183 181 180;
+  --tv-on-secondary-fixed: 27 28 28;
+  --tv-on-secondary-fixed-variant: 71 71 70;
+  --tv-on-surface: 229 226 225;
+  --tv-on-surface-variant: 221 192 185;
+  --tv-on-tertiary: 51 48 45;
+  --tv-on-tertiary-container: 44 41 38;
+  --tv-on-tertiary-fixed: 30 27 25;
+  --tv-on-tertiary-fixed-variant: 74 70 67;
+  --tv-outline: 164 139 133;
+  --tv-outline-variant: 86 66 61;
+  --tv-primary: 255 181 161;
+  --tv-primary-container: 223 113 83;
+  --tv-primary-fixed: 255 219 209;
+  --tv-primary-fixed-dim: 255 181 161;
+  --tv-secondary: 200 198 197;
+  --tv-secondary-container: 71 71 70;
+  --tv-secondary-fixed: 228 226 225;
+  --tv-secondary-fixed-dim: 200 198 197;
+  --tv-surface: 19 19 19;
+  --tv-surface-bright: 57 57 57;
+  --tv-surface-container: 32 31 31;
+  --tv-surface-container-high: 42 42 42;
+  --tv-surface-container-highest: 53 53 52;
+  --tv-surface-container-low: 28 27 27;
+  --tv-surface-container-lowest: 14 14 14;
+  --tv-surface-dim: 19 19 19;
+  --tv-surface-tint: 255 181 161;
+  --tv-surface-variant: 53 53 52;
+  --tv-tertiary: 204 197 193;
+  --tv-tertiary-container: 149 144 140;
+  --tv-tertiary-fixed: 232 225 221;
+  --tv-tertiary-fixed-dim: 204 197 193;
+}
+
+/* ── Legacy --lp-* remap (nav, footer, LandingFeatured) ────────────────── */
+.tv-scope {
+  --lp-paper: #fcf9f4;
+  --lp-surface: #ffffff;
+  --lp-surface-2: #f0ede8;
+  --lp-ink: #1c1c19;
+  --lp-ink-soft: #56423d;
+  --lp-muted: #786059;        /* darkened from `outline` for AA — see below */
+  --lp-line: #ddc0b9;
+  --lp-accent: #9b3f25;
+  --lp-accent-ink: #ffffff;
+  --lp-accent-soft: rgba(155, 63, 37, 0.1);
+  --lp-accent-line: rgba(155, 63, 37, 0.28);
+
+  /* Playfair Display for display faces, Fira Sans for body. Role identity
+     colours (--lp-brand / --lp-agency / --lp-creator) are deliberately NOT
+     remapped: they encode brand/agency/creator identity, not theme. */
+  --font-display: var(--font-serif);
+  --font-grotesk: var(--font-tv-body);
+}
+
+.dark .tv-scope {
+  --lp-paper: #131313;        /* surface                                  */
+  --lp-surface: #201f1f;      /* surface-container — raised lifts in dark  */
+  --lp-surface-2: #2a2a2a;    /* surface-container-high                    */
+  --lp-ink: #e5e2e1;          /* on-surface                                */
+  --lp-ink-soft: #ddc0b9;     /* on-surface-variant                        */
+  --lp-muted: #c5b3ad;        /* 9.22:1 on surface — `outline` is too dim  */
+  --lp-line: #56423d;         /* outline-variant                           */
+  --lp-accent: #ffb5a1;       /* primary                                   */
+  --lp-accent-ink: #601400;   /* on-primary                                */
+  --lp-accent-soft: rgba(255, 181, 161, 0.12);
+  --lp-accent-line: rgba(255, 181, 161, 0.34);
+}

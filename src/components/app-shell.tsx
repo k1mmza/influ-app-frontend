@@ -94,9 +94,18 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   }
 
   // A4: landing + public-info + login/register pages use the top-nav + footer layout.
+  // This branch's route set is exactly the src/app/(marketing) route group.
+  //
+  // `tv-scope` is applied HERE rather than in the marketing layout so it wraps
+  // Navigation and SiteFooter too — they render as siblings of {children}, so a
+  // class on the route-group layout could never reach them, leaving porcelain
+  // chrome bracketing a travelogue body. It rebinds --lp-* / font vars for this
+  // subtree only (see (marketing)/marketing.css); Navigation's other instance in
+  // the authed sidebar is a different <main> and is untouched, as is the
+  // logged-out /discover branch below.
   if (isLandingPage || isPublicInfoPage || pathname === "/login" || pathname === "/register") {
     return (
-      <main className="flex min-h-screen flex-col bg-[var(--lp-paper)]">
+      <main className="tv-scope flex min-h-screen flex-col bg-[var(--lp-paper)]">
         <Navigation />
         <div className="flex-1">{children}</div>
         <div className="mx-auto w-full max-w-6xl px-4 pb-6">
@@ -109,9 +118,15 @@ export function AppShell({ children }: { children: React.ReactNode }) {
 
   // A6: logged-out Discover uses the public top-nav + full-width content
   // (filters now render inline at the search bar, not in a sidebar).
+  //
+  // Carries `tv-scope` like the A4 marketing branch, so the travelogue palette
+  // and Playfair/Fira faces reach this page. Without it every --lp-* and
+  // --font-* here falls back to the porcelain design and the page renders in
+  // persimmon + Bricolage regardless of what the markup asks for. The AUTHED
+  // /discover takes the A7 branch below and is deliberately left untouched.
   if (pathname === "/discover" && !isLoggedIn) {
     return (
-      <main className="flex min-h-screen flex-col bg-muted/50">
+      <main className="tv-scope flex min-h-screen flex-col bg-[var(--lp-paper)]">
         <Navigation />
         <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-6 lg:px-8">
           <section className="min-h-[calc(100vh-3rem)]">{children}</section>

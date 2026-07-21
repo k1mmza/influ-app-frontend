@@ -98,68 +98,82 @@ export function Navigation() {
       { href: "/agencies", label: "Agencies & Brands", tip: "Start running campaigns" },
     ];
 
+    // Composition ported from stitch-export/landing-page (the <header> block):
+    // italic serif wordmark in accent, small uppercase label links centred, and
+    // a squared "Get started" button — not the previous pill nav.
+    //
+    // Colours stay on the --lp-* variables rather than the hardcoded tv-*
+    // utilities for two reasons: --lp-* is theme-reactive so the ThemeToggle
+    // keeps working here, and it is scope-reactive so this same nav renders
+    // travelogue inside .tv-scope (marketing) and porcelain on logged-out
+    // /discover, which is still on the old design.
     return (
-      <nav className="sticky top-0 z-50 mb-8 grid w-full grid-cols-[1fr_auto_1fr] items-center gap-6 bg-[var(--lp-surface)] px-6 py-4 shadow-[0_2px_16px_-10px_rgba(0,0,0,0.35)] sm:px-8">
-        <Link
-          href="/"
-          className="justify-self-start shrink-0 rounded-md px-1 font-[family-name:var(--font-display)] text-2xl font-semibold tracking-tight text-[var(--lp-ink)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
-        >
-          Inflique
-        </Link>
-        <div className="hidden items-center justify-center gap-3 md:flex">
+      <nav className="sticky top-0 z-50 mb-8 w-full border-b border-[var(--lp-line)] bg-[var(--lp-paper)]">
+        <div className="mx-auto flex w-full max-w-7xl items-center justify-between gap-6 px-6 py-4 sm:px-8">
+          <Link
+            href="/"
+            className="shrink-0 px-1 font-[family-name:var(--font-display)] text-2xl italic text-[var(--lp-accent)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
+          >
+            Inflique
+          </Link>
+
+          <div className="hidden flex-1 items-center justify-center gap-8 md:flex">
             {publicNavLinks.map(({ href, label, tip }) => {
               const active = pathname === href;
               return (
                 <div key={href} className="group relative">
                   <Link
                     href={href}
+                    aria-current={active ? "page" : undefined}
                     className={cn(
-                      "inline-flex items-center rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-medium transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]",
+                      "inline-flex items-center font-[family-name:var(--font-grotesk)] text-[12px] font-semibold uppercase tracking-[0.1em] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]",
                       active
-                        ? "bg-[var(--lp-ink)] text-[var(--lp-paper)]"
-                        : "text-[var(--lp-ink-soft)] hover:bg-[var(--lp-surface-2)] hover:text-[var(--lp-ink)]"
+                        ? "text-[var(--lp-accent)] underline decoration-[1.5px] underline-offset-[6px]"
+                        : "text-[var(--lp-ink-soft)] hover:text-[var(--lp-accent)]"
                     )}
                   >
                     {label}
                   </Link>
-                  <div className="pointer-events-none absolute left-1/2 top-full mt-2 -translate-x-1/2 whitespace-nowrap rounded-xl border border-[var(--lp-line)] bg-[var(--lp-surface)] px-3 py-1.5 font-[family-name:var(--font-grotesk)] text-xs font-medium text-[var(--lp-ink-soft)] opacity-0 shadow-md transition-opacity duration-150 group-hover:opacity-100">
+                  <div className="pointer-events-none absolute left-1/2 top-full mt-3 -translate-x-1/2 whitespace-nowrap border border-[var(--lp-line)] bg-[var(--lp-surface)] px-3 py-1.5 font-[family-name:var(--font-grotesk)] text-xs font-medium text-[var(--lp-ink-soft)] opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100">
                     {tip}
-                    <div className="absolute -top-1.5 left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border-l border-t border-[var(--lp-line)] bg-[var(--lp-surface)]" />
                   </div>
                 </div>
               );
             })}
-        </div>
+          </div>
 
-        <div className="flex items-center justify-end gap-2">
-          <ReadableToggle />
-          <ThemeToggle />
-          {isLoggedIn ? (
-            <Link href="/dashboard" className="cursor-pointer">
-              <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--lp-ink)] font-[family-name:var(--font-grotesk)] text-sm font-bold text-[var(--lp-paper)] transition hover:brightness-110">
-                {name ? name.charAt(0).toUpperCase() : "U"}
-              </span>
-            </Link>
-          ) : (
-            <>
-              {pathname !== "/login" && (
-                <Link
-                  href="/login"
-                  className="hidden rounded-full px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-medium text-[var(--lp-ink-soft)] transition hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
-                >
-                  Log in
-                </Link>
-              )}
-              {pathname !== "/register" && (
-                <Link
-                  href="/register"
-                  className="inline-flex items-center gap-1.5 rounded-full bg-[var(--lp-accent)] px-4 py-2 font-[family-name:var(--font-grotesk)] text-lg font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)]"
-                >
-                  Get started
-                </Link>
-              )}
-            </>
-          )}
+          <div className="flex shrink-0 items-center gap-3">
+            {/* Kept per request: readable-mode and light/dark toggles. The Stitch
+                header has neither — it is a static light-only mockup. */}
+            <ReadableToggle />
+            <ThemeToggle />
+            {isLoggedIn ? (
+              <Link href="/dashboard" className="cursor-pointer">
+                <span className="flex h-9 w-9 items-center justify-center rounded-full bg-[var(--lp-accent)] font-[family-name:var(--font-grotesk)] text-sm font-bold text-[var(--lp-accent-ink)] transition hover:brightness-110">
+                  {name ? name.charAt(0).toUpperCase() : "U"}
+                </span>
+              </Link>
+            ) : (
+              <>
+                {pathname !== "/login" && (
+                  <Link
+                    href="/login"
+                    className="hidden font-[family-name:var(--font-grotesk)] text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--lp-ink-soft)] transition-colors hover:text-[var(--lp-accent)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] sm:inline-flex"
+                  >
+                    Log in
+                  </Link>
+                )}
+                {pathname !== "/register" && (
+                  <Link
+                    href="/register"
+                    className="inline-flex items-center rounded-[2px] bg-[var(--lp-accent)] px-6 py-2.5 font-[family-name:var(--font-grotesk)] text-[12px] font-semibold uppercase tracking-[0.1em] text-[var(--lp-accent-ink)] transition-all hover:brightness-[1.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-paper)] active:scale-95"
+                  >
+                    Get started
+                  </Link>
+                )}
+              </>
+            )}
+          </div>
         </div>
       </nav>
     );

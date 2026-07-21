@@ -35,35 +35,35 @@ const LANES = [
 
 export function LandingPersonas() {
   return (
-    <section className="w-full bg-[var(--lp-paper)] px-4 py-24">
-      <div className="mx-auto max-w-6xl">
+    <section className="w-full border-y border-tv-outline-variant bg-tv-surface-container-low px-4 py-tv-section-gap">
+      <div className="mx-auto w-full max-w-7xl md:px-tv-margin-safe">
         <LandingAnimate>
-          <h2 className="max-w-2xl font-[family-name:var(--font-display)] text-4xl font-semibold leading-tight tracking-tight text-[var(--lp-ink)] md:text-5xl">
+          <h2 className="max-w-2xl font-tv-serif text-3xl font-bold leading-tight tracking-tight text-tv-on-surface sm:text-tv-headline-lg">
             One directory, three seats at the table.
           </h2>
         </LandingAnimate>
 
-        <div className="mt-14 grid gap-px overflow-hidden rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-line)] md:grid-cols-3">
+        <div className="mt-14 grid gap-px overflow-hidden border border-tv-outline-variant bg-tv-outline-variant md:grid-cols-3">
           {LANES.map((lane, i) => (
             <LandingAnimate key={lane.tag} delay={i * 90} direction="none">
               <Link
                 href={lane.href}
-                className="group flex h-full flex-col bg-[var(--lp-surface)] p-8 transition hover:bg-[var(--lp-surface-2)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--lp-accent)] md:p-10"
+                className="group flex h-full flex-col bg-tv-surface-container-lowest p-8 transition hover:bg-tv-surface-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-tv-primary md:p-10"
               >
-                <span className="inline-flex items-center gap-2 font-[family-name:var(--font-grotesk)] text-[11px] font-semibold uppercase tracking-[0.22em] text-[var(--lp-muted)]">
+                <span className="inline-flex items-center gap-2 font-tv-body text-tv-label-caps uppercase text-tv-muted-text">
                   <span className="h-3 w-[3px] rounded-full" style={{ backgroundColor: lane.color }} />
                   {lane.tag}
                 </span>
 
-                <h3 className="mt-6 font-[family-name:var(--font-display)] text-2xl font-semibold leading-snug tracking-tight text-[var(--lp-ink)]">
+                <h3 className="mt-6 font-tv-serif text-tv-headline-md leading-snug text-tv-on-surface">
                   {lane.title}
                 </h3>
 
-                <p className="mt-3 flex-1 font-[family-name:var(--font-grotesk)] text-[15px] leading-relaxed text-[var(--lp-ink-soft)]">
+                <p className="mt-3 flex-1 font-tv-body text-tv-body-md text-tv-on-surface-variant">
                   {lane.body}
                 </p>
 
-                <span className="mt-8 inline-flex items-center gap-1.5 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-ink)]">
+                <span className="mt-8 inline-flex items-center gap-1.5 font-tv-body text-tv-label-caps uppercase text-tv-primary">
                   {lane.cta}
                   <ArrowUpRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
                 </span>

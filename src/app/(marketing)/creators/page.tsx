@@ -52,12 +52,16 @@ export default function CreatorsPage() {
         title="Get cast by brands"
         highlight="that actually fit."
         subtitle="Build a profile from your real numbers, apply to campaigns that match your content, and keep a track record brands can trust — more than a DM can carry."
+        image={{
+          src: "/pictures/stitch-creators.jpg",
+          alt: "A creator with a camera on a sunlit street of white-washed buildings and terracotta pots.",
+        }}
       >
         <CtaPrimary href="/register">Join as a creator</CtaPrimary>
         <CtaSecondary href="/discover">See the roster</CtaSecondary>
       </MarketingHero>
 
-      <section className="w-full bg-[var(--lp-paper)] px-4 py-20">
+      <section className="w-full border-y border-tv-outline-variant bg-tv-surface-container-low px-4 py-tv-section-gap">
         <div className="mx-auto max-w-6xl">
           <SectionHeading
             eyebrow="What you get today"

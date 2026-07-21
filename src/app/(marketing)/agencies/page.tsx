@@ -52,12 +52,22 @@ export default function AgenciesPage() {
         title="Run creator campaigns"
         highlight="without the spreadsheet."
         subtitle="Discover creators, brief a campaign, shortlist applicants, and track what went live — the workflow you're stitching together across sheets and email, in one directory."
+        image={{
+          src: "/pictures/stitch-agencies-brands.jpg",
+          alt: "A campaign manager working at a laptop in a warm, terracotta-toned office.",
+          // Anchored left on purpose. The laptop on the right of this frame shows
+          // a FABRICATED dashboard — invented brand names ("AURA / LUNA / VERVE")
+          // and made-up metrics that are not this product's UI. Pulling the crop
+          // left keeps the subject and pushes that screen out of frame. Do not
+          // recentre this without replacing the asset.
+          objectPosition: "22% center",
+        }}
       >
         <CtaPrimary href="/register">Get started free</CtaPrimary>
         <CtaSecondary href="/discover">Explore the roster</CtaSecondary>
       </MarketingHero>
 
-      <section className="w-full bg-[var(--lp-paper)] px-4 py-20">
+      <section className="w-full border-y border-tv-outline-variant bg-tv-surface-container-low px-4 py-tv-section-gap">
         <div className="mx-auto max-w-6xl">
           <SectionHeading
             eyebrow="What you can do today"

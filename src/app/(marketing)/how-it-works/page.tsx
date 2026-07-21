@@ -74,7 +74,7 @@ export default function HowItWorksPage() {
         <CtaSecondary href="/discover">Explore the roster</CtaSecondary>
       </MarketingHero>
 
-      <section className="w-full bg-[var(--lp-paper)] px-4 py-20">
+      <section className="w-full bg-tv-surface px-4 py-tv-section-gap">
         <div className="mx-auto max-w-6xl">
           <SectionHeading
             eyebrow="Two lanes, one directory"
@@ -100,7 +100,7 @@ export default function HowItWorksPage() {
         </div>
       </section>
 
-      <section className="w-full border-y border-[var(--lp-line)] bg-[var(--lp-surface)] px-4 py-20">
+      <section className="w-full border-y border-tv-outline-variant bg-tv-surface-container-low px-4 py-tv-section-gap">
         <div className="mx-auto max-w-6xl">
           <SectionHeading eyebrow="Along the way" title="The parts both sides rely on." />
           <FeatureGrid features={sharedFeatures} />

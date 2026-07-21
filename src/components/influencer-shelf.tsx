@@ -18,6 +18,8 @@ interface InfluencerShelfProps {
   className?: string;
   titleClassName?: string;
   subtitleClassName?: string;
+  /** Forwarded to InfluencerCard; see its `skin` prop. */
+  skin?: "default" | "travelogue";
 }
 
 export function InfluencerShelf({
@@ -32,6 +34,7 @@ export function InfluencerShelf({
   className,
   titleClassName,
   subtitleClassName,
+  skin = "default",
 }: InfluencerShelfProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -153,6 +156,7 @@ export function InfluencerShelf({
                   )}
                 >
                   <InfluencerCard
+                    skin={skin}
                     influencer={influencer}
                     isActive={selectedId === influencer.id}
                     onSelect={onSelect}

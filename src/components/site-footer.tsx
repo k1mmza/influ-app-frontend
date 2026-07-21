@@ -25,7 +25,10 @@ export function SiteFooter() {
           <div className="lg:col-span-1">
             <Link
               href="/"
-              className="rounded font-[family-name:var(--font-display)] text-xl font-semibold tracking-tight text-[var(--lp-ink)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
+              // Matches the nav wordmark: same --font-display face, italic, in
+              // accent. Weight and tracking overrides dropped so the italic
+              // serif reads the same in both places.
+              className="rounded font-[family-name:var(--font-display)] text-xl italic text-[var(--lp-accent)] transition hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
             >
               Inflique
             </Link>

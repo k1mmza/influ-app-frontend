@@ -1,8 +1,8 @@
 "use client";
 
 import { LandingAnimate } from "@/components/marketing/landing-motion";
-import { Search, ArrowRight } from "lucide-react";
-import Link from "next/link";
+import { Search, ArrowRight, Compass } from "lucide-react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import { FormEvent, useEffect, useRef, useState } from "react";
 
@@ -15,8 +15,6 @@ const CASTING_BRIEFS = [
   "sustainable fashion · Gen Z",
   "fitness coaches · 50k–200k reach",
 ] as const;
-
-const CATEGORIES = ["Beauty", "Fashion", "Fitness", "Food", "Travel", "Tech", "Gaming"] as const;
 
 function looksLikeSocialUrl(query: string) {
   return (
@@ -62,95 +60,124 @@ export function LandingHero() {
   };
 
   return (
-    <section className="relative w-full overflow-hidden bg-[var(--lp-paper)] px-4 pb-24 pt-16 sm:pt-24">
-      {/* Quiet index grid — barely-there texture that reads as "catalog", not decoration. */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 opacity-[0.55]"
-        style={{
-          backgroundImage:
-            "linear-gradient(var(--lp-line) 1px, transparent 1px), linear-gradient(90deg, var(--lp-line) 1px, transparent 1px)",
-          backgroundSize: "80px 80px",
-          maskImage: "radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 72%)",
-          WebkitMaskImage: "radial-gradient(ellipse 90% 70% at 50% 30%, #000 30%, transparent 72%)",
-        }}
-      />
+    <section className="relative w-full overflow-hidden bg-tv-surface px-4 pb-tv-section-gap pt-12">
+      <div className="relative z-10 mx-auto flex w-full max-w-7xl flex-col items-center gap-12 px-4 md:flex-row md:px-tv-margin-safe">
+        {/* ── Left column: the pitch + the working casting bar ─────────────── */}
+        <div className="z-10 flex-1 space-y-8">
+          <LandingAnimate onMount>
+            <p className="inline-flex items-center gap-2 font-tv-body text-tv-label-caps uppercase text-tv-muted-text">
+              <span className="inline-block h-1.5 w-1.5 rounded-tv-full bg-tv-primary" />
+              Inflique — creator casting
+            </p>
+          </LandingAnimate>
 
-      <div className="relative z-10 mx-auto w-full max-w-4xl text-center">
-        <LandingAnimate onMount>
-          <p className="mb-6 inline-flex items-center gap-2 font-[family-name:var(--font-grotesk)] text-[11px] font-semibold uppercase tracking-[0.28em] text-[var(--lp-muted)]">
-            <span className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--lp-accent)]" />
-            Inflique — creator casting
-          </p>
-        </LandingAnimate>
+          <LandingAnimate onMount delay={120}>
+            <h1 className="font-tv-serif text-4xl font-bold leading-tight text-tv-on-surface sm:text-5xl md:text-tv-display-lg">
+              Cast the right creator.{" "}
+              <span className="font-normal italic text-tv-primary">Not the loudest one.</span>
+            </h1>
+          </LandingAnimate>
 
-        <LandingAnimate onMount delay={120}>
-          <h1 className="font-[family-name:var(--font-display)] text-[13vw] font-semibold leading-[0.95] tracking-tight text-[var(--lp-ink)] sm:text-6xl md:text-7xl">
-            Cast the right creator.
-            <br />
-            <span className="text-[var(--lp-muted)]">Not the loudest one.</span>
-          </h1>
-        </LandingAnimate>
+          <LandingAnimate onMount delay={230}>
+            <p className="max-w-xl font-tv-body text-tv-body-lg text-tv-on-surface-variant">
+              Search creators by niche, reach, and audience — or paste a profile
+              link and get their real numbers back in seconds.
+            </p>
+          </LandingAnimate>
 
-        <LandingAnimate onMount delay={230}>
-          <p className="mx-auto mt-6 max-w-lg font-[family-name:var(--font-grotesk)] text-base leading-relaxed text-[var(--lp-ink-soft)] sm:text-lg">
-            Search creators by niche, reach, and audience — or paste a profile
-            link and get their real numbers back in seconds.
-          </p>
-        </LandingAnimate>
-
-        {/* The Casting Bar — the signature element. */}
-        <LandingAnimate onMount delay={340}>
-          <form onSubmit={handleSubmit} className="mx-auto mt-10 max-w-2xl text-left">
-            <div className="group relative flex flex-col gap-2 rounded-2xl border border-[var(--lp-line)] bg-[var(--lp-surface)] p-2 shadow-[0_1px_0_rgba(0,0,0,0.02),0_18px_40px_-24px_rgba(0,0,0,0.25)] transition focus-within:border-[var(--lp-accent-line)] focus-within:shadow-[0_0_0_4px_var(--lp-accent-soft),0_18px_40px_-24px_rgba(0,0,0,0.25)] sm:flex-row sm:items-center">
-              <div className="relative flex flex-1 items-center">
-                <Search className="pointer-events-none absolute left-4 h-5 w-5 text-[var(--lp-muted)]" />
-                {/* Cycling casting hint, rendered as an overlay so it can cross-fade
-                    (a native placeholder attribute cannot animate). */}
-                {showCastingHint && (
-                  <span
-                    aria-hidden
-                    key={briefIndex}
-                    className="motion-safe:animate-[lpFade_2800ms_ease-in-out] pointer-events-none absolute left-12 right-4 truncate font-[family-name:var(--font-grotesk)] text-[15px] text-[var(--lp-muted)]"
-                  >
-                    <span className="text-[var(--lp-accent)]">Now casting:</span>{" "}
-                    {CASTING_BRIEFS[briefIndex]}
-                  </span>
-                )}
-                <input
-                  ref={inputRef}
-                  type="text"
-                  aria-label="Search creators, niches, or paste a profile link"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                  onFocus={() => setFocused(true)}
-                  onBlur={() => setFocused(false)}
-                  className="h-12 w-full rounded-xl bg-transparent pl-12 pr-4 font-[family-name:var(--font-grotesk)] text-[15px] text-[var(--lp-ink)] outline-none placeholder:text-[var(--lp-muted)]"
-                  placeholder={showCastingHint ? "" : "Search a niche, name, or profile link"}
-                />
+          {/* The Casting Bar — now a pill per the travelogue composition, but the
+              same real form: submits to /discover, detects pasted profile URLs,
+              and cross-fades the rotating brief hint. */}
+          <LandingAnimate onMount delay={340}>
+            <form onSubmit={handleSubmit} className="max-w-2xl text-left">
+              <div className="group relative flex flex-col gap-2 rounded-tv-xl border border-tv-outline-variant bg-tv-surface-container-lowest p-2 transition focus-within:border-tv-primary sm:flex-row sm:items-center sm:rounded-tv-full">
+                <div className="relative flex flex-1 items-center">
+                  <Search className="pointer-events-none absolute left-4 h-5 w-5 text-tv-muted-text" />
+                  {/* Cycling casting hint, rendered as an overlay so it can cross-fade
+                      (a native placeholder attribute cannot animate). */}
+                  {showCastingHint && (
+                    <span
+                      aria-hidden
+                      key={briefIndex}
+                      className="motion-safe:animate-[lpFade_2800ms_ease-in-out] pointer-events-none absolute left-12 right-4 truncate font-tv-body text-tv-body-md text-tv-on-surface-variant"
+                    >
+                      <span className="text-tv-primary">Now casting:</span>{" "}
+                      {CASTING_BRIEFS[briefIndex]}
+                    </span>
+                  )}
+                  <input
+                    ref={inputRef}
+                    type="text"
+                    aria-label="Search creators, niches, or paste a profile link"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    onFocus={() => setFocused(true)}
+                    onBlur={() => setFocused(false)}
+                    className="h-12 w-full bg-transparent pl-12 pr-4 font-tv-body text-tv-body-md text-tv-on-surface outline-none placeholder:text-tv-muted-text"
+                    placeholder={showCastingHint ? "" : "Search a niche, name, or profile link"}
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-tv-full bg-tv-primary px-8 font-tv-body text-tv-label-caps uppercase text-tv-on-primary transition-all hover:bg-tv-primary-container focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-tv-primary focus-visible:ring-offset-2 active:scale-95"
+                >
+                  Find creators
+                  <ArrowRight className="h-4 w-4" />
+                </button>
               </div>
-              <button
-                type="submit"
-                className="inline-flex h-12 shrink-0 items-center justify-center gap-2 rounded-xl bg-[var(--lp-accent)] px-6 font-[family-name:var(--font-grotesk)] text-sm font-semibold text-[var(--lp-accent-ink)] transition hover:brightness-[1.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--lp-surface)] active:scale-[0.99]"
-              >
-                Find creators
-                <ArrowRight className="h-4 w-4" />
-              </button>
-            </div>
-          </form>
-        </LandingAnimate>
+            </form>
+          </LandingAnimate>
 
-        <LandingAnimate onMount delay={440}>
-          <div className="mt-5 flex flex-wrap justify-center gap-2">
-            {CATEGORIES.map((cat) => (
-              <Link
-                key={cat}
-                href={`/discover?category=${cat}`}
-                className="rounded-full border border-[var(--lp-line)] bg-[var(--lp-surface)] px-3.5 py-1.5 font-[family-name:var(--font-grotesk)] text-[13px] font-medium text-[var(--lp-ink-soft)] transition hover:border-[var(--lp-accent-line)] hover:text-[var(--lp-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--lp-accent)]"
-              >
-                {cat}
-              </Link>
-            ))}
+        </div>
+
+        {/* ── Right column: the tilted "postcard" ──────────────────────────────
+            Photo is the Stitch mockup's own hero image, pulled down from the
+            googleusercontent URL in stitch-export/landing-page/index.html and
+            committed to /public so there is no external runtime dependency.
+            Largest available is 1408x768 — the export embeds a 512px thumbnail;
+            the `=w1600` size parameter gets the full one.
+
+            ⚠️ It is AI-generated and has "InfluApp" (the OLD product name)
+            printed on the tote bag and the table card. A centred 4:5 crop puts
+            both outside the frame, which is why object-center is deliberate
+            here. Re-check the crop before changing this frame's aspect ratio or
+            object-position, or the wrong brand name comes into view. */}
+        {/* LandingAnimate renders the flex child itself, so the sizing has to go
+            HERE. Putting flex-1 on a div inside it collapsed this column to zero
+            width and the fill-image rendered nothing at all. */}
+        <LandingAnimate onMount delay={200} className="w-full flex-1">
+          <div className="relative w-full">
+            <div className="relative aspect-[4/5] w-full -rotate-2 overflow-hidden border border-tv-outline-variant bg-tv-surface-container">
+              <Image
+                src="/pictures/stitch-hero.jpg"
+                alt="A creator smiling while writing in a notebook at a sunlit Mediterranean cafe table."
+                fill
+                priority
+                sizes="(max-width: 768px) 100vw, 45vw"
+                className="object-cover object-center"
+              />
+              {/* Scrim. The overlay text sits on a photograph, so its contrast
+                  is not something the palette can guarantee — this pins the
+                  bottom of the frame dark enough for white type to clear AA
+                  regardless of what the image does there. */}
+              <div
+                aria-hidden
+                className="absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/70 via-black/30 to-transparent"
+              />
+              <div className="absolute right-6 top-6">
+                <div className="flex h-16 w-16 rotate-12 items-center justify-center rounded-tv-full border-2 border-dashed border-tv-primary bg-tv-surface/80 backdrop-blur-[2px]">
+                  <Compass className="h-7 w-7 text-tv-primary" strokeWidth={1.5} />
+                </div>
+              </div>
+              <div className="absolute bottom-6 left-6">
+                <p className="font-tv-serif text-2xl font-bold tracking-tight text-white">
+                  INFLIQUE
+                </p>
+                <p className="font-tv-body text-tv-label-caps uppercase text-white/80">
+                  Creator casting directory
+                </p>
+              </div>
+            </div>
           </div>
         </LandingAnimate>
       </div>

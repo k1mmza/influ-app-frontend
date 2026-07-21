@@ -43,6 +43,15 @@ interface InfluencerCardProps {
   isActive?: boolean;
   onSelect?: (influencer: Influencer) => void;
   onAddToCampaign?: (influencer: Influencer) => void;
+  /**
+   * Visual treatment. "default" is the shadcn card used by /shortlist and the
+   * authenticated Discover — do not change its output. "travelogue" is the
+   * opt-in skin for logged-out Discover: squared paper edges, hairline borders,
+   * terracotta accent, no drop shadows (the design brief builds depth from
+   * tonal layering, not shadows). Passed explicitly so authenticated surfaces
+   * are never re-skinned by proximity.
+   */
+  skin?: "default" | "travelogue";
 }
 
 /**
@@ -53,7 +62,8 @@ interface InfluencerCardProps {
  * `flex h-full` + `mt-auto` keep every card the same height with the button
  * pinned to the bottom.
  */
-export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign }: InfluencerCardProps) {
+export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign, skin = "default" }: InfluencerCardProps) {
+  const tv = skin === "travelogue";
   // Canonical order: youtube → tiktok → instagram → rest
   const orderedPlatforms = [
     ...PLATFORM_ORDER.filter((p) => influencer.platforms.includes(p)),
@@ -92,8 +102,13 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
     <Card
       onClick={() => onSelect?.(influencer)}
       className={cn(
-        "group flex h-full cursor-pointer flex-col overflow-hidden border border-border bg-card shadow-sm transition-all hover:shadow-md hover:-translate-y-0.5",
-        isActive ? "ring-2 ring-primary ring-offset-2" : "",
+        "group flex h-full cursor-pointer flex-col overflow-hidden transition-all",
+        tv
+          ? "rounded-tv-lg border border-tv-outline-variant bg-tv-surface-container-lowest shadow-none hover:border-tv-primary"
+          : "border border-border bg-card shadow-sm hover:shadow-md hover:-translate-y-0.5",
+        isActive
+          ? tv ? "border-tv-primary ring-1 ring-tv-primary" : "ring-2 ring-primary ring-offset-2"
+          : "",
       )}
     >
       {/* Top — picture (fixed aspect so all cards' image regions match) */}
@@ -129,17 +144,24 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         ) : null}
 
         {/* score (top-right) */}
-        <Badge className="absolute right-2 top-2 border-none bg-card/90 text-primary font-bold backdrop-blur-sm hover:bg-card">
+        <Badge
+          className={cn(
+            "absolute right-2 top-2 backdrop-blur-sm",
+            tv
+              ? "rounded-tv-lg border border-tv-outline-variant bg-tv-surface/90 font-tv-body text-tv-label-caps uppercase text-tv-primary hover:bg-tv-surface"
+              : "border-none bg-card/90 text-primary font-bold hover:bg-card",
+          )}
+        >
           Score {influencer.performanceScore}
         </Badge>
 
         {/* overlaid identity (bottom) */}
         <div className="absolute inset-x-0 bottom-0 p-3">
-          <h3 className="truncate text-base font-bold tracking-tight text-white font-serif">{influencer.name}</h3>
+          <h3 className={cn("truncate text-white", tv ? "font-tv-serif text-lg" : "text-base font-bold tracking-tight font-serif")}>{influencer.name}</h3>
           {tags.length > 0 && (
-            <p className="truncate text-xs font-medium text-white/70">{tags.join(", ")}</p>
+            <p className={cn("truncate text-white/70", tv ? "font-tv-body text-tv-label-caps uppercase" : "text-xs font-medium")}>{tags.join(", ")}</p>
           )}
-          <p className="mt-0.5 truncate text-xs font-semibold text-emerald-300">
+          <p className={cn("mt-0.5 truncate text-xs font-semibold", tv ? "font-tv-body text-tv-primary-fixed" : "text-emerald-300")}>
             {activePlatform ? `${activePlatform} · ` : ""}{activeFollowers.toLocaleString()} followers
           </p>
         </div>
@@ -181,18 +203,23 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-0.5">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Total reach</p>
-            <p className="text-sm font-bold text-foreground">{activeFollowers.toLocaleString()}</p>
+            <p className={cn("text-[9px] uppercase tracking-widest", tv ? "font-tv-body font-semibold text-tv-muted-text" : "font-bold text-muted-foreground")}>Total reach</p>
+            <p className={cn("text-sm font-bold", tv ? "font-tv-serif text-tv-on-surface" : "text-foreground")}>{activeFollowers.toLocaleString()}</p>
           </div>
           <div className="space-y-0.5">
-            <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
-            <p className="text-sm font-bold text-foreground">{activeEngagement}%</p>
+            <p className={cn("text-[9px] uppercase tracking-widest", tv ? "font-tv-body font-semibold text-tv-muted-text" : "font-bold text-muted-foreground")}>Engagement</p>
+            <p className={cn("text-sm font-bold", tv ? "font-tv-serif text-tv-on-surface" : "text-foreground")}>{activeEngagement}%</p>
           </div>
         </div>
 
         {onAddToCampaign ? (
           <Button
-            className="mt-auto w-full rounded-xl font-bold text-sm h-9 shadow-sm"
+            className={cn(
+              "mt-auto h-9 w-full text-sm",
+              tv
+                ? "rounded-tv-lg bg-tv-primary font-tv-body text-tv-label-caps uppercase text-tv-on-primary shadow-none hover:bg-tv-primary-container"
+                : "rounded-xl font-bold shadow-sm",
+            )}
             onClick={(e) => { e.stopPropagation(); onAddToCampaign(influencer); }}
           >
             <PlusCircle className="mr-1.5 h-3.5 w-3.5" />

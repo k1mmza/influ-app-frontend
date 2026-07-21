@@ -1,5 +1,42 @@
 import { clsx, type ClassValue } from "clsx";
-import { twMerge } from "tailwind-merge";
+import { extendTailwindMerge } from "tailwind-merge";
+
+/**
+ * tailwind-merge only knows Tailwind's DEFAULT font-size scale. The travelogue
+ * theme adds custom fontSize keys (text-tv-display-lg, text-tv-label-caps, …),
+ * and because they are unknown, tailwind-merge classifies them as text-COLOUR
+ * utilities. It then treats them as conflicting with real colour classes and
+ * silently drops whichever came first:
+ *
+ *   cn("text-white/70", "text-tv-label-caps")  ->  "text-tv-label-caps"
+ *        (colour lost — element inherits dark text on a dark image)
+ *   cn("text-tv-label-caps", "text-tv-muted-text")  ->  "text-tv-muted-text"
+ *        (size lost — label renders at the inherited size)
+ *
+ * Registering them under `font-size` makes the two independent again, so a
+ * size and a colour can coexist. Keep this list in sync with the `tv` fontSize
+ * keys in tailwind.config.ts.
+ */
+const twMerge = extendTailwindMerge({
+  extend: {
+    classGroups: {
+      "font-size": [
+        {
+          text: [
+            "tv-display-lg",
+            "tv-headline-lg",
+            "tv-headline-lg-mobile",
+            "tv-headline-md",
+            "tv-italic-serif",
+            "tv-body-lg",
+            "tv-body-md",
+            "tv-label-caps",
+          ],
+        },
+      ],
+    },
+  },
+});
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
