@@ -22,27 +22,20 @@ import { cn } from "@/lib/utils";
 
 const PLATFORM_ORDER = ["youtube", "tiktok", "instagram"];
 
-type PlatformPresentation = { Icon: IconType; iconClassName: string; activeBg: string };
+type PlatformPresentation = { Icon: IconType; activeBg: string };
 
 function platformPresentation(platform: string): PlatformPresentation {
   const p = platform.trim().toLowerCase();
-  if (p.includes("instagram"))
-    return { Icon: SiInstagram, iconClassName: "text-[#E4405F]", activeBg: "bg-[#E4405F]" };
-  if (p.includes("youtube"))
-    return { Icon: SiYoutube, iconClassName: "text-[#FF0000]", activeBg: "bg-[#FF0000]" };
-  if (p.includes("facebook"))
-    return { Icon: SiFacebook, iconClassName: "text-[#0866FF]", activeBg: "bg-[#0866FF]" };
-  if (p === "x" || p.includes("twitter"))
-    return { Icon: SiX, iconClassName: "text-foreground", activeBg: "bg-foreground" };
-  if (p.includes("tiktok"))
-    return { Icon: SiTiktok, iconClassName: "text-foreground", activeBg: "bg-foreground" };
-  if (p.includes("linkedin"))
-    return { Icon: FaLinkedinIn, iconClassName: "text-[#0A66C2]", activeBg: "bg-[#0A66C2]" };
-  if (p.includes("lemon8"))
-    return { Icon: FaMobileAlt, iconClassName: "text-[#C6FF00]", activeBg: "bg-[#C6FF00]" };
+  if (p.includes("instagram")) return { Icon: SiInstagram, activeBg: "bg-[#E4405F]" };
+  if (p.includes("youtube")) return { Icon: SiYoutube, activeBg: "bg-[#FF0000]" };
+  if (p.includes("facebook")) return { Icon: SiFacebook, activeBg: "bg-[#0866FF]" };
+  if (p === "x" || p.includes("twitter")) return { Icon: SiX, activeBg: "bg-foreground" };
+  if (p.includes("tiktok")) return { Icon: SiTiktok, activeBg: "bg-foreground" };
+  if (p.includes("linkedin")) return { Icon: FaLinkedinIn, activeBg: "bg-[#0A66C2]" };
+  if (p.includes("lemon8")) return { Icon: FaMobileAlt, activeBg: "bg-[#C6FF00]" };
   if (p.includes("red note") || p.includes("xiaohongshu"))
-    return { Icon: SiXiaohongshu, iconClassName: "text-[#FF2442]", activeBg: "bg-[#FF2442]" };
-  return { Icon: FaGlobe, iconClassName: "text-sky-600", activeBg: "bg-sky-600" };
+    return { Icon: SiXiaohongshu, activeBg: "bg-[#FF2442]" };
+  return { Icon: FaGlobe, activeBg: "bg-sky-600" };
 }
 
 interface InfluencerCardProps {
@@ -163,7 +156,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
             onClick={(e) => e.stopPropagation()}
           >
             {orderedPlatforms.map((platform) => {
-              const { Icon, iconClassName, activeBg } = platformPresentation(platform);
+              const { Icon, activeBg } = platformPresentation(platform);
               const isActiveTab = platform === activePlatform;
               return (
                 <button
@@ -175,11 +168,11 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
                   className={cn(
                     "flex h-9 w-9 items-center justify-center rounded-full border transition-all cursor-pointer",
                     isActiveTab
-                      ? `${activeBg} border-transparent text-white shadow-sm`
+                      ? `${activeBg} border-transparent text-background shadow-sm`
                       : "border-border bg-background hover:bg-muted",
                   )}
                 >
-                  <Icon className={cn("size-5 shrink-0", isActiveTab ? "text-white" : iconClassName)} />
+                  <Icon className={cn("size-5 shrink-0", isActiveTab ? "text-background" : "text-muted-foreground")} />
                 </button>
               );
             })}
@@ -187,11 +180,11 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          <div className="rounded-lg bg-muted/50 p-2">
+          <div className="space-y-0.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Total reach</p>
             <p className="text-sm font-bold text-foreground">{activeFollowers.toLocaleString()}</p>
           </div>
-          <div className="rounded-lg bg-muted/50 p-2">
+          <div className="space-y-0.5">
             <p className="text-[9px] font-bold uppercase tracking-widest text-muted-foreground">Engagement</p>
             <p className="text-sm font-bold text-foreground">{activeEngagement}%</p>
           </div>

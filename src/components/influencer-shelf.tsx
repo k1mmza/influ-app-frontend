@@ -16,6 +16,8 @@ interface InfluencerShelfProps {
   showRank?: boolean;
   emptyMessage?: string;
   className?: string;
+  titleClassName?: string;
+  subtitleClassName?: string;
 }
 
 export function InfluencerShelf({
@@ -28,6 +30,8 @@ export function InfluencerShelf({
   showRank = false,
   emptyMessage = "No creators in this row yet.",
   className,
+  titleClassName,
+  subtitleClassName,
 }: InfluencerShelfProps) {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
@@ -75,8 +79,10 @@ export function InfluencerShelf({
     >
       <div className="mb-3 flex items-end justify-between gap-3 px-1">
         <div>
-          <h2 className="text-lg font-bold font-serif text-foreground">{title}</h2>
-          {subtitle && <p className="mt-0.5 text-xs text-muted-foreground sm:text-sm">{subtitle}</p>}
+          <h2 className={cn("text-lg font-bold font-serif text-foreground", titleClassName)}>{title}</h2>
+          {subtitle && (
+            <p className={cn("mt-0.5 text-xs text-muted-foreground sm:text-sm", subtitleClassName)}>{subtitle}</p>
+          )}
         </div>
       </div>
 
@@ -135,8 +141,7 @@ export function InfluencerShelf({
                 {showRank && (
                   <span
                     aria-hidden
-                    className="pointer-events-none -mb-2 -mr-1 select-none text-[3.5rem] font-black leading-none tracking-tighter text-transparent sm:-mb-3 sm:-mr-2 sm:text-[4.5rem] lg:text-[5.5rem]"
-                    style={{ WebkitTextStroke: "2px rgb(148 163 184)" }}
+                    className="pointer-events-none -mb-2 -mr-1 select-none text-[3.5rem] font-black leading-none tracking-tighter tabular-nums text-foreground/10 sm:-mb-3 sm:-mr-2 sm:text-[4.5rem] lg:text-[5.5rem]"
                   >
                     {index + 1}
                   </span>

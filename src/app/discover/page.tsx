@@ -1127,6 +1127,8 @@ function DiscoverPageContent() {
             <InfluencerShelf
               title="Top Ten Trending"
               subtitle="Highest-performing creators by reach and campaign score"
+              titleClassName={publicSkin ? "font-[family-name:var(--font-display)] text-[var(--lp-ink)]" : undefined}
+              subtitleClassName={publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-muted)]" : undefined}
               influencers={trendingInfluencers}
               selectedId={selectedInfluencerId}
               onSelect={(selected) => setSelectedInfluencerId(selected.id)}
