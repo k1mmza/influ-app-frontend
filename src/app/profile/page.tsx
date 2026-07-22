@@ -1,6 +1,7 @@
 "use client";
 
-import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink } from "lucide-react";
+import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink, ShieldCheck } from "lucide-react";
+import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
 import { useMediaKitStore } from "@/store/useMediaKitStore";
@@ -1092,10 +1093,83 @@ Engagement rate:
   );
 }
 
+// ─── Admin profile ─────────────────────────────────────────────────────────────
+// An ADMIN account is provisioned by promoting an existing user, so it may still
+// carry an InfluencerProfile (or brand/agency) row underneath — but none of those
+// editing surfaces make sense for an admin. This view shows the account itself
+// plus links to the admin surfaces, and nothing editable.
+function AdminProfileView() {
+  const { name, email } = useUserStore();
+
+  return (
+    <section className="space-y-6">
+      <h1 className="text-2xl font-bold text-foreground font-serif">Admin profile</h1>
+      <p className="text-muted-foreground">
+        Your administrator account. There is no public creator or brand profile to edit here.
+      </p>
+
+      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
+        <article className="rounded-2xl bg-card p-5 shadow-sm">
+          <div className="flex flex-col items-center text-center">
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl border border-border bg-muted">
+              <ShieldCheck className="h-10 w-10 text-primary" />
+            </div>
+            <p className="mt-3 font-semibold text-foreground font-serif">{name || "Administrator"}</p>
+            <span className="mt-1 rounded-full bg-primary/10 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider text-primary">
+              Administrator
+            </span>
+            <p className="mt-2 text-xs text-muted-foreground">{email}</p>
+          </div>
+        </article>
+
+        <div className="space-y-4">
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Account</h2>
+            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Name</p>
+                <p className="mt-1 text-sm text-foreground">{name || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Email</p>
+                <p className="mt-1 text-sm text-foreground">{email || "—"}</p>
+              </div>
+              <div>
+                <p className="text-xs font-medium uppercase tracking-wide text-muted-foreground">Role</p>
+                <p className="mt-1 text-sm text-foreground">Administrator</p>
+              </div>
+            </div>
+          </article>
+
+          <article className="rounded-2xl bg-card p-5 shadow-sm">
+            <h2 className="text-lg font-semibold text-foreground font-serif">Admin tools</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Platform-wide views available to your account.</p>
+            <div className="mt-4 flex flex-wrap gap-3">
+              <Link
+                href="/dashboard"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary"
+              >
+                Platform overview
+              </Link>
+              <Link
+                href="/campaigns"
+                className="inline-flex cursor-pointer items-center gap-2 rounded-xl border border-border bg-background px-4 py-2 text-sm font-semibold text-foreground transition-colors hover:border-primary"
+              >
+                All campaigns
+              </Link>
+            </div>
+          </article>
+        </div>
+      </div>
+    </section>
+  );
+}
+
 // ─── Page entry ───────────────────────────────────────────────────────────────
 
 export default function ProfilePage() {
   const { role } = useUserStore();
+  if (role === "admin") return <AdminProfileView />;
   if (role === "brand" || role === "agency") return <BrandProfileView />;
   return <InfluencerProfileView />;
 }

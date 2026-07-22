@@ -27,7 +27,7 @@ const LANES = [
     tag: "For creators",
     color: "var(--lp-creator)",
     title: "Get found by brands that fit.",
-    body: "Claim your profile, show real numbers, and let the right campaigns come to you.",
+    body: "Claim your profile, show real numbers, and let the right campaigns come to you directly.",
     href: "/creators",
     cta: "Claim your profile",
   },

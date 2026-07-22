@@ -490,6 +490,9 @@ function DiscoverPageContent() {
       avgViewsByPlatform: { [platform]: averageViews },
       engagementByPlatform: { [platform]: engagementRate },
       handleByPlatform: { [platform]: displayName },
+      // The pasted link IS the only contact point we have for an unregistered
+      // creator — keep it so the "Add to Campaign" modal can offer to reach out.
+      profileUrlByPlatform: { [platform]: parsed.href },
       avatarByPlatform: { [platform]: null },
       syncedAtByPlatform: { [platform]: null },
       spotlightByPlatform: { [platform]: null },

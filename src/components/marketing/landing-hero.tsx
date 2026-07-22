@@ -74,14 +74,14 @@ export function LandingHero() {
           <LandingAnimate onMount delay={120}>
             <h1 className="font-tv-serif text-4xl font-bold leading-tight text-tv-on-surface sm:text-5xl md:text-tv-display-lg">
               Cast the right creator.{" "}
-              <span className="font-normal italic text-tv-primary">Not the loudest one.</span>
+              <span className="font-normal italic text-tv-primary">Empower every brand.</span>
             </h1>
           </LandingAnimate>
 
           <LandingAnimate onMount delay={230}>
             <p className="max-w-xl font-tv-body text-tv-body-lg text-tv-on-surface-variant">
-              Search creators by niche, reach, and audience — or paste a profile
-              link and get their real numbers back in seconds.
+              The definitive directory for the creator economy — connecting
+              world-class talent with the brands and agencies that need them.
             </p>
           </LandingAnimate>
 

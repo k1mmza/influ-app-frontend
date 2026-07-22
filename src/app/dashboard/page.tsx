@@ -11,14 +11,16 @@ import {
   apiGetInvitations,
   apiAcceptInvitation,
   apiDeclineInvitation,
+  apiSyncMyPlatforms,
+  apiTriggerAdminSync,
   Invitation,
+  SyncResult,
 } from "@/lib/api";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Wallet,
   Rocket,
   FileText,
   MessageSquare,
@@ -27,9 +29,63 @@ import {
   Loader2,
   Inbox,
   Check,
-  X
+  X,
+  RefreshCw
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+/**
+ * On-demand "Sync now" trigger, shared by the influencer and admin dashboards.
+ * The parent supplies the actual call (self-sync vs. platform-wide) as `sync`,
+ * so this component never needs to know which endpoint it's hitting. Shows a
+ * spinner while running and a one-line result ("Synced 2 of 3 accounts").
+ */
+function ManualSyncButton({
+  sync,
+  idleLabel = "Sync now",
+}: {
+  sync: () => Promise<SyncResult>;
+  idleLabel?: string;
+}) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const run = async () => {
+    setLoading(true);
+    setResult(null);
+    try {
+      const r = await sync();
+      setResult(
+        r.total === 0
+          ? "No connected accounts to sync"
+          : `Synced ${r.synced} of ${r.total} account${r.total === 1 ? "" : "s"}`,
+      );
+    } catch (err: any) {
+      setResult(err?.message ?? "Sync failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-3">
+      <Button
+        onClick={run}
+        disabled={loading}
+        variant="outline"
+        className="rounded-xl bg-background"
+      >
+        {loading ? (
+          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+        ) : (
+          <RefreshCw className="mr-2 h-4 w-4" />
+        )}
+        {idleLabel}
+      </Button>
+      {result && <span className="text-sm text-muted-foreground">{result}</span>}
+    </div>
+  );
+}
 
 function InfluencerInvitations() {
   const { token } = useUserStore();
@@ -162,8 +218,8 @@ function InfluencerInvitations() {
 }
 
 function InfluencerDashboard({ data }: { data: any }) {
+  const { token } = useUserStore();
   const stats = {
-    walletBalance: data?.stats?.walletBalance ?? 0,
     activeCampaigns: data?.stats?.activeCampaigns ?? 0,
     pendingApplications: data?.stats?.pendingApplications ?? 0,
     unreadMessages: data?.stats?.unreadMessages ?? 0,
@@ -185,9 +241,8 @@ function InfluencerDashboard({ data }: { data: any }) {
         <p className="mt-1 text-white/70 font-medium">Quick overview of your active campaigns, messages, and earnings.</p>
       </div>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {[
-          { label: "Wallet Balance", value: `THB ${stats.walletBalance.toLocaleString()}`, icon: Wallet, color: "text-emerald-600" },
           { label: "Active Campaigns", value: stats.activeCampaigns.toString(), icon: Rocket, color: "text-blue-600" },
           { label: "Pending Apps", value: stats.pendingApplications.toString(), icon: FileText, color: "text-amber-600" },
           { label: "Unread Messages", value: stats.unreadMessages.toString(), icon: MessageSquare, color: "text-primary" }
@@ -204,13 +259,16 @@ function InfluencerDashboard({ data }: { data: any }) {
         ))}
       </div>
 
-      <div className="flex flex-wrap gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button asChild className="rounded-xl shadow-lg shadow-primary/20">
           <Link href="/campaigns">Find Campaigns</Link>
         </Button>
         <Button asChild variant="outline" className="rounded-xl bg-background">
           <Link href="/messages">View Messages</Link>
         </Button>
+        {token && (
+          <ManualSyncButton sync={() => apiSyncMyPlatforms(token)} idleLabel="Sync my stats" />
+        )}
       </div>
 
       <InfluencerInvitations />
@@ -338,9 +396,14 @@ function AdminDashboard() {
 
   return (
     <div className="space-y-6">
-      <div>
-        <h1 className="font-serif text-2xl font-bold text-foreground">Platform overview</h1>
-        <p className="mt-1 text-sm text-muted-foreground">Read-only view across all brands and agencies</p>
+      <div className="flex flex-wrap items-start justify-between gap-4">
+        <div>
+          <h1 className="font-serif text-2xl font-bold text-foreground">Platform overview</h1>
+          <p className="mt-1 text-sm text-muted-foreground">Read-only view across all brands and agencies</p>
+        </div>
+        {token && (
+          <ManualSyncButton sync={() => apiTriggerAdminSync(token)} idleLabel="Sync all creators" />
+        )}
       </div>
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
         {tiles.map(({ label, value, icon: Icon }) => (

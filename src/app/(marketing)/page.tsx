@@ -32,10 +32,10 @@ export default function HomePage() {
         <LandingAnimate>
           <div className="mx-auto max-w-3xl text-center">
             <h2 className="font-tv-serif text-3xl font-bold leading-tight tracking-tight text-tv-on-surface sm:text-tv-headline-lg md:text-tv-display-lg">
-              Your next creator is already in here.
+              Your next partnership starts here.
             </h2>
             <p className="mx-auto mt-5 max-w-md font-tv-body text-tv-body-lg text-tv-on-surface-variant">
-              Free to search. No sales call to see the roster.
+              Free to join. No sales call required to enter the marketplace.
             </p>
             <div className="mt-10 flex flex-col items-center justify-center gap-3 sm:flex-row">
               <Link

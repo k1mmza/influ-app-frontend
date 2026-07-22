@@ -581,6 +581,31 @@ export async function apiGetAdminDashboard(token: string): Promise<any> {
   return res.json();
 }
 
+export interface SyncResult {
+  synced: number;
+  total: number;
+}
+
+/** Manually sync the current user's own connected platform accounts on demand. */
+export async function apiSyncMyPlatforms(token: string): Promise<SyncResult> {
+  const res = await authFetch(`${API_URL}/auth/platform/sync`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Sync failed"));
+  return res.json();
+}
+
+/** ADMIN only — trigger a platform-wide sync of every connected account. 403s for other roles. */
+export async function apiTriggerAdminSync(token: string): Promise<SyncResult> {
+  const res = await authFetch(`${API_URL}/admin/sync`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Sync failed"));
+  return res.json();
+}
+
 export interface PaginatedResponse<T> {
   data: T[];
   total: number;

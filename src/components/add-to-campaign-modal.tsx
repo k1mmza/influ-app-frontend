@@ -6,6 +6,7 @@ import {
   CheckCheck,
   ChevronLeft,
   ChevronRight,
+  ExternalLink,
   Loader2,
   X as XIcon,
 } from "lucide-react";
@@ -73,6 +74,15 @@ export function AddToCampaignModal({
   if (!influencer) return null;
 
   const isUrlDerived = influencer.id.startsWith("url-derived-");
+
+  // Primary contact link for an unregistered creator: their first available
+  // public profile URL, following the platform order (YouTube → TikTok → …).
+  // It's the only way to reach someone who has no account to invite.
+  const primaryContactUrl =
+    influencer.profileUrlByPlatform &&
+    influencer.platforms
+      .map((p) => influencer.profileUrlByPlatform?.[p])
+      .find((url): url is string => !!url);
 
   return (
     <div
@@ -151,9 +161,26 @@ export function AddToCampaignModal({
             </>
           )}
           {isUrlDerived && (
-            <div className="flex items-center gap-2 text-xs font-medium text-amber-600 pt-1">
-              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
-              This creator isn&apos;t registered on Inflique yet, so they can&apos;t be invited.
+            <div className="flex items-start gap-2 text-xs font-medium text-amber-600 pt-1">
+              <AlertCircle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <span>
+                This creator isn&apos;t registered on Inflique yet, so they can&apos;t be invited.
+                {primaryContactUrl && (
+                  <>
+                    {" "}
+                    <a
+                      href={primaryContactUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="inline-flex items-center gap-0.5 font-semibold text-amber-700 underline underline-offset-2 hover:text-amber-800 dark:text-amber-500 dark:hover:text-amber-400"
+                    >
+                      Reach out on their profile
+                      <ExternalLink className="h-3 w-3 shrink-0" />
+                    </a>
+                    .
+                  </>
+                )}
+              </span>
             </div>
           )}
           {addConfirmed && (
