@@ -30,6 +30,7 @@ import {
   Calendar,
   Target,
   Loader2,
+  DollarSign,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -526,60 +527,65 @@ function InfluencerDiscoverCampaignsView() {
 
   return (
     <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-[#b45309] to-[#78350f] text-white">
-        <CardContent className="p-8">
-          <h1 className="text-3xl font-extrabold tracking-tight font-serif">Discover Campaigns</h1>
-          <p className="mt-2 text-white/80 font-medium">
-            Find the best-fit collaborations with clear budget visibility.
-          </p>
-          <div className="pt-4">
-            <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
-              {total} active opportunities
-            </Badge>
+      <header className="relative overflow-hidden rounded-2xl bg-[#6e5713] px-6 py-9 text-white shadow-sm sm:px-8">
+        <div className="pointer-events-none absolute -right-6 top-1/2 -translate-y-1/2 select-none opacity-[0.08]">
+          <Rocket className="h-40 w-40" />
+        </div>
+        <div className="relative z-10">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Creator workspace</p>
+          <h1 className="mt-2 font-serif text-3xl font-bold">Discover Campaigns</h1>
+          <p className="mt-1 text-sm text-white/70">Find the best-fit collaborations with clear budget visibility.</p>
+          <div className="mt-4 inline-flex items-center rounded-full bg-white/15 px-3 py-1 text-xs font-semibold backdrop-blur-sm">
+            {total} active opportunities
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </header>
 
-      <Card className="border-none shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Opportunities Filter
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-2 text-xs font-bold text-primary">
-              <RotateCcw className="mr-1.5 h-3 w-3" />
-              Reset
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Campaign or brand..."
-                  className="pl-9 rounded-xl"
-                />
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Goal</Label>
-              <select
-                value={goal}
-                onChange={(e) => setGoal(e.target.value)}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm"
-              >
-                {goalOptions.map((item) => <option key={item} value={item}>{item}</option>)}
-              </select>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
+      {/* Journal-style filter bar (Stitch): goal tabs + inline search */}
+      <div className="flex flex-wrap items-center gap-x-6 gap-y-4 border-b border-border pb-6">
+        {goalOptions.map((g) => {
+          const active = goal === g;
+          const label = g === "All" ? "All Opportunities" : g;
+          return active ? (
+            <button
+              key={g}
+              onClick={() => setGoal(g)}
+              className="flex items-center gap-2 rounded-full border border-[#8a6d15] bg-[#8a6d15]/10 px-4 py-1.5 dark:border-[#d8b85a]"
+            >
+              <span className="text-[11px] font-semibold uppercase tracking-widest text-[#8a6d15] dark:text-[#d8b85a]">{label}</span>
+              {g === "All" && (
+                <span className="rounded-full bg-[#8a6d15] px-1.5 text-[10px] font-bold text-white dark:bg-[#d8b85a] dark:text-[#1c1c19]">{total}</span>
+              )}
+            </button>
+          ) : (
+            <button
+              key={g}
+              onClick={() => setGoal(g)}
+              className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+            >
+              {label}
+            </button>
+          );
+        })}
+        <div className="relative ml-auto">
+          <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search campaigns..."
+            className="w-56 rounded-full border-border bg-card pl-9 text-sm italic"
+          />
+          {(search || goal !== "All") && (
+            <button
+              onClick={resetFilters}
+              title="Reset filters"
+              className="absolute right-2 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-primary"
+            >
+              <RotateCcw className="h-3.5 w-3.5" />
+            </button>
+          )}
+        </div>
+      </div>
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -599,41 +605,50 @@ function InfluencerDiscoverCampaignsView() {
           return (
             <article
               key={c.id}
-              className="overflow-hidden rounded-2xl border border-border bg-card p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+              className="group relative flex flex-col border border-border bg-card p-4 shadow-sm transition-transform duration-300 hover:-translate-y-1.5"
             >
-              <div className="flex items-start justify-between gap-2">
-                <div className="min-w-0">
-                  <h3 className="truncate font-bold text-foreground leading-tight font-serif">{c.name}</h3>
-                  <p className="mt-1 text-sm font-semibold text-primary">{c.brand}</p>
+              {/* Postcard cover — no image source in API, so a bronze journal
+                  cover carrying the brand name; platform badge like a stamp. */}
+              <div className="relative mb-4 h-48 overflow-hidden border border-border">
+                <div className="absolute inset-0 bg-gradient-to-br from-[#8a6d15] to-[#5c4a10]" />
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                  <span className="line-clamp-3 text-center font-serif text-2xl italic leading-tight text-white/90">{c.brand}</span>
                 </div>
-                <span className="shrink-0 rounded-full bg-muted px-2.5 py-1 text-xs font-semibold text-muted-foreground">
+                <div className="absolute right-2 top-2 bg-[#3b0800]/70 px-3 py-1 text-[10px] font-semibold uppercase tracking-widest text-white shadow-md backdrop-blur-sm">
                   {c.platform}
-                </span>
+                </div>
               </div>
 
-              <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-                <li>Budget: {budgetLabel(c.budget)}</li>
-                <li>Content: {c.contentType}</li>
-                <li className="flex items-center gap-1.5">
-                  <Target className="h-3.5 w-3.5" /> Goal: {c.objective}
-                </li>
-                <li className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
-                </li>
-              </ul>
+              <div className="flex flex-grow flex-col">
+                <h3 className="mb-1 line-clamp-1 font-serif text-lg font-semibold text-foreground">{c.name}</h3>
+                <p className="mb-3 text-sm font-semibold text-primary">{c.brand}</p>
 
-              <div className="mt-4 flex gap-2">
-                <Button
-                  className="flex-1 rounded-xl font-bold text-xs h-10 shadow-sm"
-                  disabled={applyingId != null}
-                  onClick={() => applyToCampaign(c.id)}
-                >
-                  {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
-                  Apply Now
-                </Button>
-                <Button variant="outline" asChild className="flex-1 rounded-xl font-bold text-xs h-10">
-                  <Link href={`/campaigns/${c.id}`}>Details</Link>
-                </Button>
+                <div className="mb-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-muted-foreground">
+                  <span className="flex items-center gap-1.5 text-sm">
+                    <Calendar className="h-4 w-4" /> <span className="italic">{c.deadline}</span>
+                  </span>
+                  <span className="flex items-center gap-1.5 text-sm font-semibold text-foreground">
+                    <DollarSign className="h-4 w-4" /> {budgetLabel(c.budget)}
+                  </span>
+                </div>
+
+                <div className="mb-4 flex items-center gap-1.5 text-sm text-muted-foreground">
+                  <Target className="h-3.5 w-3.5 shrink-0" /> <span className="line-clamp-1">Goal: {c.objective}</span>
+                </div>
+
+                <div className="mt-auto flex gap-2 border-t border-border pt-4">
+                  <Button
+                    className="h-10 flex-1 rounded-xl text-xs font-bold shadow-sm"
+                    disabled={applyingId != null}
+                    onClick={() => applyToCampaign(c.id)}
+                  >
+                    {applyingId === c.id ? <Loader2 className="mr-2 h-3.5 w-3.5 animate-spin" /> : null}
+                    Apply Now
+                  </Button>
+                  <Button variant="outline" asChild className="h-10 flex-1 rounded-xl text-xs font-bold">
+                    <Link href={`/campaigns/${c.id}`}>Details</Link>
+                  </Button>
+                </div>
               </div>
             </article>
           );

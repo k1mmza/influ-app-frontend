@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, Edit, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, DollarSign, Edit, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -692,6 +692,7 @@ export default function CampaignDetailPage() {
     <section className="space-y-6">
       <Card className="border-none shadow-sm">
         <CardContent className="p-6">
+          {/* Cover banner — shown in view mode when set; uploader in edit mode. */}
           {(campaign.coverImageUrl || (isEditing && canManageCampaign)) && (
             <div className="relative mb-5 h-40 w-full overflow-hidden rounded-2xl bg-muted sm:h-56">
               {campaign.coverImageUrl ? (
@@ -764,11 +765,14 @@ export default function CampaignDetailPage() {
                 </div>
               </div>
             ) : (
-              <div>
-                <h1 className="text-2xl font-bold text-foreground font-serif">
-                  {canManageCampaign ? "Campaign management" : campaign.name}
-                </h1>
-                {canManageCampaign ? <p className="mt-1 text-sm text-muted-foreground">{campaign.name}</p> : null}
+              <div className="min-w-0">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+                  {campaign.clientBrand?.brandName ?? "Campaign"}
+                </p>
+                <h1 className="mt-1 font-serif text-3xl font-bold text-foreground">{campaign.name}</h1>
+                {campaign.objective ? (
+                  <p className="mt-1.5 max-w-xl font-serif text-lg italic text-muted-foreground">{campaign.objective}</p>
+                ) : null}
               </div>
             )}
             <div className="flex flex-wrap gap-2">
@@ -828,16 +832,8 @@ export default function CampaignDetailPage() {
                 </div>
               </>
             ) : (
-              <>
-                <div><p className="font-semibold text-foreground">Objective</p><p className="mt-1">{campaign.objective ?? "TBD"}</p></div>
-                <div><p className="font-semibold text-foreground">Budget</p><p className="mt-1">{formatMoney(campaign.budget)}</p></div>
-                <div><p className="font-semibold text-foreground">Payment</p><p className="mt-1">{campaign.paymentType ?? "TBD"}</p></div>
-              </>
+              <div><p className="font-semibold text-foreground">Payment</p><p className="mt-1">{campaign.paymentType ?? "TBD"}</p></div>
             )}
-            <div>
-              <p className="font-semibold text-foreground">Apply deadline</p>
-              <p className="mt-1">{formatDate(campaign.applyDeadline)}</p>
-            </div>
             <div>
               <p className="font-semibold text-foreground">Applications</p>
               <p className="mt-1">{applications.length || campaign.applications?.length || 0}</p>
@@ -913,60 +909,14 @@ export default function CampaignDetailPage() {
         </CardContent>
       </Card>
 
-      {(campaign.briefImageUrl || (isEditing && canManageCampaign)) ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Product image</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="relative w-full overflow-hidden rounded-xl border border-border bg-muted">
-              {campaign.briefImageUrl ? (
-                <img
-                  src={campaign.briefImageUrl ?? ""}
-                  alt={`${campaign.name} product`}
-                  className="max-h-80 w-full object-contain"
-                />
-              ) : (
-                <div className="flex h-40 w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                  <ImageIcon className="h-8 w-8" />
-                  <span className="text-sm font-medium">No product image yet</span>
-                </div>
-              )}
-              {isEditing && canManageCampaign && (
-                <>
-                  <input
-                    ref={briefImageInputRef}
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,image/gif"
-                    className="hidden"
-                    onChange={(e) => handleBriefImageUpload(e.target.files?.[0])}
-                  />
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="secondary"
-                    disabled={uploadingBriefImage}
-                    onClick={() => briefImageInputRef.current?.click()}
-                    className="absolute bottom-3 right-3 rounded-xl font-bold shadow-md"
-                  >
-                    {uploadingBriefImage ? (
-                      <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
-                    ) : (
-                      <ImageIcon className="mr-1.5 h-4 w-4" />
-                    )}
-                    {campaign.briefImageUrl ? "Change product image" : "Upload product image"}
-                  </Button>
-                </>
-              )}
-            </div>
-          </CardContent>
-        </Card>
-      ) : null}
+      {/* Two-column body: main content (left) + investment right rail (Stitch) */}
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+        <div className="min-w-0 space-y-6">
 
       <div className="grid gap-4 md:grid-cols-2">
         <Card className="border-none shadow-sm">
           <CardHeader>
-            <CardTitle className="text-lg">Campaign brief</CardTitle>
+            <CardTitle className="text-lg">Brief &amp; Creative Direction</CardTitle>
           </CardHeader>
           <CardContent className="space-y-4 text-sm text-muted-foreground">
             {isEditing && editFormData ? (
@@ -1591,6 +1541,83 @@ export default function CampaignDetailPage() {
           </Card>
         </div>
       ) : null}
+        </div>
+
+        {/* Right rail — Investment & Schedule (terracotta) */}
+        <aside className="space-y-6 lg:sticky lg:top-6">
+          <Card className="border-none bg-primary text-primary-foreground shadow-sm">
+            <CardContent className="space-y-5 p-6">
+              <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-primary-foreground/70">
+                <DollarSign className="h-4 w-4" /> Investment &amp; Schedule
+              </div>
+              <div>
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-primary-foreground/60">Total budget</p>
+                <p className="mt-1 font-serif text-3xl font-bold">{formatMoney(campaign.budget)}</p>
+                {campaign.paymentType ? (
+                  <p className="mt-1 text-sm text-primary-foreground/70">{campaign.paymentType}</p>
+                ) : null}
+              </div>
+              <div className="border-t border-primary-foreground/20 pt-4">
+                <p className="text-[11px] font-semibold uppercase tracking-widest text-primary-foreground/60">Timeline</p>
+                <p className="mt-1.5 flex items-center gap-2 text-sm font-semibold">
+                  <Calendar className="h-4 w-4 shrink-0" /> Apply by {formatDate(campaign.applyDeadline)}
+                </p>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Latest Assets (Stitch) — the campaign product image */}
+          {(campaign.briefImageUrl || (isEditing && canManageCampaign)) ? (
+            <Card className="border-none shadow-sm">
+              <CardContent className="p-5">
+                <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                  <ImageIcon className="h-4 w-4" /> Latest Assets
+                </div>
+                <div className="relative w-full overflow-hidden rounded-xl border border-border bg-muted">
+                  {campaign.briefImageUrl ? (
+                    <img
+                      src={campaign.briefImageUrl ?? ""}
+                      alt={`${campaign.name} product`}
+                      className="max-h-56 w-full object-cover"
+                    />
+                  ) : (
+                    <div className="flex h-32 w-full flex-col items-center justify-center gap-2 text-muted-foreground">
+                      <ImageIcon className="h-7 w-7" />
+                      <span className="text-xs font-medium">No product image yet</span>
+                    </div>
+                  )}
+                </div>
+                {isEditing && canManageCampaign && (
+                  <>
+                    <input
+                      ref={briefImageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => handleBriefImageUpload(e.target.files?.[0])}
+                    />
+                    <Button
+                      type="button"
+                      size="sm"
+                      variant="secondary"
+                      disabled={uploadingBriefImage}
+                      onClick={() => briefImageInputRef.current?.click()}
+                      className="mt-3 w-full rounded-xl font-bold"
+                    >
+                      {uploadingBriefImage ? (
+                        <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
+                      ) : (
+                        <ImageIcon className="mr-1.5 h-4 w-4" />
+                      )}
+                      {campaign.briefImageUrl ? "Change product image" : "Upload product image"}
+                    </Button>
+                  </>
+                )}
+              </CardContent>
+            </Card>
+          ) : null}
+        </aside>
+      </div>
     </section>
   );
 }

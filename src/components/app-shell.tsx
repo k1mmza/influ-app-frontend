@@ -7,7 +7,7 @@ import { Navigation } from "@/components/navigation";
 import { NavFooter } from "@/components/nav-footer";
 import { SiteFooter } from "@/components/site-footer";
 import { SidebarProvider, useSidebar } from "@/components/sidebar-context";
-import { getPageBgClass, SIDEBAR_SURFACE_CLASS } from "@/lib/nav-theme";
+// nav-theme's per-section tints are retired under the travelogue shell.
 import { cn } from "@/lib/utils";
 import { useUserStore } from "@/store/useUserStore";
 import { useShortlistStore } from "@/store/useShortlistStore";
@@ -19,17 +19,16 @@ import { useShortlistStore } from "@/store/useShortlistStore";
  * supplies the sidebar chrome + per-route page-bg tint. Pages opt into the
  * header-extracting layout themselves, later.
  */
-function AppSidebarLayout({ children, pageBg }: { children: React.ReactNode; pageBg: string }) {
+function AppSidebarLayout({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
 
   return (
-    <main className={cn("flex min-h-svh w-full flex-col transition-colors duration-300", pageBg)}>
+    <main className="app-tv flex min-h-svh w-full flex-col bg-background text-foreground transition-colors duration-300">
       <div className="flex min-h-0 w-full flex-1 flex-col lg:min-h-svh lg:flex-row">
         <aside
           className={cn(
-            "flex w-full shrink-0 flex-col border-b border-border transition-[width] duration-300 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:border-b-0 lg:border-r",
-            SIDEBAR_SURFACE_CLASS,
-            collapsed ? "lg:w-16" : "lg:w-[calc(260px-1cm)]"
+            "flex w-full shrink-0 flex-col border-b border-border bg-card transition-[width] duration-300 lg:sticky lg:top-0 lg:z-30 lg:h-screen lg:border-b-0 lg:border-r",
+            collapsed ? "lg:w-16" : "lg:w-[260px]"
           )}
         >
           <Navigation />
@@ -63,7 +62,6 @@ export function AppShell({ children }: { children: React.ReactNode }) {
   const isPublicReport =
     pathname.startsWith("/tracking/public/") ||
     pathname.startsWith("/campaigns/public/");
-  const pageBg = getPageBgClass(pathname);
   const { isLoggedIn, token, role } = useUserStore();
   const { error, clearError, syncFromServer } = useShortlistStore();
 
@@ -136,10 +134,12 @@ export function AppShell({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // A7: default authed layout — replaced by the design's collapsible sidebar.
+  // A7: default authed layout — travelogue collapsible sidebar. The `app-tv`
+  // class on the layout root remaps the shadcn tokens to the warm palette for
+  // every authed page (see globals.css).
   return (
     <SidebarProvider>
-      <AppSidebarLayout pageBg={pageBg}>{children}</AppSidebarLayout>
+      <AppSidebarLayout>{children}</AppSidebarLayout>
       <ShortlistErrorToast error={error} onDismiss={clearError} />
     </SidebarProvider>
   );

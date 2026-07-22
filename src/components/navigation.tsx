@@ -16,7 +16,6 @@ import {
   type LucideIcon,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { getNavIconActiveClass, getNavIndicatorClass, getNavLinkClass } from "@/lib/nav-theme";
 import { getSidebarMenuHeading, getSidebarWorkspaceLabel } from "@/lib/role-labels";
 import { useSidebarOptional } from "@/components/sidebar-context";
 import { useUserStore } from "@/store/useUserStore";
@@ -205,10 +204,12 @@ export function Navigation() {
         >
           {!collapsed ? (
             <div className="min-w-0">
-              <p className="truncate text-base font-bold tracking-tight text-foreground font-serif">Inflique</p>
-              <p className="text-xs font-medium text-muted-foreground">{getSidebarWorkspaceLabel(role)}</p>
+              <p className="truncate font-serif text-xl italic tracking-tight text-primary">Inflique</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">{getSidebarWorkspaceLabel(role)}</p>
             </div>
-          ) : null}
+          ) : (
+            <span className="flex h-9 w-9 items-center justify-center rounded-full bg-primary font-serif text-lg italic text-primary-foreground">I</span>
+          )}
         </Link>
 
         {/* Mobile-only menu toggle. Hidden at lg where the full sidebar is shown. */}
@@ -245,25 +246,22 @@ export function Navigation() {
               href={link.href}
               title={collapsed ? link.label : undefined}
               aria-label={link.label}
+              data-section={link.href}
               className={cn(
-                "group relative flex items-center rounded-xl text-sm font-medium transition-all duration-200",
-                collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-3 py-2.5",
-                getNavLinkClass(link.href, active),
-                active && "shadow-sm"
+                "group relative flex items-center rounded-lg text-[13px] font-semibold uppercase tracking-[0.08em] transition-all duration-200",
+                collapsed ? "justify-center px-2 py-2.5" : "gap-3 px-4 py-2.5",
+                active
+                  ? "nav-section-active"
+                  : "text-muted-foreground hover:bg-muted hover:text-primary"
               )}
             >
               {active && !collapsed ? (
-                <span
-                  className={cn(
-                    "absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full",
-                    getNavIndicatorClass(link.href)
-                  )}
-                />
+                <span className="absolute left-0 top-1/2 h-6 w-1 -translate-y-1/2 rounded-r-full bg-current" />
               ) : null}
               <Icon
                 className={cn(
                   "h-[18px] w-[18px] shrink-0 transition-colors",
-                  active ? getNavIconActiveClass(link.href) : "text-muted-foreground group-hover:text-foreground"
+                  active ? "" : "text-muted-foreground group-hover:text-primary"
                 )}
                 strokeWidth={active ? 2.25 : 2}
               />

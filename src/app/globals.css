@@ -169,6 +169,88 @@
   --role-influencer: #dc2626; /* red-600     */
 }
 
+/* ── Authenticated "Travelogue" theme remap ────────────────────────────────
+   Applied via the `app-tv` class on the authed <main> (AppShell A7 branch).
+   Re-points the shadcn semantic tokens to the travelogue palette ("The
+   Traveler's Ledger": terracotta / olive / gold on porcelain) so EVERY authed
+   page inherits the warm look through the utility classes it already uses
+   (bg-card, bg-primary, text-muted-foreground, …) — no per-page rewrite needed.
+   Scoped to `.app-tv`, so marketing / login / register / public share pages
+   (which live outside this class) keep the original blue/violet system.
+   Values are the HSL forms of the --tv-* RGB tokens defined further down.
+   Body copy switches to Fira Sans (--font-tv-body); headings keep Playfair
+   via the existing font-serif utility. */
+.app-tv {
+  --background: 37 57% 97%;
+  --foreground: 60 6% 10%;
+  --card: 0 0% 100%;
+  --card-foreground: 60 6% 10%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 60 6% 10%;
+  --primary: 13 61% 38%;
+  --primary-foreground: 0 0% 100%;
+  --secondary: 90 16% 33%;
+  --secondary-foreground: 0 0% 100%;
+  --muted: 38 21% 93%;
+  --muted-foreground: 12 17% 29%;
+  --accent: 38 17% 91%;
+  --accent-foreground: 60 6% 10%;
+  --border: 12 35% 80%;
+  --input: 12 35% 80%;
+  --ring: 13 61% 38%;
+  --destructive: 0 75% 42%;
+  --destructive-foreground: 0 0% 100%;
+  font-family: var(--font-tv-body), ui-sans-serif, system-ui, sans-serif;
+}
+
+.dark .app-tv {
+  --background: 0 0% 7%;
+  --foreground: 15 7% 89%;
+  --card: 0 0% 5%;
+  --card-foreground: 15 7% 89%;
+  --popover: 0 0% 5%;
+  --popover-foreground: 15 7% 89%;
+  --primary: 13 100% 82%;
+  --primary-foreground: 13 100% 19%;
+  --secondary: 60 1% 21%;
+  --secondary-foreground: 15 7% 89%;
+  --muted: 0 2% 12%;
+  --muted-foreground: 15 17% 73%;
+  --accent: 0 0% 16%;
+  --accent-foreground: 15 7% 89%;
+  --border: 60 1% 21%;
+  --input: 60 1% 21%;
+  --ring: 13 100% 82%;
+  --destructive: 6 100% 84%;
+  --destructive-foreground: 357 100% 21%;
+}
+
+/* Readable mode also relaxes the travelogue body face to a plain stack. */
+html.readable .app-tv {
+  font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+}
+
+/* ── Per-section nav accents ("Warm editorial") ────────────────────────────
+   The active sidebar item tints by the current route: pill background =
+   --nav-tint, and label / icon / indicator inherit --nav-ink via currentColor.
+   Dark mode uses lightened inks so warm mid-tones stay legible on near-black.
+   Driven by `.nav-section-active[data-section="…"]` set in navigation.tsx. */
+.nav-section-active { background-color: var(--nav-tint); color: var(--nav-ink); }
+.nav-section-active[data-section="/dashboard"]  { --nav-ink: #9B3F25; --nav-tint: #9B3F2524; }
+.nav-section-active[data-section="/campaigns"]  { --nav-ink: #8A6D15; --nav-tint: #8A6D1524; }
+.nav-section-active[data-section="/discover"]   { --nav-ink: #B5603A; --nav-tint: #B5603A24; }
+.nav-section-active[data-section="/shortlist"]  { --nav-ink: #A24759; --nav-tint: #A2475924; }
+.nav-section-active[data-section="/smart-plan"] { --nav-ink: #C2410C; --nav-tint: #C2410C24; }
+.nav-section-active[data-section="/messages"]   { --nav-ink: #556347; --nav-tint: #55634724; }
+.nav-section-active[data-section="/tracking"]   { --nav-ink: #3F5D3A; --nav-tint: #3F5D3A24; }
+.dark .nav-section-active[data-section="/dashboard"]  { --nav-ink: #E08A6B; --nav-tint: #E08A6B2e; }
+.dark .nav-section-active[data-section="/campaigns"]  { --nav-ink: #D8B85A; --nav-tint: #D8B85A2e; }
+.dark .nav-section-active[data-section="/discover"]   { --nav-ink: #E7A07E; --nav-tint: #E7A07E2e; }
+.dark .nav-section-active[data-section="/shortlist"]  { --nav-ink: #E08497; --nav-tint: #E084972e; }
+.dark .nav-section-active[data-section="/smart-plan"] { --nav-ink: #F09055; --nav-tint: #F090552e; }
+.dark .nav-section-active[data-section="/messages"]   { --nav-ink: #A9BE93; --nav-tint: #A9BE932e; }
+.dark .nav-section-active[data-section="/tracking"]   { --nav-ink: #8FB183; --nav-tint: #8FB1832e; }
+
 /* ── Readable mode ───────────────────────────────────────────────── */
 /* Independent of light/dark. Remaps the decorative font-family vars to a
    plain system stack and scales the root font-size so all rem-based

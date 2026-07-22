@@ -236,7 +236,7 @@ function MessagesView({ role }: { role: string }) {
   if (loadingConv) {
     return (
       <section className="space-y-6">
-        <div className="rounded-2xl bg-gradient-to-r from-[#0f766e] to-[#134e4a] p-6 text-white shadow-sm">
+        <div className="rounded-2xl bg-[#4a5639] p-6 text-white shadow-sm">
           <h1 className="text-2xl font-bold font-serif">Messages</h1>
           <p className="mt-1 text-sm text-white/70">Manage active conversations, files, and campaign workflow in one place.</p>
         </div>
@@ -259,7 +259,7 @@ function MessagesView({ role }: { role: string }) {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-gradient-to-r from-[#0f766e] to-[#134e4a] p-6 text-white shadow-sm">
+      <div className="rounded-2xl bg-[#4a5639] p-6 text-white shadow-sm">
         <h1 className="text-2xl font-bold font-serif">Messages</h1>
         <p className="mt-1 text-sm text-white/70">Manage active conversations, files, and campaign workflow in one place.</p>
       </div>
@@ -286,7 +286,7 @@ function MessagesView({ role }: { role: string }) {
                 onClick={() => selectConversation(conv.id)}
                 className={`rounded-xl border p-3 shadow-sm cursor-pointer transition-all ${
                   activeConvId === conv.id
-                    ? "border-nav-teal-900 bg-nav-teal-100 dark:border-nav-teal-800 dark:bg-nav-teal-900/30"
+                    ? "border-primary bg-accent"
                     : "border-border bg-card hover:bg-muted/50"
                 }`}
               >
@@ -399,7 +399,7 @@ function MessagesView({ role }: { role: string }) {
                           <div
                             className={`max-w-[80%] rounded-2xl px-3.5 py-2 text-sm shadow-sm ${
                               isMe
-                                ? "rounded-tr-md bg-nav-teal-900 text-white"
+                                ? "rounded-tr-md bg-primary text-primary-foreground"
                                 : "rounded-tl-md bg-card text-foreground border border-border"
                             }`}
                           >
@@ -424,11 +424,11 @@ function MessagesView({ role }: { role: string }) {
                   value={newMessage}
                   onChange={(e) => setNewMessage(e.target.value)}
                   placeholder="Type your message..."
-                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-nav-teal-900"
+                  className="w-full rounded-xl border border-border bg-background px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-primary"
                 />
                 <button
                   disabled={!newMessage.trim()}
-                  className="rounded-xl bg-nav-teal-900 px-4 py-2 text-sm font-semibold text-white disabled:opacity-50 hover:bg-nav-teal-800 transition-all flex items-center gap-2 cursor-pointer"
+                  className="rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-primary-foreground disabled:opacity-50 hover:opacity-90 transition-all flex items-center gap-2 cursor-pointer"
                 >
                   <Send className="h-4 w-4" />
                   <span className="hidden sm:inline">Send</span>

@@ -535,41 +535,70 @@ Engagement rate:
 
   const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
 
+  // Compact number formatter for the journal-style stat cards (1.2M, 24.5K).
+  const fmtCompact = (n: number) => {
+    if (!n || n <= 0) return "—";
+    if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1).replace(/\.0$/, "")}M`;
+    if (n >= 1_000) return `${(n / 1_000).toFixed(1).replace(/\.0$/, "")}K`;
+    return String(n);
+  };
+
   return (
-    <section className="space-y-6">
-      {/* Brown gradient header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#92400e] to-[#431407] px-6 py-8 text-white shadow-lg">
-        <div className="pointer-events-none absolute inset-0 flex items-center justify-end pr-8 opacity-10 select-none">
-          <span className="text-[120px] font-black font-serif leading-none">Profile</span>
-        </div>
-        <div className="relative flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-          <div>
-            <span className="inline-block rounded-full bg-white/20 px-3 py-0.5 text-[11px] font-bold uppercase tracking-widest">
-              Influencer
-            </span>
-            <h1 className="mt-2 text-2xl font-bold font-serif">Media Kit</h1>
-            <p className="mt-1 text-sm text-white/70">
-              Edit the fields brands see in discovery. Name, bio, categories and availability sync to the backend.
-            </p>
+    <section className="space-y-10">
+      {/* Editorial hero — postcard profile + journal stats (travelogue) */}
+      <div className="grid grid-cols-12 items-start gap-6">
+        {/* Postcard */}
+        <div className="relative col-span-12 rounded-xl border border-border bg-card p-8 shadow-sm transition-transform duration-500 lg:col-span-7 lg:-rotate-[0.4deg] lg:hover:rotate-0">
+          <div className="flex flex-col items-center gap-8 md:flex-row md:items-start">
+            <AvatarTrigger
+              src={displayInfluencerAvatar}
+              alt={`${kit.displayName} profile`}
+              imgClassName="h-36 w-36 shrink-0 border-4 border-muted object-cover"
+              onClick={() => setShowAvatarPicker(true)}
+            />
+            <div className="flex-1 space-y-3 text-center md:text-left">
+              <div className="flex flex-wrap items-center justify-center gap-3 md:justify-start">
+                <h1 className="font-serif text-4xl font-bold text-foreground">{kit.displayName || "Your name"}</h1>
+                <span className="rounded bg-primary px-4 py-1 text-[11px] font-semibold uppercase tracking-widest text-primary-foreground">Creator</span>
+              </div>
+              <p className="font-serif text-lg italic text-muted-foreground">{kit.handle || "@handle"}</p>
+              <p className="mx-auto max-w-md text-sm leading-relaxed text-foreground md:mx-0">
+                {kit.bio || "Add a short bio so brands understand your positioning."}
+              </p>
+              <div className="flex flex-wrap items-center justify-center gap-2 pt-2 md:justify-start">
+                <input ref={uploadRef} type="file" accept=".txt,text/plain,.pdf,application/pdf,.json,application/json" className="hidden" onChange={onUploadFiles} />
+                <button
+                  type="button"
+                  onClick={() => uploadRef.current?.click()}
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-foreground transition hover:border-primary hover:text-primary"
+                >
+                  <Upload className="h-4 w-4" aria-hidden /> Import kit
+                </button>
+                <button
+                  type="button"
+                  onClick={downloadMediaKitTemplate}
+                  className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-foreground transition hover:border-primary hover:text-primary"
+                >
+                  <Download className="h-4 w-4" aria-hidden /> Template
+                </button>
+              </div>
+            </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 shrink-0">
-            <input ref={uploadRef} type="file" accept=".txt,text/plain,.pdf,application/pdf,.json,application/json" className="hidden" onChange={onUploadFiles} />
-            <button
-              type="button"
-              onClick={() => uploadRef.current?.click()}
-              className="inline-flex items-center gap-2 rounded-xl border border-white/30 bg-white/10 px-3 py-2 text-sm font-semibold text-white backdrop-blur-sm hover:bg-white/20"
-            >
-              <Upload className="h-4 w-4" aria-hidden />
-              Upload Text / PDF
-            </button>
-            <button
-              type="button"
-              onClick={downloadMediaKitTemplate}
-              className="inline-flex items-center gap-2 rounded-xl bg-white/20 px-3 py-2 text-sm font-semibold text-white hover:bg-white/30"
-            >
-              <Download className="h-4 w-4" aria-hidden />
-              Download Template
-            </button>
+        </div>
+
+        {/* Journal-style stats + completeness */}
+        <div className="col-span-12 grid grid-cols-2 gap-4 lg:col-span-5">
+          <div className="space-y-1.5 border-b-2 border-primary bg-muted p-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Total reach</span>
+            <div className="font-serif text-3xl font-bold text-primary">{fmtCompact(kit.totalFollowers)}</div>
+          </div>
+          <div className="space-y-1.5 border-b-2 border-primary bg-muted p-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Engagement</span>
+            <div className="font-serif text-3xl font-bold text-primary">{kit.engagementRate ? `${kit.engagementRate}%` : "—"}</div>
+          </div>
+          <div className="col-span-2 space-y-1.5 border-b-2 border-primary bg-muted p-5">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Avg. views</span>
+            <div className="font-serif text-3xl font-bold text-primary">{fmtCompact(kit.averageViews)}</div>
           </div>
         </div>
       </div>
@@ -811,19 +840,6 @@ Engagement rate:
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Contact email for brands</span>
             <input type="email" value={kit.email} onChange={(e) => setKit({ email: e.target.value })} className={inputCls} />
           </label>
-          <div className="mt-4 rounded-xl bg-muted p-3">
-            <div className="flex items-center justify-between mb-1.5">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Profile completeness</span>
-              <span className="text-sm font-bold text-foreground">{completenessScore}%</span>
-            </div>
-            <div className="h-2 w-full rounded-full bg-border overflow-hidden">
-              <div
-                className="h-2 rounded-full bg-[#92400e] transition-all duration-500"
-                style={{ width: `${completenessScore}%` }}
-              />
-            </div>
-          </div>
-
           <div className="mt-4 flex items-center gap-3">
             <button
               type="button"
@@ -863,6 +879,15 @@ Engagement rate:
                   />
                 </label>
               ))}
+            </div>
+            <div className="mt-4 space-y-2 border-t border-border pt-4">
+              <div className="flex items-center justify-between">
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Profile completeness</span>
+                <span className="text-sm font-bold text-foreground">{completenessScore}%</span>
+              </div>
+              <div className="h-2 w-full overflow-hidden rounded-full bg-border">
+                <div className="h-2 rounded-full bg-primary transition-all duration-500" style={{ width: `${completenessScore}%` }} />
+              </div>
             </div>
           </article>
 

@@ -30,7 +30,11 @@ import {
   Inbox,
   Check,
   X,
-  RefreshCw
+  RefreshCw,
+  Megaphone,
+  Wallet,
+  TrendingUp,
+  ArrowRight
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -218,7 +222,7 @@ function InfluencerInvitations() {
 }
 
 function InfluencerDashboard({ data }: { data: any }) {
-  const { token } = useUserStore();
+  const { token, name } = useUserStore();
   const stats = {
     activeCampaigns: data?.stats?.activeCampaigns ?? 0,
     pendingApplications: data?.stats?.pendingApplications ?? 0,
@@ -231,109 +235,105 @@ function InfluencerDashboard({ data }: { data: any }) {
 
   const recentActivity = data?.recentActivity ?? [];
 
+  // Stamp-tilt KPI tiles (mirrors the brand-dashboard mockup). `tilt` alternates
+  // the resting rotation; `big` keeps the money tile from overflowing.
+  const kpis: Array<{ label: string; value: string; hint: string; icon: typeof Rocket; big?: boolean }> = [
+    { label: "Active Campaigns", value: String(stats.activeCampaigns), hint: "In progress", icon: Rocket },
+    { label: "Pending Invitations", value: String(stats.pendingApplications), hint: "Awaiting your reply", icon: Inbox },
+    { label: "Unread Messages", value: String(stats.unreadMessages), hint: "In your inbox", icon: MessageSquare },
+    { label: "Total Earned", value: `THB ${stats.totalEarned.toLocaleString()}`, hint: stats.pendingPayout > 0 ? `THB ${stats.pendingPayout.toLocaleString()} pending` : "All settled", icon: Wallet, big: true },
+  ];
+
   return (
     <div className="space-y-8">
-      <div className="rounded-2xl bg-gradient-to-r from-[#dc2626] to-[#7f1d1d] p-7 text-white shadow-sm">
-        <div className="flex items-center gap-2 mb-1">
-          <span className="rounded-full bg-white/20 px-2.5 py-0.5 text-[10px] font-bold uppercase tracking-wider">Influencer</span>
+      {/* Slate header band */}
+      <header className="relative overflow-hidden rounded-2xl bg-[#334155] px-6 py-10 text-white shadow-sm sm:px-8">
+        <div className="pointer-events-none absolute -right-6 top-1/2 -translate-y-1/2 select-none opacity-[0.07]">
+          <Megaphone className="h-40 w-40" />
         </div>
-        <h1 className="text-3xl font-extrabold tracking-tight font-serif">Influencer Dashboard</h1>
-        <p className="mt-1 text-white/70 font-medium">Quick overview of your active campaigns, messages, and earnings.</p>
-      </div>
+        <div className="relative z-10 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/60">Creator workspace</p>
+            <h1 className="mt-2 font-serif text-3xl font-bold">Welcome back{name ? `, ${name}` : ""}</h1>
+            <p className="mt-1 text-sm text-white/70">Your active campaigns, invitations, and earnings at a glance.</p>
+          </div>
+          <div className="flex flex-wrap gap-3">
+            <Link
+              href="/campaigns"
+              className="inline-flex items-center gap-2 rounded-full bg-white/10 px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-white transition hover:bg-white/20"
+            >
+              <Megaphone className="h-4 w-4" /> Find Campaigns
+            </Link>
+            <Link
+              href="/messages"
+              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-lg shadow-black/20 transition hover:opacity-90"
+            >
+              <MessageSquare className="h-4 w-4" /> Messages
+            </Link>
+          </div>
+        </div>
+      </header>
 
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[
-          { label: "Active Campaigns", value: stats.activeCampaigns.toString(), icon: Rocket, color: "text-blue-600" },
-          { label: "Pending Apps", value: stats.pendingApplications.toString(), icon: FileText, color: "text-amber-600" },
-          { label: "Unread Messages", value: stats.unreadMessages.toString(), icon: MessageSquare, color: "text-primary" }
-        ].map((item) => (
-          <Card key={item.label} className="border-none shadow-sm transition-all hover:shadow-md">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <p className="text-sm font-medium text-muted-foreground">{item.label}</p>
-                <item.icon className={cn("h-4 w-4", item.color)} />
-              </div>
-              <p className="mt-2 text-2xl font-bold tracking-tight text-foreground font-serif">{item.value}</p>
-            </CardContent>
-          </Card>
+      {/* KPI grid — stamp-tilt cards */}
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+        {kpis.map(({ label, value, hint, icon: Icon, big }) => (
+          <div
+            key={label}
+            className="relative overflow-hidden rounded-xl border border-border bg-card p-6 shadow-sm transition-shadow duration-300 hover:shadow-md"
+          >
+            <Icon className="pointer-events-none absolute right-3 top-3 h-10 w-10 text-primary/[0.06]" />
+            <div className="flex items-center justify-between">
+              <p className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">{label}</p>
+              <Icon className="h-4 w-4 text-muted-foreground/50" />
+            </div>
+            <p className={cn("mt-2 font-serif font-bold text-primary", big ? "text-2xl" : "text-4xl")}>{value}</p>
+            <p className="mt-2 text-xs text-muted-foreground">{hint}</p>
+          </div>
         ))}
       </div>
 
-      <div className="flex flex-wrap items-center gap-3">
-        <Button asChild className="rounded-xl shadow-lg shadow-primary/20">
-          <Link href="/campaigns">Find Campaigns</Link>
-        </Button>
-        <Button asChild variant="outline" className="rounded-xl bg-background">
-          <Link href="/messages">View Messages</Link>
-        </Button>
-        {token && (
-          <ManualSyncButton sync={() => apiSyncMyPlatforms(token)} idleLabel="Sync my stats" />
-        )}
-      </div>
+      {/* Bento: invitations (left) + snapshot rail (right) */}
+      <div className="grid grid-cols-12 gap-6">
+        <section className="col-span-12 lg:col-span-8">
+          <InfluencerInvitations />
+        </section>
 
-      <InfluencerInvitations />
-
-      <div className="grid gap-6 lg:grid-cols-3">
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">My Campaigns</CardTitle>
-            <CardDescription>Active, Pending, Completed</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="rounded-xl bg-muted p-4">
-              <div className="flex items-center justify-between text-sm">
-                <span className="font-medium">In Progress</span>
-                <span className="font-bold text-primary">{stats.activeCampaigns}</span>
+        <section className="col-span-12 space-y-6 lg:col-span-4">
+          <div className="rounded-2xl border border-border bg-muted/40 p-6 shadow-sm">
+            <h4 className="font-serif text-lg font-semibold text-foreground">Your snapshot</h4>
+            <dl className="mt-4 space-y-4">
+              <div className="flex items-center justify-between">
+                <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <TrendingUp className="h-4 w-4 text-primary" /> Engagement
+                </dt>
+                <dd className="font-serif text-base font-bold text-foreground">
+                  {stats.engagementRate != null ? `${stats.engagementRate.toFixed(1)}%` : "—"}
+                </dd>
               </div>
-            </div>
-            {/* Brief + Submit Work both live in the campaign conversation's
-                workPhase flow (contact→brief→draft→work→payment). Rather than
-                rebuild standalone actions here, send the influencer to Messages. */}
-            <Button asChild size="sm" className="w-full rounded-lg">
-              <Link href="/messages">
-                <MessageSquare className="mr-2 h-3.5 w-3.5" /> Go to Messages
+              <div className="flex items-center justify-between border-t border-border pt-4">
+                <dt className="flex items-center gap-2 text-sm text-muted-foreground">
+                  <Wallet className="h-4 w-4 text-primary" /> Total earned
+                </dt>
+                <dd className="font-serif text-base font-bold text-foreground">THB {stats.totalEarned.toLocaleString()}</dd>
+              </div>
+              {stats.pendingPayout > 0 && (
+                <div className="flex items-center justify-between">
+                  <dt className="text-sm text-muted-foreground">Pending payout</dt>
+                  <dd className="text-sm font-semibold text-foreground">THB {stats.pendingPayout.toLocaleString()}</dd>
+                </div>
+              )}
+            </dl>
+            <div className="mt-5 space-y-2 border-t border-border pt-5">
+              {token && <ManualSyncButton sync={() => apiSyncMyPlatforms(token)} idleLabel="Sync my stats" />}
+              <Link
+                href="/messages"
+                className="flex items-center justify-between rounded-xl px-1 py-2 text-sm font-semibold text-primary transition hover:opacity-80"
+              >
+                Go to Messages <ArrowRight className="h-4 w-4" />
               </Link>
-            </Button>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Performance</CardTitle>
-            <CardDescription>Engagement</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {/* Growth Rate hidden until sync populates it — the platform adapters
-                are still stubs (growthRate always 0), so showing it is misleading. */}
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="h-4 w-4 text-primary" />
-                <span className="text-sm font-medium">Engagement</span>
-              </div>
-              <span className="text-sm font-bold text-foreground">
-                {stats.engagementRate != null ? `${stats.engagementRate.toFixed(1)}%` : "—"}
-              </span>
             </div>
-          </CardContent>
-        </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Earnings</CardTitle>
-            <CardDescription>Portfolio performance</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="space-y-1">
-              <p className="text-xs text-muted-foreground font-medium">Total Earned</p>
-              <p className="text-xl font-bold text-foreground">THB {stats.totalEarned.toLocaleString()}</p>
-            </div>
-            {stats.pendingPayout > 0 && (
-              <p className="text-xs text-muted-foreground">
-                Pending payout: <span className="font-semibold text-foreground">THB {stats.pendingPayout.toLocaleString()}</span>
-              </p>
-            )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       </div>
 
       {/* Recent Activity — reads data.recentActivity (Notification rows written by
@@ -341,7 +341,7 @@ function InfluencerDashboard({ data }: { data: any }) {
       <Card className="border-none shadow-sm">
         <CardHeader>
           <CardTitle className="text-lg flex items-center gap-2">
-            <Bell className="h-5 w-5 text-amber-500" /> Recent Activity
+            <Bell className="h-5 w-5 text-primary" /> Recent Activity
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
