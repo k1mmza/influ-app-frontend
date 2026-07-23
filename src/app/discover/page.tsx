@@ -64,6 +64,8 @@ const categories = [
 const platforms = ["TikTok", "Instagram", "YouTube", "Facebook", "X", "Lemon8", "LinkedIn", "Red Note (Xiaohongshu)"];
 const ageGroups = ["All", "18-24", "25-34", "35-44", "45+"];
 const audienceGenders = ["All", "Female", "Male", "Mixed"];
+// The creator's own gender (InfluencerProfile.gender), distinct from audience gender.
+const creatorGenders = ["All", "Female", "Male", "Other"];
 const countryOptions = ["All", "Thailand", "Vietnam", "Singapore", "Malaysia", "Indonesia", "Philippines"];
 const stylePresentOptions = ["All", "Short Story", "Storytelling", "Experiment", "Tutorial", "Review", "Vlog"];
 
@@ -224,6 +226,7 @@ function DiscoverPageContent() {
   const [minGrowthRate, setMinGrowthRate] = useState(0);
   const [keyword, setKeyword] = useState("");
   const [audienceGender, setAudienceGender] = useState("All");
+  const [creatorGender, setCreatorGender] = useState("All");
   const [audienceAgeGroup, setAudienceAgeGroup] = useState("All");
   const [stylePresent, setStylePresent] = useState("All");
   const [minQualityScore, setMinQualityScore] = useState(0);
@@ -273,7 +276,7 @@ function DiscoverPageContent() {
   }, [
     smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword,
     minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews,
-    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country,
+    minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, creatorGender, audienceAgeGroup, availabilityStatus, country,
   ]);
 
   // Single source of truth for filter → query params, shared by the paginated
@@ -299,11 +302,12 @@ function DiscoverPageContent() {
       minFollowers: minFollowers > 0 ? minFollowers : undefined,
       stylePresent: stylePresent !== "All" ? stylePresent : undefined,
       audienceGender: audienceGender !== "All" ? audienceGender : undefined,
+      gender: creatorGender !== "All" ? creatorGender.toLowerCase() : undefined,
       audienceAgeGroup: audienceAgeGroup !== "All" ? audienceAgeGroup : undefined,
       availabilityStatus: availabilityStatus !== "All" ? availabilityStatus : undefined,
       country: country !== "All" ? country : undefined,
     };
-  }, [smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword, minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews, minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, audienceAgeGroup, availabilityStatus, country]);
+  }, [smartQuery, selectedCategories, selectedPlatforms, followerRange, minEngagementRate, keyword, minQualityScore, minPerformanceScore, minGrowthRate, minAverageViews, minResponseRate, maxRatePerPost, minRatePerPost, minFollowers, stylePresent, audienceGender, creatorGender, audienceAgeGroup, availabilityStatus, country]);
 
   // Shelf-pool fetch — same filters, page 1, larger limit; independent of grid pagination.
   useEffect(() => {
@@ -368,6 +372,7 @@ function DiscoverPageContent() {
     setMinGrowthRate(0);
     setKeyword("");
     setAudienceGender("All");
+    setCreatorGender("All");
     setAudienceAgeGroup("All");
     setStylePresent("All");
     setMinQualityScore(0);
@@ -1007,6 +1012,19 @@ function DiscoverPageContent() {
                     <div className="col-span-full flex items-center gap-2">
                       <span className="text-xs font-black uppercase tracking-widest text-primary/60">Creator Profile</span>
                       <div className="flex-1 h-px bg-border" />
+                    </div>
+
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold uppercase tracking-widest text-muted-foreground">Gender</Label>
+                      <select
+                        value={creatorGender}
+                        onChange={(e) => setCreatorGender(e.target.value)}
+                        className="w-full rounded-lg border border-input bg-background px-3 py-2 text-sm"
+                      >
+                        {creatorGenders.map((g) => (
+                          <option key={g} value={g}>{g}</option>
+                        ))}
+                      </select>
                     </div>
 
                     <div className="space-y-2">
