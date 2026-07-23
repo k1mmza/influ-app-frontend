@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Heart, Loader2, X as XIcon } from "lucide-react";
+import { ChevronLeft, ChevronRight, Heart, Loader2, X as XIcon } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { InfluencerCard } from "@/components/influencer-card";
@@ -24,6 +24,19 @@ export default function ShortlistPage() {
   const { token, role } = useUserStore();
   const { influencers, error, syncFromServer } = useShortlistStore();
   const [loading, setLoading] = useState(true);
+
+  // Paginate the saved grid: 8 per page (4 per row × 2 rows).
+  const PER_PAGE = 8;
+  const [page, setPage] = useState(1);
+  const totalPages = Math.max(1, Math.ceil(influencers.length / PER_PAGE));
+  const paginatedInfluencers = useMemo(
+    () => influencers.slice((page - 1) * PER_PAGE, page * PER_PAGE),
+    [influencers, page],
+  );
+  // Keep the page in range when the shortlist shrinks (e.g. an item is removed).
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const [campaigns, setCampaigns] = useState<CampaignResponse[]>([]);
   const [selectedInfluencerId, setSelectedInfluencerId] = useState<string | null>(null);
@@ -106,17 +119,22 @@ export default function ShortlistPage() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-rose-500/10">
-          <Heart className="h-5 w-5 text-rose-500" />
+    <div className="space-y-8">
+      {/* Travelogue banner — "Saved Creators" in the page accent (bg-primary). */}
+      <div className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground shadow-sm sm:flex-row sm:items-end">
+        <div className="relative z-10">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/70">
+            Curated Selection
+          </span>
+          <h1 className="mt-2 font-serif text-4xl font-bold italic sm:text-5xl">Saved Creators</h1>
         </div>
-        <div>
-          <h1 className="text-2xl font-bold text-foreground font-serif">Shortlist</h1>
-          <p className="text-sm text-muted-foreground">
-            Saved influencers — {influencers.length} creator{influencers.length !== 1 ? "s" : ""}
-          </p>
-        </div>
+        {influencers.length > 0 && (
+          <span className="relative z-10 flex items-center gap-2 font-serif text-lg italic text-primary-foreground/90">
+            <Heart className="h-4 w-4" />
+            {influencers.length} Saved
+          </span>
+        )}
+        <Heart className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
       </div>
 
       {error && (
@@ -147,17 +165,64 @@ export default function ShortlistPage() {
           </Button>
         </div>
       ) : (
-        <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3 2xl:grid-cols-4">
-          {influencers.map((influencer) => (
-            <InfluencerCard
-              key={influencer.id}
-              influencer={influencer}
-              isActive={selectedInfluencerId === influencer.id}
-              onSelect={(selected) => setSelectedInfluencerId(selected.id)}
-              onAddToCampaign={openCampaignPicker}
-            />
-          ))}
-        </div>
+        <>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {paginatedInfluencers.map((influencer) => (
+              <InfluencerCard
+                key={influencer.id}
+                influencer={influencer}
+                compact
+                isActive={selectedInfluencerId === influencer.id}
+                onSelect={(selected) => setSelectedInfluencerId(selected.id)}
+                onAddToCampaign={openCampaignPicker}
+              />
+            ))}
+          </div>
+
+          {influencers.length > PER_PAGE && (
+            <div className="mt-10 flex items-center justify-between border-t border-border pt-6">
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.max(1, p - 1))}
+                  disabled={page === 1}
+                  aria-label="Previous page"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    type="button"
+                    onClick={() => setPage(p)}
+                    aria-current={p === page ? "page" : undefined}
+                    className={
+                      "flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition cursor-pointer " +
+                      (p === page
+                        ? "border-primary bg-primary text-primary-foreground"
+                        : "border-border text-muted-foreground hover:bg-muted")
+                    }
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  type="button"
+                  onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+                  disabled={page === totalPages}
+                  aria-label="Next page"
+                  className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40 cursor-pointer"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </button>
+              </div>
+              <p className="font-serif text-sm italic text-muted-foreground">
+                Showing {(page - 1) * PER_PAGE + 1}–{Math.min(page * PER_PAGE, influencers.length)} of {influencers.length} saved
+              </p>
+            </div>
+          )}
+        </>
       )}
 
       {selectedInfluencer && selectedInfluencerMeta && (

@@ -203,6 +203,15 @@
   font-family: var(--font-tv-body), ui-sans-serif, system-ui, sans-serif;
 }
 
+/* Playfair defaults to old-style figures, whose 3/4/7/9 descend below the
+   baseline — looks like the leading digits are "sinking" in numbers like
+   347.0K. Force lining figures for serif text inside the authed app so all
+   digits sit uniformly on the baseline. Marketing/landing keep the default. */
+.app-tv .font-serif,
+.app-tv .font-tv-serif {
+  font-variant-numeric: lining-nums;
+}
+
 .dark .app-tv {
   --background: 0 0% 7%;
   --foreground: 15 7% 89%;
@@ -225,6 +234,45 @@
   --destructive-foreground: 357 100% 21%;
 }
 
+/* ── Per-page accents ─────────────────────────────────────────────────────
+   Each authed section gets its own accent by overriding only --primary / --ring
+   on the page's root wrapper. Every text-primary / bg-primary / border-primary
+   element on that page inherits the hue, so the pages read as distinct "chapters"
+   while the shared travelogue base (paper, borders, olive, serif) stays constant.
+   Dashboard keeps the base persimmon as its home identity. Light values are
+   mid-dark (white foreground); dark values lighten so headings stay legible. */
+.tv-accent-pine      { --primary: 172 42% 30%; --primary-foreground: 0 0% 100%; --ring: 172 42% 30%; }
+.tv-accent-ochre     { --primary: 32 54% 37%;  --primary-foreground: 0 0% 100%; --ring: 32 54% 37%; }
+.tv-accent-slateblue { --primary: 214 43% 42%; --primary-foreground: 0 0% 100%; --ring: 214 43% 42%; }
+.tv-accent-olive     { --primary: 96 24% 32%;  --primary-foreground: 0 0% 100%; --ring: 96 24% 32%; }
+.tv-accent-violet    { --primary: 276 30% 48%; --primary-foreground: 0 0% 100%; --ring: 276 30% 48%; }
+.tv-accent-wine      { --primary: 344 42% 41%; --primary-foreground: 0 0% 100%; --ring: 344 42% 41%; }
+.tv-accent-amber     { --primary: 44 66% 45%;  --primary-foreground: 0 0% 100%; --ring: 44 66% 45%; }
+.tv-accent-forest    { --primary: 150 40% 30%; --primary-foreground: 0 0% 100%; --ring: 150 40% 30%; }
+.tv-accent-slate     { --primary: 215 28% 34%; --primary-foreground: 0 0% 100%; --ring: 215 28% 34%; }
+.tv-accent-teal      { --primary: 186 60% 26%; --primary-foreground: 0 0% 100%; --ring: 186 60% 26%; }
+.tv-accent-brown     { --primary: 22 36% 33%;  --primary-foreground: 0 0% 100%; --ring: 22 36% 33%; }
+.tv-accent-ocean     { --primary: 205 62% 40%; --primary-foreground: 0 0% 100%; --ring: 205 62% 40%; }
+.tv-accent-burntorange { --primary: 18 74% 44%; --primary-foreground: 0 0% 100%; --ring: 18 74% 44%; }
+.tv-accent-bronze    { --primary: 30 52% 38%;  --primary-foreground: 0 0% 100%; --ring: 30 52% 38%; }
+.tv-accent-pink      { --primary: 340 38% 47%; --primary-foreground: 0 0% 100%; --ring: 340 38% 47%; }
+
+.dark .tv-accent-pine      { --primary: 168 45% 75%; --primary-foreground: 172 60% 14%; --ring: 168 45% 75%; }
+.dark .tv-accent-ochre     { --primary: 36 72% 76%;  --primary-foreground: 32 65% 16%;  --ring: 36 72% 76%; }
+.dark .tv-accent-slateblue { --primary: 212 55% 78%; --primary-foreground: 214 50% 16%; --ring: 212 55% 78%; }
+.dark .tv-accent-olive     { --primary: 92 30% 74%;  --primary-foreground: 96 45% 14%;  --ring: 92 30% 74%; }
+.dark .tv-accent-violet    { --primary: 278 50% 80%; --primary-foreground: 278 40% 18%; --ring: 278 50% 80%; }
+.dark .tv-accent-wine      { --primary: 344 55% 78%; --primary-foreground: 344 55% 16%; --ring: 344 55% 78%; }
+.dark .tv-accent-amber     { --primary: 44 80% 76%;  --primary-foreground: 40 70% 16%;  --ring: 44 80% 76%; }
+.dark .tv-accent-forest    { --primary: 148 42% 72%; --primary-foreground: 150 50% 13%; --ring: 148 42% 72%; }
+.dark .tv-accent-slate     { --primary: 214 34% 76%; --primary-foreground: 215 35% 15%; --ring: 214 34% 76%; }
+.dark .tv-accent-teal      { --primary: 184 44% 70%; --primary-foreground: 186 60% 11%; --ring: 184 44% 70%; }
+.dark .tv-accent-brown     { --primary: 24 40% 72%;  --primary-foreground: 22 45% 14%;  --ring: 24 40% 72%; }
+.dark .tv-accent-ocean     { --primary: 204 58% 76%; --primary-foreground: 205 55% 14%; --ring: 204 58% 76%; }
+.dark .tv-accent-burntorange { --primary: 20 74% 72%; --primary-foreground: 18 68% 13%; --ring: 20 74% 72%; }
+.dark .tv-accent-bronze    { --primary: 32 56% 73%;  --primary-foreground: 30 58% 14%;  --ring: 32 56% 73%; }
+.dark .tv-accent-pink      { --primary: 340 42% 74%; --primary-foreground: 340 40% 15%; --ring: 340 42% 74%; }
+
 /* Readable mode also relaxes the travelogue body face to a plain stack. */
 html.readable .app-tv {
   font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
@@ -236,20 +284,22 @@ html.readable .app-tv {
    Dark mode uses lightened inks so warm mid-tones stay legible on near-black.
    Driven by `.nav-section-active[data-section="…"]` set in navigation.tsx. */
 .nav-section-active { background-color: var(--nav-tint); color: var(--nav-ink); }
-.nav-section-active[data-section="/dashboard"]  { --nav-ink: #9B3F25; --nav-tint: #9B3F2524; }
-.nav-section-active[data-section="/campaigns"]  { --nav-ink: #8A6D15; --nav-tint: #8A6D1524; }
-.nav-section-active[data-section="/discover"]   { --nav-ink: #B5603A; --nav-tint: #B5603A24; }
-.nav-section-active[data-section="/shortlist"]  { --nav-ink: #A24759; --nav-tint: #A2475924; }
-.nav-section-active[data-section="/smart-plan"] { --nav-ink: #C2410C; --nav-tint: #C2410C24; }
-.nav-section-active[data-section="/messages"]   { --nav-ink: #556347; --nav-tint: #55634724; }
-.nav-section-active[data-section="/tracking"]   { --nav-ink: #3F5D3A; --nav-tint: #3F5D3A24; }
-.dark .nav-section-active[data-section="/dashboard"]  { --nav-ink: #E08A6B; --nav-tint: #E08A6B2e; }
-.dark .nav-section-active[data-section="/campaigns"]  { --nav-ink: #D8B85A; --nav-tint: #D8B85A2e; }
-.dark .nav-section-active[data-section="/discover"]   { --nav-ink: #E7A07E; --nav-tint: #E7A07E2e; }
-.dark .nav-section-active[data-section="/shortlist"]  { --nav-ink: #E08497; --nav-tint: #E084972e; }
-.dark .nav-section-active[data-section="/smart-plan"] { --nav-ink: #F09055; --nav-tint: #F090552e; }
-.dark .nav-section-active[data-section="/messages"]   { --nav-ink: #A9BE93; --nav-tint: #A9BE932e; }
-.dark .nav-section-active[data-section="/tracking"]   { --nav-ink: #8FB183; --nav-tint: #8FB1832e; }
+.nav-section-active[data-section="/dashboard"]  { --nav-ink: #3F4E5E; --nav-tint: #3F4E5E47; } /* slate        */
+.nav-section-active[data-section="/campaigns"]  { --nav-ink: #9C6B30; --nav-tint: #9C6B3047; } /* amber/bronze */
+.nav-section-active[data-section="/discover"]   { --nav-ink: #2E6C8C; --nav-tint: #2E6C8C47; } /* ocean blue   */
+.nav-section-active[data-section="/shortlist"]  { --nav-ink: #A24759; --nav-tint: #A2475947; } /* rose         */
+.nav-section-active[data-section="/smart-plan"] { --nav-ink: #B4552A; --nav-tint: #B4552A47; } /* burnt orange */
+.nav-section-active[data-section="/messages"]   { --nav-ink: #2B6A66; --nav-tint: #2B6A6647; } /* deep teal    */
+.nav-section-active[data-section="/profile"]    { --nav-ink: #6F4E37; --nav-tint: #6F4E3747; } /* brown        */
+.nav-section-active[data-section="/tracking"]   { --nav-ink: #3F5D3A; --nav-tint: #3F5D3A47; } /* forest green */
+.dark .nav-section-active[data-section="/dashboard"]  { --nav-ink: #9DB0C4; --nav-tint: #9DB0C452; }
+.dark .nav-section-active[data-section="/campaigns"]  { --nav-ink: #D6AB63; --nav-tint: #D6AB6352; }
+.dark .nav-section-active[data-section="/discover"]   { --nav-ink: #74ADC8; --nav-tint: #74ADC852; }
+.dark .nav-section-active[data-section="/shortlist"]  { --nav-ink: #E08497; --nav-tint: #E0849752; }
+.dark .nav-section-active[data-section="/smart-plan"] { --nav-ink: #E8875A; --nav-tint: #E8875A52; }
+.dark .nav-section-active[data-section="/messages"]   { --nav-ink: #6FB6B1; --nav-tint: #6FB6B152; }
+.dark .nav-section-active[data-section="/profile"]    { --nav-ink: #C4A084; --nav-tint: #C4A08452; }
+.dark .nav-section-active[data-section="/tracking"]   { --nav-ink: #8FB183; --nav-tint: #8FB18352; }
 
 /* ── Readable mode ───────────────────────────────────────────────── */
 /* Independent of light/dark. Remaps the decorative font-family vars to a

@@ -32,17 +32,13 @@ import {
   type TrackingSummaryRow,
   type TrackingDetailRow,
 } from "@/lib/api";
-import {
-  getPageAccentTextClassForRoute,
-  getPageButtonClassForRoute,
-  getPageSolidClassForRoute,
-} from "@/lib/nav-theme";
 import { cn } from "@/lib/utils";
 import { exportRowsToExcel } from "@/lib/excel";
 
-const pageBtn = getPageButtonClassForRoute("/tracking");
-const pageSolid = getPageSolidClassForRoute("/tracking");
-const pageAccent = getPageAccentTextClassForRoute("/tracking");
+// Travelogue theme: active/solid surfaces use the persimmon primary token
+// (remapped by `.app-tv`); accents are `text-primary`.
+const pageBtn = "bg-primary text-primary-foreground";
+const pageAccent = "text-primary";
 const CAMPAIGNS_PER_PAGE = 6;
 type DetailViewMode = "card" | "table";
 
@@ -74,38 +70,70 @@ function contentTypeIcon(type: string | null) {
   return <FileText className="h-4 w-4" />;
 }
 
-/** coverImage has no source → role-tinted gradient placeholder. */
-function roleCoverGradient(role: string | null | undefined): string {
-  if (role === "brand") return "bg-gradient-to-br from-role-navy to-role-navy/70";
-  if (role === "influencer") return "bg-gradient-to-br from-role-coral to-role-coral/70";
-  return "bg-gradient-to-br from-nav-forest-800 to-nav-forest-900"; // agency / default
+/** coverImage has no source → travelogue slate→persimmon gradient placeholder
+ *  (matches the campaign banner strips on the dashboard). */
+function roleCoverGradient(_role: string | null | undefined): string {
+  return "bg-gradient-to-br from-[#334155] via-[#3f4d5e] to-primary/60";
 }
 
-function KpiCard({
-  icon: Icon,
+// Large editorial "paper-stack" stat card (Live Performance section). Sharp
+// corners + offset double-shadow + slight tilt = the stacked-paper look from the
+// Stitch design. `accent` swaps the number/overline/border tint per card.
+type StatAccent = {
+  text: string;
+  border: string;
+  iconBg: string;
+};
+
+function StatCard({
+  overline,
   value,
-  label,
-  tint,
+  sub,
+  note,
+  icon: Icon,
+  accent,
 }: {
-  icon: ComponentType<{ className?: string }>;
+  overline: string;
   value: string;
-  label: string;
-  tint: string;
+  sub?: string;
+  note?: string;
+  icon: ComponentType<{ className?: string }>;
+  accent: StatAccent;
 }) {
   return (
-    <article className="flex items-center gap-3 rounded-2xl bg-card p-4 shadow-sm">
-      <div className={cn("flex h-11 w-11 shrink-0 items-center justify-center rounded-xl", tint)}>
-        <Icon className="h-5 w-5" />
+    <div
+      className={cn("relative rounded-sm border bg-card p-8 transition-transform hover:-translate-y-1", accent.border)}
+      style={{ boxShadow: "2px 2px 0 rgba(0,0,0,0.05), 4px 4px 0 -1px hsl(var(--border))" }}
+    >
+      <div className="mb-6 flex items-start justify-between">
+        <span className={cn("text-[11px] font-semibold uppercase tracking-[0.15em]", accent.text)}>{overline}</span>
+        <div className={cn("flex h-8 w-8 items-center justify-center rounded-full", accent.iconBg)}>
+          <Icon className="h-4 w-4" />
+        </div>
       </div>
-      <div className="min-w-0">
-        <p className="text-xl font-bold tabular-nums text-foreground">{value}</p>
-        <p className="truncate text-[11px] font-medium text-muted-foreground">{label}</p>
+      <div className="space-y-1">
+        <span className={cn("block font-serif text-5xl font-bold leading-none tabular-nums lining-nums", accent.text)}>{value}</span>
+        {sub ? (
+          <div className="flex items-center gap-1 pt-2 text-xs font-semibold text-muted-foreground">
+            <TrendingUp className="h-3.5 w-3.5" />
+            {sub}
+          </div>
+        ) : null}
       </div>
-    </article>
+      {note ? (
+        <div className={cn("mt-8 border-t pt-4", accent.border)}>
+          <p className="text-xs text-muted-foreground">{note}</p>
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-function CampaignCard({
+// Horizontal "journey" row (Active Journeys section) — tilted bordered thumbnail
+// on the left, editorial title + a hero number on the right, then a row of
+// border-left stat columns and the report button. Selecting a row opens the
+// detail panel below.
+function JourneyRow({
   campaign: c,
   role,
   isSelected,
@@ -118,51 +146,68 @@ function CampaignCard({
 }) {
   const statusLower = (c.status ?? "").toLowerCase();
   return (
-    <button
-      type="button"
-      onClick={onSelect}
-      className={cn(
-        "group flex flex-col overflow-hidden rounded-xl border text-left transition hover:shadow-md",
-        isSelected ? "border-nav-forest-800 ring-2 ring-nav-forest-200" : "border-border"
-      )}
-    >
-      {/* Campaign cover — same image as the campaign page; role-tinted gradient
-          fallback when the campaign has no uploaded cover. */}
-      <div className={cn("relative h-24 w-full", !c.coverImageUrl && roleCoverGradient(role))}>
+    <div className={cn("group relative flex flex-col border-b pb-8 md:flex-row", isSelected ? "border-primary" : "border-border")}>
+      {/* Tilted, bordered cover — role-tinted gradient fallback. */}
+      <div
+        className={cn("relative mb-4 h-32 w-full shrink-0 overflow-hidden rounded-sm border border-border/40 md:mb-0 md:w-48", !c.coverImageUrl && roleCoverGradient(role))}
+      >
         {c.coverImageUrl ? (
           <img
             src={c.coverImageUrl}
             alt={`${c.name} cover`}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
           />
         ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/45 via-transparent to-transparent" />
-        <span className="absolute left-2 top-2 inline-flex items-center gap-1 rounded-full bg-card/90 px-2 py-0.5 text-[10px] font-semibold capitalize text-foreground shadow-sm backdrop-blur-sm">
-          <Activity className="h-3 w-3 text-emerald-500" />
+        <span className="absolute right-2 top-2 bg-primary px-2 py-0.5 text-[10px] font-bold uppercase tracking-tight text-primary-foreground">
           {statusLower}
         </span>
-        <p className="absolute inset-x-2 bottom-2 line-clamp-2 text-sm font-semibold leading-snug text-white drop-shadow">
-          {c.name}
-        </p>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2 bg-card p-3">
-        <span className="inline-flex w-fit items-center gap-1.5 rounded-lg bg-muted px-2 py-1 text-[10px] text-muted-foreground">
-          <Users className="h-3 w-3 shrink-0" aria-hidden />
-          {c.influencerCount} {c.influencerCount === 1 ? "creator" : "creators"}
-        </span>
-        <div className="flex flex-wrap gap-1.5 border-t border-border pt-2">
-          <span className="inline-flex items-center gap-1 rounded-md bg-sky-50 px-2 py-0.5 text-[10px] font-medium text-sky-700 dark:bg-sky-500/15 dark:text-sky-300">
-            <Eye className="h-3 w-3" />
-            {c.totalViews > 0 ? formatCompact(c.totalViews) : "—"}
-          </span>
-          <span className="inline-flex items-center gap-1 rounded-md bg-emerald-50 px-2 py-0.5 text-[10px] font-medium text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
-            <TrendingUp className="h-3 w-3" />
-            {c.influencerCount ? `${c.avgEngagementRate.toFixed(1)}%` : "—"}
-          </span>
+      <div className="flex flex-1 flex-col justify-center md:pl-8">
+        <div className="flex items-start justify-between gap-4">
+          <div className="min-w-0">
+            <h4 className="mb-1 truncate font-serif text-xl font-semibold text-foreground">{c.name}</h4>
+            <p className="mb-4 text-sm text-muted-foreground">
+              {c.influencerCount} {c.influencerCount === 1 ? "creator" : "creators"} · Real-time tracking
+            </p>
+          </div>
+          <div className="shrink-0 text-right">
+            <span className="mb-1 block text-[10px] font-semibold uppercase tracking-wider text-muted-foreground/70">Total Views</span>
+            <span className="font-serif text-xl font-semibold tabular-nums text-foreground">
+              {c.totalViews > 0 ? formatCompact(c.totalViews) : "—"}
+            </span>
+          </div>
+        </div>
+
+        <div className="mt-2 grid grid-cols-2 gap-4 md:grid-cols-4">
+          <div className="border-l border-border pl-4">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Engagement</span>
+            <p className="font-serif text-lg text-primary">{c.influencerCount ? `${c.avgEngagementRate.toFixed(1)}%` : "—"}</p>
+          </div>
+          <div className="border-l border-border pl-4">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Creators</span>
+            <p className="font-serif text-lg text-secondary">{c.influencerCount}</p>
+          </div>
+          <div className="border-l border-border pl-4">
+            <span className="text-[10px] font-bold uppercase tracking-wide text-muted-foreground">Status</span>
+            <p className="font-serif text-lg capitalize text-foreground">{statusLower || "—"}</p>
+          </div>
+          <div className="flex items-center justify-end">
+            <button
+              type="button"
+              onClick={onSelect}
+              className={cn(
+                "flex items-center gap-2 rounded-full px-5 py-2.5 text-sm font-semibold shadow-sm transition-all active:scale-95",
+                isSelected ? "bg-primary text-primary-foreground" : "bg-secondary text-secondary-foreground hover:bg-secondary/90"
+              )}
+            >
+              <BarChart3 className="h-4 w-4" />
+              {isSelected ? "Viewing" : "View Report"}
+            </button>
+          </div>
         </div>
       </div>
-    </button>
+    </div>
   );
 }
 
@@ -171,7 +216,7 @@ function MetricGauge({
   value,
   max,
   icon: Icon,
-  colorClass = "bg-nav-forest-900",
+  colorClass,
 }: {
   label: string;
   value: number;
@@ -180,6 +225,7 @@ function MetricGauge({
   colorClass?: string;
 }) {
   const pct = max > 0 ? Math.min(100, (value / max) * 100) : 0;
+  const bar = colorClass ?? "bg-primary";
   return (
     <div className="space-y-1">
       <div className="flex items-center justify-between gap-2">
@@ -192,7 +238,7 @@ function MetricGauge({
         </span>
       </div>
       <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-        <div className={cn("h-full rounded-full transition-all", colorClass)} style={{ width: `${pct}%` }} />
+        <div className={cn("h-full rounded-full transition-all", bar)} style={{ width: `${pct}%` }} />
       </div>
     </div>
   );
@@ -251,7 +297,7 @@ function DetailInfluencerCard({
   return (
     <article className="rounded-xl border border-border bg-gradient-to-b from-card to-muted/40 p-4">
       <div className="flex items-center gap-3">
-        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-nav-forest-200 to-nav-forest-800 text-xs font-bold text-white">
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-secondary to-primary text-xs font-bold text-white">
           {getInitials(r.influencerName)}
         </div>
         <div className="min-w-0 flex-1">
@@ -323,7 +369,7 @@ function DetailInfluencerTable({ rows }: { rows: TrackingDetailRow[] }) {
             <tr key={r.id} className="border-t border-border hover:bg-muted/50">
               <td className="px-4 py-2.5">
                 <div className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-nav-forest-100 text-[10px] font-bold text-nav-forest-800 dark:bg-nav-forest-900/40 dark:text-nav-forest-100">
+                  <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-secondary-container text-[10px] font-bold text-on-secondary-container">
                     {getInitials(r.influencerName)}
                   </div>
                   <span className="font-medium text-foreground">{r.influencerName}</span>
@@ -474,97 +520,187 @@ function TrackingPageContent() {
     setShareMessage("Tracking result exported (opens in Excel & Numbers).");
   };
 
-  return (
-    <section className="space-y-5">
-      {/* Header */}
-      <div className={cn("flex items-center justify-between gap-4 rounded-2xl px-5 py-4 text-white shadow-sm", pageSolid)}>
-        <div className="flex items-center gap-3">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-white/15">
-            <BarChart3 className="h-5 w-5" />
+  // Detail panel for the selected campaign — rendered inline under its row.
+  const renderDetailPanel = (c: TrackingSummaryRow) => (
+    <article className="overflow-hidden rounded-2xl border border-border bg-card shadow-sm">
+      <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
+        <div className="flex min-w-0 items-center gap-2">
+          <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-primary/10">
+            <Activity className="h-4 w-4 text-primary" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold font-serif">Tracking</h1>
-            <span className="flex items-center gap-1.5 text-xs text-white/70">
-              <span className="relative flex h-2 w-2">
-                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-300 opacity-75" />
-                <span className="relative inline-flex h-2 w-2 rounded-full bg-emerald-400" />
-              </span>
-              Live
-            </span>
-          </div>
+          <h2 className="truncate text-sm font-semibold text-foreground font-serif">{c.name}</h2>
         </div>
-        <div className="hidden items-end gap-1 sm:flex" aria-hidden>
-          {[40, 65, 45, 80, 55, 90, 70].map((h, i) => (
-            <div key={i} className="w-1.5 rounded-full bg-white/30" style={{ height: `${h * 0.28}px` }} />
+        <div className="flex shrink-0 items-center gap-1">
+          {/* Entry point to the client-facing presentation report. */}
+          <Link
+            href={`/tracking/${c.id}`}
+            title="Open client report"
+            className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-primary/10", pageAccent)}
+          >
+            <FileText className="h-4 w-4" />
+            <span className="hidden sm:inline">Open report</span>
+          </Link>
+          <DetailViewToggle mode={detailViewMode} onChange={setDetailViewMode} disabled={detailRows.length === 0} />
+          <button
+            type="button"
+            onClick={exportExcel}
+            disabled={detailRows.length === 0}
+            title="Export CSV"
+            className={cn("rounded-lg p-2 hover:bg-primary/10 disabled:opacity-40", pageAccent)}
+          >
+            <Download className="h-4 w-4" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setSelectedId(null)}
+            title="Close"
+            className="rounded-lg p-2 text-muted-foreground hover:bg-muted"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        </div>
+      </div>
+
+      {shareMessage ? (
+        <div className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
+          <Link2 className="h-3.5 w-3.5" />
+          {shareMessage}
+        </div>
+      ) : null}
+
+      {detailLoading ? (
+        <p className="p-4 text-sm text-muted-foreground">Loading detail...</p>
+      ) : detailRows.length === 0 ? (
+        <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
+          <BarChart3 className="h-10 w-10 opacity-40" />
+          <p className="text-xs">No live rows for this campaign yet.</p>
+        </div>
+      ) : detailViewMode === "table" ? (
+        <DetailInfluencerTable rows={detailRows} />
+      ) : (
+        <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
+          {detailRows.map((r) => (
+            <DetailInfluencerCard key={r.id} row={r} maxViews={maxDetailViews} maxEr={maxDetailEr} />
           ))}
         </div>
+      )}
+    </article>
+  );
+
+  return (
+    <section className="space-y-8">
+      {/* Travelogue banner — "Live Performance" in the page accent (bg-primary). */}
+      <div className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground shadow-sm sm:flex-row sm:items-end">
+        <div className="relative z-10">
+          <span className="block text-[11px] font-semibold uppercase tracking-[0.2em] text-primary-foreground/70">
+            Campaign Tracking
+          </span>
+          <h1 className="mt-2 font-serif text-4xl font-bold italic sm:text-5xl">Live Performance</h1>
+        </div>
+        <span className="relative z-10 flex items-center gap-2 font-serif text-lg italic text-primary-foreground/90">
+          <span className="relative flex h-2 w-2">
+            <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary-foreground opacity-75" />
+            <span className="relative inline-flex h-2 w-2 rounded-full bg-primary-foreground" />
+          </span>
+          Updated in real time
+        </span>
+        <TrendingUp className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
       </div>
 
       {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
 
-      {/* KPI strip (summary aggregates) */}
-      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard icon={Eye} value={formatCompact(totals.views)} label="Total views" tint="bg-sky-100 text-sky-600 dark:bg-sky-500/15 dark:text-sky-300" />
-        <KpiCard icon={Users} value={String(totals.creators)} label="Creators tracked" tint="bg-rose-100 text-rose-600 dark:bg-rose-500/15 dark:text-rose-300" />
-        <KpiCard icon={TrendingUp} value={`${totals.avgEr.toFixed(1)}%`} label="Avg ER" tint="bg-emerald-100 text-emerald-600 dark:bg-emerald-500/15 dark:text-emerald-300" />
-        <KpiCard icon={Activity} value={String(totals.active)} label="Active campaigns" tint="bg-nav-forest-100 text-nav-forest-800 dark:bg-nav-forest-900/40 dark:text-nav-forest-100" />
+      {/* Live Performance — three large paper-stack stat cards */}
+      <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+        <StatCard
+          overline="Total Reach"
+          value={formatCompact(totals.views)}
+          sub={`${totals.active} active ${totals.active === 1 ? "campaign" : "campaigns"}`}
+          note="Aggregated impressions across all tracked campaigns."
+          icon={Eye}
+          accent={{
+            text: "text-secondary",
+            border: "border-secondary/20",
+            iconBg: "bg-secondary-container text-on-secondary-container",
+          }}
+        />
+        <StatCard
+          overline="Engagement Rate"
+          value={`${totals.avgEr.toFixed(1)}%`}
+          sub={`Averaged across ${totals.creators} ${totals.creators === 1 ? "creator" : "creators"}`}
+          note="Live engagement rate from tracked deliverables."
+          icon={Heart}
+          accent={{
+            text: "text-primary",
+            border: "border-primary/20",
+            iconBg: "bg-primary/10 text-primary",
+          }}
+        />
+        <StatCard
+          overline="Creators Tracked"
+          value={String(totals.creators)}
+          sub={`${totals.active} live ${totals.active === 1 ? "campaign" : "campaigns"}`}
+          note="Total creators with active deliverables under measurement."
+          icon={Users}
+          accent={{
+            text: "text-amber-700 dark:text-amber-400",
+            border: "border-amber-500/20",
+            iconBg: "bg-amber-100 text-amber-700 dark:bg-amber-500/15 dark:text-amber-400",
+          }}
+        />
       </div>
 
-      {/* Campaign list */}
-      <article className="overflow-hidden rounded-2xl bg-card shadow-sm">
-        <div className="flex flex-col gap-3 border-b border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-2">
-            <Eye className={cn("h-4 w-4", pageAccent)} />
-            <h2 className="text-sm font-semibold text-foreground font-serif">Campaigns</h2>
-            <span className="rounded-full bg-muted px-2 py-0.5 text-[10px] font-medium text-muted-foreground">
-              {filteredCampaigns.length}
-            </span>
+      {/* Active Journeys — horizontal campaign rows */}
+      <section>
+        <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+          <div>
+            <h3 className="font-serif text-3xl font-bold text-foreground">Active Journeys</h3>
+            <p className="mt-1 font-serif text-lg italic text-muted-foreground">
+              Real-time collaboration across {totals.active} active {totals.active === 1 ? "campaign" : "campaigns"}.
+            </p>
           </div>
           <div className="relative w-full sm:max-w-xs">
-            <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+            <Search className="pointer-events-none absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
             <input
               type="search"
               value={campaignSearch}
               onChange={(e) => setCampaignSearch(e.target.value)}
               placeholder="Search campaigns..."
-              className="w-full rounded-xl border border-input bg-muted/50 py-2 pl-9 pr-3 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-ring focus:bg-background focus:ring-2 focus:ring-ring/20"
+              className="w-full rounded-full border border-border bg-card py-2 pl-10 pr-4 text-sm text-foreground outline-none transition placeholder:text-muted-foreground focus:border-primary focus:ring-2 focus:ring-primary/20"
             />
           </div>
         </div>
 
         {loading ? (
-          <p className="p-4 text-sm text-muted-foreground">Loading tracking data...</p>
+          <p className="text-sm text-muted-foreground">Loading tracking data...</p>
         ) : paginatedCampaigns.length === 0 ? (
-          <div className="flex flex-col items-center gap-2 py-12 text-muted-foreground">
+          <div className="flex flex-col items-center gap-2 rounded-2xl border border-dashed border-border py-16 text-muted-foreground">
             <Search className="h-8 w-8 opacity-40" />
-            <p className="text-xs">{campaigns.length === 0 ? "No campaigns yet." : "No campaigns match your search."}</p>
+            <p className="text-sm">{campaigns.length === 0 ? "No campaigns yet." : "No campaigns match your search."}</p>
           </div>
         ) : (
-          <div className="grid gap-3 p-4 sm:grid-cols-2 lg:grid-cols-3">
+          <div className="space-y-8">
             {paginatedCampaigns.map((c) => (
-              <CampaignCard
-                key={c.id}
-                campaign={c}
-                role={role}
-                isSelected={selectedId === c.id}
-                onSelect={() => setSelectedId(c.id)}
-              />
+              <div key={c.id} className="space-y-6">
+                <JourneyRow
+                  campaign={c}
+                  role={role}
+                  isSelected={selectedId === c.id}
+                  onSelect={() => setSelectedId(selectedId === c.id ? null : c.id)}
+                />
+                {selectedId === c.id && renderDetailPanel(c)}
+              </div>
             ))}
           </div>
         )}
 
         {filteredCampaigns.length > CAMPAIGNS_PER_PAGE && (
-          <div className="flex flex-col gap-2 border-t border-border px-4 py-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-xs text-muted-foreground">
-              {(campaignPage - 1) * CAMPAIGNS_PER_PAGE + 1}–
-              {Math.min(campaignPage * CAMPAIGNS_PER_PAGE, filteredCampaigns.length)} of {filteredCampaigns.length}
-            </p>
+          <div className="mt-8 flex flex-col gap-3 border-t border-border pt-6 sm:flex-row sm:items-center sm:justify-between">
             <div className="flex items-center gap-1">
               <button
                 type="button"
                 onClick={() => setCampaignPage((p) => Math.max(1, p - 1))}
                 disabled={campaignPage === 1}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Previous page"
               >
                 <ChevronLeft className="h-4 w-4" />
@@ -574,9 +710,10 @@ function TrackingPageContent() {
                   key={p}
                   type="button"
                   onClick={() => setCampaignPage(p)}
+                  aria-current={p === campaignPage ? "page" : undefined}
                   className={cn(
-                    "min-w-8 rounded-lg px-2 py-1 text-xs font-semibold transition",
-                    p === campaignPage ? cn(pageBtn, "shadow-sm") : "text-muted-foreground hover:bg-muted"
+                    "flex h-9 w-9 items-center justify-center rounded-full border text-sm font-semibold transition",
+                    p === campaignPage ? "border-primary bg-primary text-primary-foreground" : "border-border text-muted-foreground hover:bg-muted"
                   )}
                 >
                   {p}
@@ -586,82 +723,19 @@ function TrackingPageContent() {
                 type="button"
                 onClick={() => setCampaignPage((p) => Math.min(totalCampaignPages, p + 1))}
                 disabled={campaignPage === totalCampaignPages}
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
+                className="flex h-9 w-9 items-center justify-center rounded-full border border-border text-muted-foreground transition hover:bg-muted disabled:cursor-not-allowed disabled:opacity-40"
                 aria-label="Next page"
               >
                 <ChevronRight className="h-4 w-4" />
               </button>
             </div>
+            <p className="font-serif text-sm italic text-muted-foreground">
+              Showing {(campaignPage - 1) * CAMPAIGNS_PER_PAGE + 1}–
+              {Math.min(campaignPage * CAMPAIGNS_PER_PAGE, filteredCampaigns.length)} of {filteredCampaigns.length}
+            </p>
           </div>
         )}
-      </article>
-
-      {/* Detail panel */}
-      {selectedCampaign && (
-        <article className="overflow-hidden rounded-2xl bg-card shadow-sm">
-          <div className="flex items-center justify-between gap-3 border-b border-border px-4 py-3">
-            <div className="flex min-w-0 items-center gap-2">
-              <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-nav-forest-100 dark:bg-nav-forest-900/40">
-                <Activity className="h-4 w-4 text-nav-forest-800 dark:text-nav-forest-100" />
-              </div>
-              <h2 className="truncate text-sm font-semibold text-foreground font-serif">{selectedCampaign.name}</h2>
-            </div>
-            <div className="flex shrink-0 items-center gap-1">
-              {/* Entry point to the client-facing presentation report. */}
-              <Link
-                href={`/tracking/${selectedCampaign.id}`}
-                title="Open client report"
-                className={cn("flex items-center gap-1.5 rounded-lg px-2.5 py-2 text-xs font-semibold hover:bg-nav-forest-100 dark:hover:bg-nav-forest-900/30", pageAccent)}
-              >
-                <FileText className="h-4 w-4" />
-                <span className="hidden sm:inline">Open report</span>
-              </Link>
-              <DetailViewToggle mode={detailViewMode} onChange={setDetailViewMode} disabled={detailRows.length === 0} />
-              <button
-                type="button"
-                onClick={exportExcel}
-                disabled={detailRows.length === 0}
-                title="Export CSV"
-                className={cn("rounded-lg p-2 hover:bg-nav-forest-100 dark:hover:bg-nav-forest-900/30 disabled:opacity-40", pageAccent)}
-              >
-                <Download className="h-4 w-4" />
-              </button>
-              <button
-                type="button"
-                onClick={() => setSelectedId(null)}
-                title="Close"
-                className="rounded-lg p-2 text-muted-foreground hover:bg-muted"
-              >
-                <X className="h-4 w-4" />
-              </button>
-            </div>
-          </div>
-
-          {shareMessage ? (
-            <div className="flex items-center gap-1.5 px-4 py-2 text-xs font-medium text-emerald-700 dark:text-emerald-300">
-              <Link2 className="h-3.5 w-3.5" />
-              {shareMessage}
-            </div>
-          ) : null}
-
-          {detailLoading ? (
-            <p className="p-4 text-sm text-muted-foreground">Loading detail...</p>
-          ) : detailRows.length === 0 ? (
-            <div className="flex flex-col items-center gap-2 py-10 text-muted-foreground">
-              <BarChart3 className="h-10 w-10 opacity-40" />
-              <p className="text-xs">No live rows for this campaign yet.</p>
-            </div>
-          ) : detailViewMode === "table" ? (
-            <DetailInfluencerTable rows={detailRows} />
-          ) : (
-            <div className="grid gap-3 p-4 sm:grid-cols-2 xl:grid-cols-3">
-              {detailRows.map((r) => (
-                <DetailInfluencerCard key={r.id} row={r} maxViews={maxDetailViews} maxEr={maxDetailEr} />
-              ))}
-            </div>
-          )}
-        </article>
-      )}
+      </section>
     </section>
   );
 }

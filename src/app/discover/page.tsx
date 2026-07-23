@@ -613,9 +613,7 @@ function DiscoverPageContent() {
     <div
       className={cn(
         "space-y-6 rounded-3xl p-4 lg:p-6",
-        publicSkin
-          ? "bg-[var(--lp-paper)]"
-          : "bg-gradient-to-b from-indigo-50/80 via-slate-50 to-slate-50 dark:from-slate-900 dark:via-slate-950 dark:to-slate-950"
+        publicSkin ? "bg-[var(--lp-paper)]" : "bg-transparent"
       )}
     >
       {publicSkin ? (
@@ -633,48 +631,20 @@ function DiscoverPageContent() {
           </p>
         </section>
       ) : (
-      <Card
-        className={cn(
-          "overflow-hidden",
-          publicSkin
-            ? "border border-[var(--lp-line)] bg-[var(--lp-surface)] shadow-none"
-            : "border-none shadow-sm bg-gradient-to-r from-[#0284c7] to-[#075985] text-white"
-        )}
-      >
-        <CardContent className="p-8 relative">
-          <div className={cn("absolute top-0 right-0 p-8", publicSkin ? "text-[var(--lp-accent)] opacity-[0.08]" : "opacity-10")}>
-            <Globe className="h-32 w-32" />
+        /* Authenticated masthead — travelogue banner in the page accent (bg-primary
+           picks up the per-page hue from .tv-accent-pine on the content section). */
+        <section className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground shadow-sm sm:flex-row sm:items-end">
+          <div className="relative z-10">
+            <h1 className="font-serif text-4xl font-bold italic sm:text-5xl">Discover Influencers</h1>
+            <p className="mt-2 max-w-md font-serif text-lg italic text-primary-foreground/90">
+              Find campaign-fit creators with smart filters and audience signals.
+            </p>
           </div>
-          <div className="relative z-10 flex flex-col gap-2 md:flex-row md:items-end md:justify-between">
-            <div>
-              <h1
-                className={cn(
-                  "tracking-tight",
-                  publicSkin
-                    ? "font-[family-name:var(--font-display)] text-3xl font-semibold text-[var(--lp-ink)] md:text-4xl"
-                    : "text-3xl font-extrabold font-serif"
-                )}
-              >
-                Discover Influencers
-              </h1>
-              <p className={cn("mt-2", publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-ink-soft)]" : "text-primary-foreground/80 font-medium")}>
-                Find campaign-fit creators with smart filters and audience signals.
-              </p>
-            </div>
-            <Badge
-              variant="outline"
-              className={cn(
-                "w-fit font-bold px-4 py-1.5",
-                publicSkin
-                  ? "border-[var(--lp-accent-line)] bg-[var(--lp-accent-soft)] text-[var(--lp-accent)] font-[family-name:var(--font-grotesk)]"
-                  : "border-white/30 bg-card/10 text-white backdrop-blur-sm"
-              )}
-            >
-              {totalCount} matches found
-            </Badge>
-          </div>
-        </CardContent>
-      </Card>
+          <span className="relative z-10 w-fit rounded-full border border-primary-foreground/30 bg-primary-foreground/15 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest">
+            {totalCount} matches found
+          </span>
+          <Globe className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
+        </section>
       )}
 
       {/* Search bar with inline filters (design parity: filters live at the
@@ -734,47 +704,55 @@ function DiscoverPageContent() {
             </div>
           </div>
         ) : (
-        <Card className={cn("overflow-hidden", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)] shadow-none" : "border-none shadow-sm")}>
-          <CardContent className="p-1">
-            <div className="flex flex-col gap-1 md:flex-row">
-              <div className="relative flex-1">
-                <Search className={cn("absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2", publicSkin ? "text-[var(--lp-muted)]" : "text-muted-foreground")} />
-                <Input
+          /* Authenticated journal search — bottom-rule field + serif italic entry,
+             matching the logged-out treatment in app tokens. */
+          <div className="flex flex-col items-end gap-6 border-b border-border py-6 md:flex-row">
+            <div className="relative flex-grow">
+              <label
+                htmlFor="roster-search-authed"
+                className="mb-2 block text-[10px] font-semibold uppercase tracking-widest text-muted-foreground"
+              >
+                Search the archive
+              </label>
+              <div className="relative">
+                <input
+                  id="roster-search-authed"
+                  type="text"
                   value={unifiedSearchInput}
                   onChange={(e) => setUnifiedSearchInput(e.target.value)}
-                  placeholder="Enter creator URL or type keywords for Smart Search..."
-                  className={cn("h-12 border-none shadow-none pl-11 pr-4 focus-visible:ring-0 text-sm", publicSkin && "bg-transparent font-[family-name:var(--font-grotesk)] text-[var(--lp-ink)] placeholder:text-[var(--lp-muted)]")}
+                  onKeyDown={(e) => { if (e.key === "Enter") handleUnifiedSearch(); }}
+                  placeholder="Enter a creator name, keyword, or profile URL..."
+                  className="w-full border-0 border-b border-border bg-transparent px-0 py-3 font-serif text-xl italic text-foreground outline-none transition-colors placeholder:text-muted-foreground/70 focus:border-primary"
                 />
+                <Search className="pointer-events-none absolute bottom-4 right-0 h-5 w-5 text-primary" />
               </div>
+            </div>
+            <div className="flex flex-none items-center gap-2">
               <Button
                 onClick={handleUnifiedSearch}
                 disabled={isUrlSearching}
-                className={cn(
-                  "h-12 rounded-none px-8 font-bold text-sm shadow-none",
-                  publicSkin && "bg-[var(--lp-accent)] font-[family-name:var(--font-grotesk)] text-[var(--lp-accent-ink)] hover:bg-[var(--lp-accent)] hover:brightness-[1.06]"
-                )}
+                className="h-12 rounded-full bg-primary px-8 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-md hover:brightness-110"
               >
                 {isUrlSearching ? <Loader2 className="h-4 w-4 animate-spin" /> : "Search"}
               </Button>
               <Button
                 type="button"
-                variant={showFiltersPanel ? "default" : "outline"}
+                variant="outline"
                 onClick={() => setShowFiltersPanel((v) => !v)}
                 aria-expanded={showFiltersPanel}
                 aria-label={showFiltersPanel ? "Hide filters" : "Show filters"}
-                className="h-12 rounded-none px-5 font-bold text-sm shadow-none"
+                className="h-12 rounded-full border-border px-5 text-xs font-semibold uppercase tracking-widest text-foreground shadow-none"
               >
                 <SlidersHorizontal className="h-4 w-4 md:mr-2" />
                 <span className="hidden md:inline">Filters</span>
                 {activeChips.length > 0 && (
-                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-black/10 px-1 text-xs font-bold leading-none dark:bg-white/25">
+                  <span className="ml-1.5 inline-flex h-4 min-w-4 items-center justify-center rounded-full bg-primary/10 px-1 text-xs font-bold leading-none text-primary">
                     {activeChips.length}
                   </span>
                 )}
               </Button>
             </div>
-          </CardContent>
-        </Card>
+          </div>
         )}
 
         {showFiltersPanel && (
@@ -1185,7 +1163,7 @@ function DiscoverPageContent() {
                 </div>
               )}
               <InfluencerCard
-                skin={publicSkin ? "travelogue" : "default"}
+                skin="travelogue"
                 influencer={generatedInfluencer}
                 isActive={selectedInfluencerId === generatedInfluencer.id}
                 onSelect={(selected) => setSelectedInfluencerId(selected.id)}
@@ -1197,7 +1175,7 @@ function DiscoverPageContent() {
 
         {/* Section 1 — hero grey box: the single Top Ten Trending shelf. */}
         {poolLoading ? (
-          <div className={cn("min-h-[200px] overflow-hidden rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
+          <div className={cn("min-h-[200px] overflow-hidden rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "border border-border bg-card/50")}>
             <div className="flex gap-4 overflow-hidden">
               {[0, 1, 2, 3, 4].map((i) => (
                 <Skeleton key={i} className="h-64 w-48 shrink-0 rounded-2xl" />
@@ -1205,13 +1183,13 @@ function DiscoverPageContent() {
             </div>
           </div>
         ) : poolInfluencers.length > 0 ? (
-          <div className={cn("rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "bg-muted/30")}>
+          <div className={cn("rounded-2xl p-4 sm:p-5", publicSkin ? "border border-[var(--lp-line)] bg-[var(--lp-surface)]" : "border border-border bg-card/50")}>
             <InfluencerShelf
-              skin={publicSkin ? "travelogue" : "default"}
+              skin="travelogue"
               title="Top Ten Trending"
               subtitle="Highest-performing creators by reach and campaign score"
-              titleClassName={publicSkin ? "font-[family-name:var(--font-display)] text-[var(--lp-ink)]" : undefined}
-              subtitleClassName={publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-muted)]" : undefined}
+              titleClassName={publicSkin ? "font-[family-name:var(--font-display)] text-[var(--lp-ink)]" : "font-serif text-foreground"}
+              subtitleClassName={publicSkin ? "font-[family-name:var(--font-grotesk)] text-[var(--lp-muted)]" : "text-muted-foreground"}
               influencers={trendingInfluencers}
               selectedId={selectedInfluencerId}
               onSelect={(selected) => setSelectedInfluencerId(selected.id)}
@@ -1235,10 +1213,12 @@ function DiscoverPageContent() {
                 )}
               </h2>
             ) : (
-              <>
-                <h2 className="font-serif text-lg font-bold text-foreground">All Influencers</h2>
-                {!loading && <span className="text-sm font-medium text-muted-foreground">{totalCount} creators</span>}
-              </>
+              <h2 className="font-serif text-3xl text-foreground">
+                The Full Roster
+                {!loading && (
+                  <span className="ml-3 text-base font-normal text-muted-foreground">/ {totalCount} found</span>
+                )}
+              </h2>
             )}
           </div>
           {loading ? (
@@ -1255,7 +1235,7 @@ function DiscoverPageContent() {
             <div className={cn("grid grid-cols-1 sm:grid-cols-2", publicSkin ? "gap-tv-gutter lg:grid-cols-4" : "gap-4 lg:grid-cols-3 xl:grid-cols-4")}>
               {influencers.map((influencer) => (
                 <InfluencerCard
-                skin={publicSkin ? "travelogue" : "default"}
+                skin="travelogue"
                   key={influencer.id}
                   influencer={influencer}
                   isActive={selectedInfluencerId === influencer.id}

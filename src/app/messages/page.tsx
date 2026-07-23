@@ -17,7 +17,7 @@ import {
   apiUploadConversationFile,
   type ConversationBrief,
 } from "@/lib/api";
-import { Send } from "lucide-react";
+import { MessagesSquare, Send } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001";
@@ -236,9 +236,14 @@ function MessagesView({ role }: { role: string }) {
   if (loadingConv) {
     return (
       <section className="space-y-6">
-        <div className="rounded-2xl bg-[#4a5639] p-6 text-white shadow-sm">
-          <h1 className="text-2xl font-bold font-serif">Messages</h1>
-          <p className="mt-1 text-sm text-white/70">Manage active conversations, files, and campaign workflow in one place.</p>
+        <div className="relative overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground shadow-sm">
+          <div className="relative z-10">
+            <h1 className="font-serif text-4xl font-bold italic sm:text-5xl">Messages</h1>
+            <p className="mt-2 max-w-md font-serif text-lg italic text-primary-foreground/90">
+              Manage active conversations, files, and campaign workflow in one place.
+            </p>
+          </div>
+          <MessagesSquare className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
         </div>
         <div className="grid gap-4 xl:grid-cols-[280px_1fr]">
           <div className="rounded-2xl bg-card p-4 shadow-sm h-[600px] flex flex-col gap-3">
@@ -259,9 +264,14 @@ function MessagesView({ role }: { role: string }) {
 
   return (
     <section className="space-y-6">
-      <div className="rounded-2xl bg-[#4a5639] p-6 text-white shadow-sm">
-        <h1 className="text-2xl font-bold font-serif">Messages</h1>
-        <p className="mt-1 text-sm text-white/70">Manage active conversations, files, and campaign workflow in one place.</p>
+      <div className="relative overflow-hidden rounded-xl bg-primary p-8 text-primary-foreground shadow-sm">
+        <div className="relative z-10">
+          <h1 className="font-serif text-4xl font-bold italic sm:text-5xl">Messages</h1>
+          <p className="mt-2 max-w-md font-serif text-lg italic text-primary-foreground/90">
+            Manage active conversations, files, and campaign workflow in one place.
+          </p>
+        </div>
+        <MessagesSquare className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
       </div>
 
       <div className="grid gap-4 xl:grid-cols-[280px_1fr]">

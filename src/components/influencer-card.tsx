@@ -52,6 +52,9 @@ interface InfluencerCardProps {
    * are never re-skinned by proximity.
    */
   skin?: "default" | "travelogue";
+  /** Denser layout (shorter cover, tighter padding, smaller controls) for grids
+   *  that pack more cards per row, e.g. /shortlist. Default keeps Discover's size. */
+  compact?: boolean;
 }
 
 /**
@@ -62,7 +65,7 @@ interface InfluencerCardProps {
  * `flex h-full` + `mt-auto` keep every card the same height with the button
  * pinned to the bottom.
  */
-export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign, skin = "default" }: InfluencerCardProps) {
+export function InfluencerCard({ influencer, isActive = false, onSelect, onAddToCampaign, skin = "default", compact = false }: InfluencerCardProps) {
   const tv = skin === "travelogue";
   // Canonical order: youtube → tiktok → instagram → rest
   const orderedPlatforms = [
@@ -112,7 +115,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
       )}
     >
       {/* Top — picture (fixed aspect so all cards' image regions match) */}
-      <div className="relative aspect-[6/5] w-full shrink-0 overflow-hidden">
+      <div className={cn("relative w-full shrink-0 overflow-hidden", compact ? "aspect-[3/2]" : "aspect-[6/5]")}>
         {showAvatarImg ? (
           <img
             src={activeAvatar as string}
@@ -169,7 +172,7 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
 
       {/* Bottom — info. flex-1 so it sizes to its content (button never clipped)
           and stretches to keep grid rows uniform. */}
-      <CardContent className="flex flex-1 flex-col gap-2.5 p-4">
+      <CardContent className={cn("flex flex-1 flex-col", compact ? "gap-2 p-3" : "gap-2.5 p-4")}>
         {orderedPlatforms.length > 0 && (
           <div
             className="flex gap-1.5"
@@ -188,13 +191,14 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
                   title={platform.charAt(0).toUpperCase() + platform.slice(1)}
                   onClick={(e) => { e.stopPropagation(); setActivePlatform(platform); }}
                   className={cn(
-                    "flex h-9 w-9 items-center justify-center rounded-full border transition-all cursor-pointer",
+                    "flex items-center justify-center rounded-full border transition-all cursor-pointer",
+                    compact ? "h-7 w-7" : "h-9 w-9",
                     isActiveTab
                       ? `${activeBg} border-transparent text-background shadow-sm`
                       : "border-border bg-background hover:bg-muted",
                   )}
                 >
-                  <Icon className={cn("size-5 shrink-0", isActiveTab ? "text-background" : "text-muted-foreground")} />
+                  <Icon className={cn("shrink-0", compact ? "size-4" : "size-5", isActiveTab ? "text-background" : "text-muted-foreground")} />
                 </button>
               );
             })}
@@ -215,7 +219,8 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
         {onAddToCampaign ? (
           <Button
             className={cn(
-              "mt-auto h-9 w-full text-sm",
+              "mt-auto w-full",
+              compact ? "h-8 text-xs" : "h-9 text-sm",
               tv
                 ? "rounded-tv-lg bg-tv-primary font-tv-body text-tv-label-caps uppercase text-tv-on-primary shadow-none hover:bg-tv-primary-container"
                 : "rounded-xl font-bold shadow-sm",

@@ -33,6 +33,7 @@ interface InfluencerMeta {
   intents: string[];
   audienceGender: string;
   audienceAgeGroup: string;
+  audienceTopLocations?: string[] | null;
   qualityScore: number;
   audienceQualityScore?: number | null;
   responseRate: number;
@@ -148,10 +149,13 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
     activeAudienceInsights != null ||
     (activeTopCountries && activeTopCountries.length > 0);
 
-  // Real country names from analytics data take priority over the hardcoded guess
+  // Synced per-platform countries win; then the creator's self-reported audience
+  // locations; then a guess derived from the creator's own country.
   const topLocationNames: string[] =
     activeTopCountries && activeTopCountries.length > 0
       ? activeTopCountries.map((c) => c.country)
+      : meta.audienceTopLocations && meta.audienceTopLocations.length > 0
+      ? meta.audienceTopLocations
       : meta.country
       ? getTopCountries(meta.country)
       : [];
@@ -556,7 +560,9 @@ export function InfluencerDetailPanel({ influencer, meta, onClose, onAddToCampai
             </div>
             {influencer.rateCardFileUrl && (
               <a
-                href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${influencer.rateCardFileUrl}`}
+                href={influencer.rateCardFileUrl.startsWith("http")
+                  ? influencer.rateCardFileUrl
+                  : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${influencer.rateCardFileUrl}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="flex items-center gap-2 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3 text-sm font-semibold text-primary hover:bg-primary/10 transition-colors"

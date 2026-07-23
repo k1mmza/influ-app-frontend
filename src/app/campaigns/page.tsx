@@ -12,16 +12,14 @@ import {
   apiGetPublicCampaigns,
   type PaginatedResponse,
 } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Rocket,
   Search,
-  Filter,
   RotateCcw,
   ChevronRight,
   ChevronLeft,
@@ -31,6 +29,9 @@ import {
   Target,
   Loader2,
   DollarSign,
+  Mountain,
+  Users,
+  ArrowRight,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -61,9 +62,9 @@ function budgetLabel(budget: number): string {
 
 /** coverImage has no source in our API → role-tinted gradient placeholder. */
 function roleCoverGradient(role: string | null | undefined): string {
-  if (role === "brand") return "bg-gradient-to-br from-role-navy to-role-navy/70";
-  if (role === "influencer") return "bg-gradient-to-br from-role-coral to-role-coral/70";
-  return "bg-gradient-to-br from-emerald-600 to-emerald-500"; // agency
+  if (role === "brand") return "bg-gradient-to-br from-primary to-primary/70";
+  if (role === "influencer") return "bg-gradient-to-br from-secondary to-secondary/70";
+  return "bg-gradient-to-br from-primary/80 to-secondary/70"; // agency
 }
 
 interface BrandCampaignVM {
@@ -174,68 +175,88 @@ function PaginationRow({
   );
 }
 
-/** One brand-side campaign card. Shared by the brand list and the agency
- *  brand→campaign view. */
+/** Status → luggage-tag badge palette (travelogue). Active reads as the olive
+ *  "stamped & approved" tag; draft is a neutral parchment tag; completed is muted. */
+function statusTag(status: BrandCampaignStatus): string {
+  if (status === "active")
+    return "bg-secondary/25 text-secondary dark:bg-secondary/30 dark:text-secondary-foreground";
+  if (status === "draft")
+    return "bg-muted text-muted-foreground";
+  return "bg-card/90 text-muted-foreground border border-border";
+}
+
+/** One brand-side campaign card — travelogue "postcard": a full-bleed cover photo
+ *  (role-tinted gradient fallback), a luggage-tag status badge, then an editorial
+ *  body with budget / deadline / roster and a "View management" itinerary link.
+ *  Shared by the brand list, the agency brand→campaign view, and admin oversight. */
 function BrandCampaignCard({ raw, role }: { raw: any; role: string | null }) {
   const c = toBrandCampaignVM(raw);
   return (
     <Link
       href={`/campaigns/${c.id}`}
-      className="group block overflow-hidden rounded-2xl border border-border bg-card shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
+      className="group relative flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm transition-all duration-300 hover:-translate-y-1 hover:shadow-md"
     >
-      {/* Campaign cover — same image as the campaign page; role-tinted gradient
-          fallback when the campaign has no uploaded cover. */}
-      <div className={cn("relative h-24 w-full", !c.coverImageUrl && roleCoverGradient(role))}>
+      {/* Postcard cover — uploaded photo when present, role-tinted gradient else. */}
+      <div className={cn("relative h-48 w-full overflow-hidden", !c.coverImageUrl && roleCoverGradient(role))}>
         {c.coverImageUrl ? (
           <img
             src={c.coverImageUrl}
             alt={`${c.name} cover`}
-            className="absolute inset-0 h-full w-full object-cover"
+            className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
           />
-        ) : null}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
+        ) : (
+          <Mountain className="absolute -bottom-3 -right-3 h-28 w-28 text-white/15" />
+        )}
         <span
           className={cn(
-            "absolute right-3 top-3 rounded-full px-2.5 py-1 text-[10px] font-bold uppercase",
-            c.status === "active"
-              ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-500/20 dark:text-emerald-200"
-              : c.status === "draft"
-                ? "bg-amber-50 text-amber-700 dark:bg-amber-500/20 dark:text-amber-200"
-                : "bg-card/90 text-muted-foreground"
+            "absolute right-4 top-4 rounded-full px-3 py-1 text-[11px] font-semibold uppercase tracking-widest capitalize backdrop-blur-sm",
+            statusTag(c.status),
           )}
         >
           {c.status}
         </span>
-        <h3 className="absolute inset-x-3 bottom-2 truncate text-base font-bold text-white font-serif drop-shadow">
-          {c.name}
-        </h3>
       </div>
 
-      <div className="p-5">
-        <div className="flex flex-wrap gap-2">
-          {c.visibility && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium capitalize text-muted-foreground">
-              {c.visibility}
-            </span>
-          )}
-          <span className="rounded-full bg-primary/10 px-2 py-0.5 text-xs font-medium text-primary">
-            {c.platform}
-          </span>
-          {c.brandName && (
-            <span className="rounded-full bg-muted px-2 py-0.5 text-xs font-medium text-muted-foreground">
-              {c.brandName}
-            </span>
-          )}
+      <div className="flex flex-grow flex-col gap-4 p-6">
+        <div className="space-y-1.5">
+          <h3 className="font-serif text-2xl font-semibold leading-tight text-foreground transition-colors group-hover:text-primary">
+            {c.name}
+          </h3>
+          <div className="flex items-center gap-2 text-sm">
+            {c.visibility && (
+              <span className="rounded bg-muted px-2 py-0.5 text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">
+                {c.visibility}
+              </span>
+            )}
+            {c.brandName && (
+              <>
+                <span className="text-border">—</span>
+                <span className="text-[11px] font-semibold uppercase tracking-widest text-secondary">
+                  {c.brandName}
+                </span>
+              </>
+            )}
+          </div>
         </div>
-        <ul className="mt-3 space-y-1 text-sm text-muted-foreground">
-          <li>Budget: {budgetLabel(c.budget)} · Spent: THB {c.spent.toLocaleString()}</li>
-          <li className="flex items-center gap-1.5">
-            <Calendar className="h-3.5 w-3.5" /> Deadline: {c.deadline}
-          </li>
-          <li>Influencers: {c.influencersJoined}</li>
-        </ul>
-        <p className="mt-3 inline-flex items-center text-sm font-bold text-primary transition-transform group-hover:translate-x-1">
-          View management <ChevronRight className="ml-1 h-4 w-4" />
+
+        <div className="space-y-2.5 border-t border-border/60 pt-4 text-sm text-foreground">
+          <div className="flex items-center justify-between">
+            <span className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground">Budget</span>
+            <span className="tabular-nums">{budgetLabel(c.budget)} · Spent THB {c.spent.toLocaleString()}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Calendar className="h-[18px] w-[18px]" />
+            <span>Deadline: {c.deadline}</span>
+          </div>
+          <div className="flex items-center gap-2 text-muted-foreground">
+            <Users className="h-[18px] w-[18px]" />
+            <span>Influencers: {c.influencersJoined}</span>
+          </div>
+        </div>
+
+        <p className="mt-auto inline-flex items-center gap-2 pt-2 text-[11px] font-semibold uppercase tracking-widest text-primary">
+          View management
+          <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
         </p>
       </div>
     </Link>
@@ -330,76 +351,82 @@ function BrandCampaignsView() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-[#b45309] to-[#78350f] text-white">
-        <CardContent className="p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-extrabold tracking-tight font-serif">Campaigns</h1>
-              <p className="text-white/80 font-medium">
-                Manage your active collaborations and marketplace listings.
-              </p>
-              <div className="pt-2">
-                <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
-                  {filtered.length} total campaigns
-                </Badge>
-              </div>
-            </div>
-            <Button size="lg" asChild className="rounded-xl bg-card text-primary font-bold shadow-xl hover:bg-card/90">
-              <Link href="/campaigns/create">
-                <Plus className="mr-2 h-5 w-5" />
-                Create Campaign
-              </Link>
-            </Button>
+    <div className="space-y-10">
+      {/* Editorial hero — persimmon "postcard" with a decorative landscape */}
+      <section className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-primary p-10 text-primary-foreground sm:flex-row sm:items-end">
+        <div className="relative z-10">
+          <h1 className="font-serif text-4xl font-bold sm:text-5xl">Campaigns</h1>
+          <p className="mt-2 max-w-md font-serif text-lg italic text-primary-foreground/90">
+            Manage your active collaborations and curated marketplace listings in your private workspace.
+          </p>
+          <div className="mt-6 inline-flex items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/15 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest">
+            {filtered.length} Total Campaigns
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Button
+          size="lg"
+          asChild
+          className="relative z-10 rounded-full bg-card px-8 font-semibold text-primary shadow-lg hover:bg-card/90"
+        >
+          <Link href="/campaigns/create">
+            <Plus className="mr-2 h-5 w-5" />
+            Create Campaign
+          </Link>
+        </Button>
+        <Mountain className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
+      </section>
 
-      <Card className="border-none shadow-sm">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Campaign Filters
-            </CardTitle>
-            <Button variant="ghost" size="sm" onClick={resetFilters} className="h-8 px-2 text-xs font-bold text-primary">
-              <RotateCcw className="mr-1.5 h-3 w-3" />
-              Reset
-            </Button>
+      {/* Filters — status tabs over an underlined search/visibility row */}
+      <section className="space-y-6">
+        <div className="flex items-center justify-between border-b border-border pb-4">
+          <div className="flex items-center gap-6 sm:gap-8">
+            {statusFilterOptions.map((s) => {
+              const active = status === s;
+              return (
+                <button
+                  key={s}
+                  onClick={() => { setStatus(s); setPage(1); }}
+                  className={cn(
+                    "cursor-pointer pb-4 text-[11px] font-semibold uppercase tracking-widest transition-colors",
+                    active
+                      ? "-mb-[17px] border-b-2 border-primary text-primary"
+                      : "text-muted-foreground hover:text-primary",
+                  )}
+                >
+                  {s === "All" ? "All Statuses" : s.charAt(0) + s.slice(1).toLowerCase()}
+                </button>
+              );
+            })}
           </div>
-        </CardHeader>
-        <CardContent>
-          <div className="grid gap-4 md:grid-cols-3">
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Search</Label>
-              <div className="relative">
-                <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
-                <Input
-                  value={search}
-                  onChange={(e) => { setSearch(e.target.value); setPage(1); }}
-                  placeholder="Campaign name..."
-                  className="pl-9 rounded-xl"
-                />
-              </div>
+          <button
+            onClick={resetFilters}
+            className="flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors hover:text-primary"
+          >
+            <RotateCcw className="h-3.5 w-3.5" />
+            Reset Filters
+          </button>
+        </div>
+
+        <div className="grid gap-6 md:grid-cols-2">
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">Search</Label>
+            <div className="flex items-center gap-2 border-b border-border py-2 transition-colors focus-within:border-primary">
+              <Search className="h-4 w-4 text-muted-foreground" />
+              <input
+                value={search}
+                onChange={(e) => { setSearch(e.target.value); setPage(1); }}
+                placeholder="Campaign name..."
+                className="w-full border-none bg-transparent p-0 text-sm italic text-primary outline-none placeholder:text-muted-foreground/60 focus:ring-0"
+              />
             </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</Label>
-              <select
-                value={status}
-                onChange={(e) => { setStatus(e.target.value as typeof status); setPage(1); }}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
-              >
-                {statusFilterOptions.map((s) => (
-                  <option key={s} value={s}>{s === "All" ? "All Statuses" : s.charAt(0) + s.slice(1).toLowerCase()}</option>
-                ))}
-              </select>
-            </div>
-            <div className="space-y-2">
-              <Label className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Visibility</Label>
+          </div>
+          <div className="space-y-2">
+            <Label className="text-[11px] font-semibold uppercase tracking-widest text-muted-foreground/70">Visibility</Label>
+            <div className="border-b border-border py-2 transition-colors focus-within:border-primary">
               <select
                 value={visibility}
                 onChange={(e) => { setVisibility(e.target.value as typeof visibility); setPage(1); }}
-                className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                className="w-full cursor-pointer border-none bg-transparent p-0 text-sm text-foreground outline-none focus:ring-0"
               >
                 {visibilityFilterOptions.map((v) => (
                   <option key={v} value={v}>{v === "All" ? "All Visibilities" : v.charAt(0) + v.slice(1).toLowerCase()}</option>
@@ -407,8 +434,8 @@ function BrandCampaignsView() {
               </select>
             </div>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      </section>
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -416,7 +443,7 @@ function BrandCampaignsView() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {pageItems.map((raw) => (
           <BrandCampaignCard key={raw.id} raw={raw} role={role} />
         ))}
@@ -599,7 +626,7 @@ function InfluencerDiscoverCampaignsView() {
         </Card>
       )}
 
-      <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {filtered.map((raw) => {
           const c = toInfCampaignVM(raw);
           return (
@@ -736,34 +763,33 @@ function AgencyCampaignsView() {
   }
 
   return (
-    <div className="space-y-6">
-      <Card className="border-none shadow-sm bg-gradient-to-r from-[#059669] to-[#064e3b] text-white">
-        <CardContent className="p-8">
-          <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-              <h1 className="text-3xl font-extrabold tracking-tight font-serif">
-                {selectedBrand ? selectedBrand.name : "Campaigns by Brand"}
-              </h1>
-              <p className="text-white/80 font-medium">
-                {selectedBrand
-                  ? "Campaigns for this brand."
-                  : "Pick a brand to view and manage its campaigns."}
-              </p>
-              <div className="pt-2">
-                <Badge variant="outline" className="border-white/30 bg-card/10 text-white font-bold px-3 py-1 backdrop-blur-sm">
-                  {selectedBrand ? `${brandCampaigns.length} campaigns` : `${brands.length} brands`}
-                </Badge>
-              </div>
-            </div>
-            <Button size="lg" asChild className="rounded-xl bg-card text-emerald-700 font-bold shadow-xl hover:bg-card/90">
-              <Link href="/campaigns/create">
-                <Plus className="mr-2 h-5 w-5" />
-                Create Campaign
-              </Link>
-            </Button>
+    <div className="space-y-10">
+      <section className="relative flex flex-col justify-between gap-6 overflow-hidden rounded-xl bg-primary p-10 text-primary-foreground sm:flex-row sm:items-end">
+        <div className="relative z-10">
+          <h1 className="font-serif text-4xl font-bold sm:text-5xl">
+            {selectedBrand ? selectedBrand.name : "Campaigns by Brand"}
+          </h1>
+          <p className="mt-2 max-w-md font-serif text-lg italic text-primary-foreground/90">
+            {selectedBrand
+              ? "Manage this brand's active collaborations and marketplace listings."
+              : "Pick a brand to view and manage its campaigns."}
+          </p>
+          <div className="mt-6 inline-flex items-center rounded-full border border-primary-foreground/30 bg-primary-foreground/15 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-widest">
+            {selectedBrand ? `${brandCampaigns.length} Campaigns` : `${brands.length} Brands`}
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <Button
+          size="lg"
+          asChild
+          className="relative z-10 rounded-full bg-card px-8 font-semibold text-primary shadow-lg hover:bg-card/90"
+        >
+          <Link href="/campaigns/create">
+            <Plus className="mr-2 h-5 w-5" />
+            Create Campaign
+          </Link>
+        </Button>
+        <Mountain className="pointer-events-none absolute -bottom-10 -right-8 h-56 w-56 opacity-10" />
+      </section>
 
       {error && (
         <Card className="border-destructive/30 bg-destructive/5">
@@ -784,7 +810,7 @@ function AgencyCampaignsView() {
               </CardContent>
             </Card>
           ) : (
-            <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
               {brandCampaigns.map((raw) => (
                 <BrandCampaignCard key={raw.id} raw={raw} role={role} />
               ))}
@@ -812,7 +838,7 @@ function AgencyCampaignsView() {
               className="group flex items-center justify-between rounded-2xl border border-border bg-card p-6 text-left shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md"
             >
               <div className="flex items-center gap-4">
-                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-emerald-50 text-lg font-bold text-emerald-700 dark:bg-emerald-500/15 dark:text-emerald-300">
+                <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl bg-primary/10 font-serif text-lg font-bold text-primary">
                   {b.name.charAt(0).toUpperCase()}
                 </div>
                 <div className="min-w-0">

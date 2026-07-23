@@ -1,20 +1,159 @@
 "use client";
 
-import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink, ShieldCheck } from "lucide-react";
+import { Download, Heart, Upload, Loader2, CheckCircle2, FileText, Trash2, ExternalLink, Youtube, Unlink, ShieldCheck, X, RefreshCw } from "lucide-react";
 import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import type { Role } from "@/lib/types";
 import { useMediaKitStore } from "@/store/useMediaKitStore";
 import { useReviewStore } from "@/store/useReviewStore";
 import { useUserStore } from "@/store/useUserStore";
-import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar, apiSetAvatarUrl } from "@/lib/api";
+import { apiGetProfile, apiUpdateProfile, apiUploadRateCard, apiDeleteRateCard, apiConnectPlatform, apiDisconnectPlatform, apiGetCompleteness, apiUploadAvatar, apiSetAvatarUrl, apiSyncMyPlatforms } from "@/lib/api";
 import { SiInstagram, SiTiktok, SiYoutube } from "react-icons/si";
 import { Camera } from "lucide-react";
 import { AvatarPickerModal } from "@/components/avatar-picker-modal";
 import { notifyAvatarUpdated } from "@/lib/use-profile-avatar";
 import { MediaKitImportPanel, type MediaKitImportHandle } from "@/components/media-kit-import-panel";
 
+// Canonical niche list — keep in sync with the discover filter `categories`
+// (backend CATEGORY_TAGS). Offered as quick-add chips; creators can also type
+// their own custom niches.
+const NICHE_SUGGESTIONS = [
+  "Beauty", "Fashion", "Fitness", "Food", "Gaming", "Travel", "Tech", "Lifestyle",
+  "Education", "Entertainment", "Business", "Music", "Sports", "Comedy", "DIY",
+  "Cooking", "Health",
+];
+
+const AVAILABILITY_OPTIONS = [
+  "Available for work",
+  "Selectively available",
+  "Booked — not available",
+];
+
 // ─── Shared subcomponents ────────────────────────────────────────────────────
+
+// Editable tag field: existing tags render as removable olive chips, a free-text
+// entry adds custom tags (Enter / comma / blur), and optional preset chips give
+// quick one-tap adds. Used for niches & services on the creator profile.
+function TagField({
+  value,
+  onChange,
+  suggestions = [],
+  placeholder = "Type and press Enter…",
+}: {
+  value: string[];
+  onChange: (next: string[]) => void;
+  suggestions?: string[];
+  placeholder?: string;
+}) {
+  const [draft, setDraft] = useState("");
+  const has = (t: string) => value.some((v) => v.toLowerCase() === t.toLowerCase());
+  const add = (raw: string) => {
+    const t = raw.trim();
+    if (!t || has(t)) return;
+    onChange([...value, t]);
+  };
+  const remove = (t: string) => onChange(value.filter((v) => v !== t));
+  const openSuggestions = suggestions.filter((s) => !has(s));
+
+  return (
+    <div>
+      <div className="mt-1 flex flex-wrap items-center gap-2 rounded-xl border border-border bg-background px-3 py-2 transition-colors focus-within:border-primary">
+        {value.map((tag) => (
+          <span
+            key={tag}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-secondary/40 bg-secondary/15 px-2.5 py-1 text-xs font-semibold text-secondary"
+          >
+            {tag}
+            <button
+              type="button"
+              onClick={() => remove(tag)}
+              className="cursor-pointer text-secondary/60 transition-colors hover:text-secondary"
+              aria-label={`Remove ${tag}`}
+            >
+              <X className="h-3 w-3" />
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" || e.key === ",") {
+              e.preventDefault();
+              add(draft);
+              setDraft("");
+            } else if (e.key === "Backspace" && !draft && value.length) {
+              remove(value[value.length - 1]);
+            }
+          }}
+          onBlur={() => {
+            if (draft.trim()) {
+              add(draft);
+              setDraft("");
+            }
+          }}
+          placeholder={value.length ? "" : placeholder}
+          className="min-w-[10ch] flex-1 border-0 bg-transparent p-0 text-sm text-foreground outline-none placeholder:text-muted-foreground"
+        />
+      </div>
+      {openSuggestions.length > 0 && (
+        <div className="mt-2 flex flex-wrap gap-1.5">
+          {openSuggestions.map((s) => (
+            <button
+              key={s}
+              type="button"
+              onClick={() => add(s)}
+              className="cursor-pointer rounded-lg border border-border px-2.5 py-1 text-xs text-muted-foreground transition-all duration-150 hover:border-primary/50 hover:bg-primary/5 hover:text-primary"
+            >
+              + {s}
+            </button>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+// Self-contained "Sync my stats" control for the creator profile — pulls fresh
+// platform metrics from the connected accounts (same endpoint as the dashboard).
+function ProfileSyncButton() {
+  const token = useUserStore((s) => s.token);
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<string | null>(null);
+
+  const run = async () => {
+    if (!token) return;
+    setLoading(true);
+    setResult(null);
+    try {
+      const r = await apiSyncMyPlatforms(token);
+      setResult(
+        r.total === 0
+          ? "No connected accounts"
+          : `Synced ${r.synced} of ${r.total} account${r.total === 1 ? "" : "s"}`,
+      );
+    } catch (err: any) {
+      setResult(err?.message ?? "Sync failed");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div className="flex flex-wrap items-center gap-2">
+      <button
+        type="button"
+        onClick={run}
+        disabled={loading || !token}
+        className="inline-flex items-center gap-2 rounded-full border border-border bg-background px-4 py-1.5 text-xs font-semibold uppercase tracking-widest text-foreground transition-colors hover:border-primary hover:text-primary disabled:opacity-50"
+      >
+        {loading ? <Loader2 className="h-3.5 w-3.5 animate-spin" /> : <RefreshCw className="h-3.5 w-3.5" />}
+        Sync my stats
+      </button>
+      {result && <span className="text-xs text-muted-foreground">{result}</span>}
+    </div>
+  );
+}
 
 function ProfileRatingAvatar({
   src,
@@ -44,64 +183,6 @@ function ProfileRatingAvatar({
         <span>{avg != null ? avg.toFixed(1) : "—"}</span>
       </div>
     </div>
-  );
-}
-
-function ProfileReviewsSection({ role }: { role: Role }) {
-  const displayName = useUserStore((s) => s.name);
-  const reviews = useReviewStore((s) => s.reviews);
-  const written = useMemo(
-    () => useReviewStore.getState().getReviewsWrittenBy(role, displayName),
-    [reviews, role, displayName]
-  );
-  const received = useMemo(
-    () => useReviewStore.getState().getReviewsReceivedBy(role, displayName),
-    [reviews, role, displayName]
-  );
-
-  return (
-    <article className="rounded-2xl bg-card p-5 shadow-sm">
-      <h2 className="text-lg font-semibold text-foreground font-serif">Partner review ratings</h2>
-      <p className="mt-1 text-xs text-muted-foreground">
-        Ratings use your account display name (same as when you submit reviews on a finished campaign).
-      </p>
-      <div className="mt-4 grid gap-4 md:grid-cols-2">
-        <div>
-          <h3 className="text-sm font-semibold text-foreground font-serif">Comments you wrote</h3>
-          {written.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No reviews yet.</p>
-          ) : (
-            <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-              {written.map((r) => (
-                <li key={r.id} className="rounded-lg border border-border bg-muted px-3 py-2">
-                  <p className="font-medium text-foreground">
-                    {r.rating}/5 → {r.toName} ({r.toRole}) — {r.campaignName}
-                  </p>
-                  {r.comment ? <p className="mt-1 text-muted-foreground">&ldquo;{r.comment}&rdquo;</p> : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-        <div>
-          <h3 className="text-sm font-semibold text-foreground font-serif">Comments about you</h3>
-          {received.length === 0 ? (
-            <p className="mt-2 text-sm text-muted-foreground">No partner feedback yet.</p>
-          ) : (
-            <ul className="mt-2 space-y-2 text-sm text-muted-foreground">
-              {received.map((r) => (
-                <li key={r.id} className="rounded-lg border border-border bg-muted px-3 py-2">
-                  <p className="font-medium text-foreground">
-                    {r.rating}/5 from {r.fromName} ({r.fromRole}) — {r.campaignName}
-                  </p>
-                  {r.comment ? <p className="mt-1 text-muted-foreground">&ldquo;{r.comment}&rdquo;</p> : null}
-                </li>
-              ))}
-            </ul>
-          )}
-        </div>
-      </div>
-    </article>
   );
 }
 
@@ -223,7 +304,14 @@ function BrandProfileView() {
     [profileRole, userName],
   );
 
-  const inputCls = "mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition focus:border-primary/70 focus:ring-2 focus:ring-primary/10";
+  // Journal-underline field (Stitch brand-profile): bottom border only, ink-on-paper.
+  const journalCls =
+    "w-full border-0 border-b border-border bg-transparent px-0 py-2 text-sm text-foreground outline-none transition-colors focus:border-primary focus:ring-0";
+  const labelCls = "mb-1 block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground";
+  const isAgency = role === "agency";
+  const stampCls = isAgency ? "bg-secondary text-secondary-foreground" : "bg-primary text-primary-foreground";
+  const stampLabel = isAgency ? "Agency" : "Brand";
+  const entityWord = isAgency ? "agency" : "company";
 
   if (loading) {
     return (
@@ -234,134 +322,152 @@ function BrandProfileView() {
   }
 
   return (
-    <section key={role} className="space-y-6">
-      <h1 className="text-2xl font-bold text-foreground font-serif">{heading}</h1>
-      <p className="text-muted-foreground">{subline}</p>
+    <section key={role} className="space-y-10">
+      {/* Page heading */}
+      <div className="space-y-2">
+        <h1 className="font-serif text-3xl font-bold text-foreground">{heading}</h1>
+        <p className="max-w-2xl text-sm text-muted-foreground">{subline}</p>
+      </div>
 
-      <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
-        <article className="rounded-2xl bg-card p-5 shadow-sm">
-          <div className="flex flex-col items-center text-center">
-            <div className="relative inline-block">
-              <AvatarTrigger
-                src={displayAvatar}
-                alt="Company"
-                imgClassName="h-24 w-24 rounded-2xl border border-border object-cover"
-                onClick={() => setShowAvatarPicker(true)}
-              />
-              <div className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md">
-                <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
-                <span>{avgRating?.toFixed(1) ?? "—"}</span>
-              </div>
-            </div>
-            {showAvatarPicker && token && (
-              <AvatarPickerModal
-                currentUrl={displayAvatar}
-                onClose={() => setShowAvatarPicker(false)}
-                onSelect={async (url) => {
-                  await apiSetAvatarUrl(token, url);
-                  setAvatarUrl(url);
-                  notifyAvatarUpdated();
-                  setShowAvatarPicker(false);
-                }}
-                onUpload={async (file) => {
-                  const { avatarUrl: url } = await apiUploadAvatar(token, file);
-                  setAvatarUrl(url);
-                  notifyAvatarUpdated();
-                }}
-                onRemove={async () => {
-                  await apiSetAvatarUrl(token, "");
-                  setAvatarUrl(null);
-                  notifyAvatarUpdated();
-                }}
-              />
-            )}
-            <p className="mt-3 font-semibold text-foreground font-serif">{companyName || userName}</p>
-            <p className="text-sm text-muted-foreground">{position || "—"}</p>
-            <p className="mt-1 text-xs text-muted-foreground">{email}</p>
+      {/* Profile card — stamped identity plaque (travelogue) */}
+      <section className="relative flex flex-col items-center gap-8 overflow-hidden rounded-2xl border border-border bg-card p-8 shadow-sm transition-transform duration-500 md:flex-row lg:-rotate-[0.3deg] lg:hover:rotate-0">
+        <span className={`absolute right-6 top-6 flex items-center gap-1 rounded-full px-4 py-1 text-[10px] font-semibold uppercase tracking-widest shadow-sm ${stampCls}`}>
+          <ShieldCheck className="h-3 w-3" aria-hidden /> {stampLabel}
+        </span>
+        <div className="relative shrink-0">
+          <AvatarTrigger
+            src={displayAvatar}
+            alt="Company"
+            imgClassName="h-32 w-32 rounded-full border-4 border-muted object-cover"
+            onClick={() => setShowAvatarPicker(true)}
+          />
+          <div className="pointer-events-none absolute -right-1 -top-1 flex items-center gap-0.5 rounded-full border border-rose-100 bg-card px-1.5 py-0.5 text-[11px] font-bold leading-none text-rose-600 shadow-md">
+            <Heart className="h-3.5 w-3.5 shrink-0 fill-rose-500 text-rose-500" aria-hidden />
+            <span>{avgRating?.toFixed(1) ?? "—"}</span>
           </div>
-        </article>
-
-        <div className="space-y-4">
-          <article className="rounded-2xl bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground font-serif">Company &amp; user</h2>
-            <div className="mt-4 grid gap-3 sm:grid-cols-2">
-              <label className="block text-sm">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company name</span>
-                <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={inputCls} />
-              </label>
-              <label className="block text-sm">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Your name</span>
-                <input value={userName} onChange={(e) => setUserName(e.target.value)} className={inputCls} />
-              </label>
-              <label className="block text-sm">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Position</span>
-                <input value={position} onChange={(e) => setPosition(e.target.value)} className={inputCls} />
-              </label>
-              <label className="block text-sm">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Email</span>
-                <input type="email" value={email} readOnly className={`${inputCls} cursor-default opacity-60`} />
-              </label>
-              <label className="block text-sm sm:col-span-2">
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Telephone</span>
-                <input value={phone} onChange={(e) => setPhone(e.target.value)} className={inputCls} />
-              </label>
-            </div>
-            <label className="mt-3 block text-sm">
-              <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company details</span>
-              <textarea
-                value={companyDetail}
-                onChange={(e) => setCompanyDetail(e.target.value)}
-                rows={4}
-                className={inputCls}
-              />
-            </label>
-
-            <div className="mt-6 border-t border-border pt-5">
-              <h3 className="text-base font-semibold text-foreground font-serif">Website &amp; company socials</h3>
-              <div className="mt-4 grid gap-3 sm:grid-cols-2">
-                <label className="block text-sm sm:col-span-2">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Company website</span>
-                  <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" className={inputCls} />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Instagram</span>
-                  <input type="url" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} placeholder="https://www.instagram.com/…" className={inputCls} />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Facebook</span>
-                  <input type="url" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} placeholder="https://www.facebook.com/…" className={inputCls} />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">LinkedIn</span>
-                  <input type="url" value={socialLinkedIn} onChange={(e) => setSocialLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/company/…" className={inputCls} />
-                </label>
-                <label className="block text-sm">
-                  <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">TikTok</span>
-                  <input type="url" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} placeholder="https://www.tiktok.com/@…" className={inputCls} />
-                </label>
-              </div>
-            </div>
-
-            <div className="mt-6 flex items-center gap-3">
-              <button
-                type="button"
-                onClick={handleSave}
-                disabled={saving}
-                className="inline-flex items-center gap-2 rounded-xl bg-primary px-4 py-2 text-sm font-semibold text-white transition hover:bg-primary/90 disabled:opacity-60"
-              >
-                {saving && <Loader2 className="h-4 w-4 animate-spin" />}
-                Save changes
-              </button>
-              {saved && (
-                <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
-                  <CheckCircle2 className="h-4 w-4" /> Saved
-                </span>
-              )}
-            </div>
-          </article>
-
-          <ProfileReviewsSection role={profileRole} />
         </div>
+        {showAvatarPicker && token && (
+          <AvatarPickerModal
+            currentUrl={displayAvatar}
+            onClose={() => setShowAvatarPicker(false)}
+            onSelect={async (url) => {
+              await apiSetAvatarUrl(token, url);
+              setAvatarUrl(url);
+              notifyAvatarUpdated();
+              setShowAvatarPicker(false);
+            }}
+            onUpload={async (file) => {
+              const { avatarUrl: url } = await apiUploadAvatar(token, file);
+              setAvatarUrl(url);
+              notifyAvatarUpdated();
+            }}
+            onRemove={async () => {
+              await apiSetAvatarUrl(token, "");
+              setAvatarUrl(null);
+              notifyAvatarUpdated();
+            }}
+          />
+        )}
+        <div className="text-center md:text-left">
+          <h3 className="font-serif text-2xl font-bold text-foreground">{companyName || userName}</h3>
+          <p className="mt-1 font-serif italic text-muted-foreground">{position || "—"}</p>
+          <p className="mt-0.5 text-xs text-muted-foreground">{email}</p>
+        </div>
+      </section>
+
+      {/* Account information — split header/box (Stitch 12-col) */}
+      <section className="grid grid-cols-1 gap-8 md:grid-cols-12">
+        <div className="space-y-2 md:col-span-4">
+          <h4 className="font-serif text-xl font-semibold text-foreground">Account information</h4>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Keep your {entityWord} details current so creators and contracts reference the right information.
+          </p>
+        </div>
+        <div className="space-y-6 rounded-2xl border border-border bg-card p-8 shadow-sm md:col-span-8">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <label className="block">
+              <span className={labelCls}>Company name</span>
+              <input value={companyName} onChange={(e) => setCompanyName(e.target.value)} className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>Your name</span>
+              <input value={userName} onChange={(e) => setUserName(e.target.value)} className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>Position</span>
+              <input value={position} onChange={(e) => setPosition(e.target.value)} className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>Email</span>
+              <input type="email" value={email} readOnly className={`${journalCls} cursor-default opacity-60`} />
+            </label>
+            <label className="block sm:col-span-2">
+              <span className={labelCls}>Telephone</span>
+              <input value={phone} onChange={(e) => setPhone(e.target.value)} className={journalCls} />
+            </label>
+          </div>
+          <label className="block">
+            <span className={labelCls}>Company details</span>
+            <textarea
+              value={companyDetail}
+              onChange={(e) => setCompanyDetail(e.target.value)}
+              rows={4}
+              className={`${journalCls} resize-none`}
+            />
+          </label>
+        </div>
+      </section>
+
+      {/* Website & socials — split header/box (Stitch 12-col) */}
+      <section className="grid grid-cols-1 gap-8 md:grid-cols-12">
+        <div className="space-y-2 md:col-span-4">
+          <h4 className="font-serif text-xl font-semibold text-foreground">Website &amp; socials</h4>
+          <p className="text-sm leading-relaxed text-muted-foreground">
+            Add your site and social profiles so creators know exactly who they are working with.
+          </p>
+        </div>
+        <div className="rounded-2xl border border-border bg-card p-8 shadow-sm md:col-span-8">
+          <div className="grid gap-6 sm:grid-cols-2">
+            <label className="block sm:col-span-2">
+              <span className={labelCls}>Company website</span>
+              <input type="url" value={websiteUrl} onChange={(e) => setWebsiteUrl(e.target.value)} placeholder="https://" className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>Instagram</span>
+              <input type="url" value={socialInstagram} onChange={(e) => setSocialInstagram(e.target.value)} placeholder="https://www.instagram.com/…" className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>Facebook</span>
+              <input type="url" value={socialFacebook} onChange={(e) => setSocialFacebook(e.target.value)} placeholder="https://www.facebook.com/…" className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>LinkedIn</span>
+              <input type="url" value={socialLinkedIn} onChange={(e) => setSocialLinkedIn(e.target.value)} placeholder="https://www.linkedin.com/company/…" className={journalCls} />
+            </label>
+            <label className="block">
+              <span className={labelCls}>TikTok</span>
+              <input type="url" value={socialTikTok} onChange={(e) => setSocialTikTok(e.target.value)} placeholder="https://www.tiktok.com/@…" className={journalCls} />
+            </label>
+          </div>
+        </div>
+      </section>
+
+      {/* Save action */}
+      <div className="flex items-center gap-3 border-t border-border pt-6">
+        <button
+          type="button"
+          onClick={handleSave}
+          disabled={saving}
+          className="inline-flex cursor-pointer items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-md transition hover:brightness-110 disabled:opacity-60"
+        >
+          {saving ? <Loader2 className="h-4 w-4 animate-spin" /> : <CheckCircle2 className="h-4 w-4" />}
+          Save changes
+        </button>
+        {saved && (
+          <span className="flex items-center gap-1.5 text-sm font-medium text-emerald-600">
+            <CheckCircle2 className="h-4 w-4" /> Saved
+          </span>
+        )}
       </div>
     </section>
   );
@@ -426,6 +532,30 @@ function InfluencerProfileView() {
           if (Array.isArray(p.categories) && p.categories.length > 0) updates.categories = p.categories;
           if (p.availabilityStatus) updates.availability = p.availabilityStatus;
           if (p.country) updates.location = p.country;
+          // Settings — visibility enum ↔ privacy label; notification prefs.
+          if (typeof p.visibility === "string") {
+            updates.privacy = p.visibility.charAt(0) + p.visibility.slice(1).toLowerCase();
+          }
+          if (typeof p.messageAlerts === "boolean" || typeof p.campaignAlerts === "boolean") {
+            updates.notificationSettings = {
+              messageAlerts: p.messageAlerts ?? kit.notificationSettings.messageAlerts,
+              campaignAlerts: p.campaignAlerts ?? kit.notificationSettings.campaignAlerts,
+            };
+          }
+          // Self-reported media-kit audience (headline numbers + audience breakdown).
+          const mk = p.mediaKitAudience as Record<string, any> | null | undefined;
+          if (mk && typeof mk === "object") {
+            if (typeof mk.totalFollowers === "number") updates.totalFollowers = mk.totalFollowers;
+            if (typeof mk.averageViews === "number") updates.averageViews = mk.averageViews;
+            if (typeof mk.engagementRate === "number") updates.engagementRate = mk.engagementRate;
+            if (typeof mk.growthRate === "number") updates.growthRate = mk.growthRate;
+            updates.audience = {
+              gender: mk.gender ?? kit.audience.gender,
+              age: mk.age ?? kit.audience.age,
+              topCountries: Array.isArray(mk.topCountries) ? mk.topCountries : kit.audience.topCountries,
+              topCities: Array.isArray(mk.topCities) ? mk.topCities : kit.audience.topCities,
+            };
+          }
           if (Array.isArray(data.platforms) && data.platforms.length > 0) {
             setPlatformAccounts(data.platforms);
             // auto-fill handle from primary connected platform
@@ -460,6 +590,22 @@ function InfluencerProfileView() {
           categories: kit.categories,
           availabilityStatus: kit.availability,
           country: kit.location || undefined,
+          // Settings → backend: privacy label maps to the ProfileVisibility enum.
+          visibility:
+            kit.privacy === "Private" ? "PRIVATE" : kit.privacy === "Unlisted" ? "UNLISTED" : "PUBLIC",
+          messageAlerts: kit.notificationSettings.messageAlerts,
+          campaignAlerts: kit.notificationSettings.campaignAlerts,
+          // Self-reported audience — display fallback; synced platform data wins.
+          mediaKitAudience: {
+            totalFollowers: kit.totalFollowers,
+            averageViews: kit.averageViews,
+            engagementRate: kit.engagementRate,
+            growthRate: kit.growthRate,
+            gender: kit.audience.gender || undefined,
+            age: kit.audience.age || undefined,
+            topCountries: kit.audience.topCountries,
+            topCities: kit.audience.topCities,
+          },
         },
       });
       useUserStore.setState({ name: kit.displayName });
@@ -892,8 +1038,13 @@ Engagement rate:
           </article>
 
           <article className="rounded-2xl bg-card p-5 shadow-sm">
-            <h2 className="text-lg font-semibold text-foreground font-serif">Connected platform stats</h2>
-            <p className="mt-0.5 text-xs text-muted-foreground">Live data from your linked accounts. Connect platforms above to populate.</p>
+            <div className="flex flex-wrap items-start justify-between gap-3">
+              <div>
+                <h2 className="text-lg font-semibold text-foreground font-serif">Connected platform stats</h2>
+                <p className="mt-0.5 text-xs text-muted-foreground">Live data from your linked accounts. Connect platforms above to populate.</p>
+              </div>
+              <ProfileSyncButton />
+            </div>
             {platformAccounts.filter((pa) => pa.hasTokens).length === 0 ? (
               <p className="mt-4 text-sm text-muted-foreground">No connected accounts yet.</p>
             ) : (
@@ -949,19 +1100,26 @@ Engagement rate:
         </div>
       </div>
 
-      <ProfileReviewsSection role="influencer" />
-
       <div className="grid gap-4 md:grid-cols-2">
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Niches &amp; deliverables</h2>
-          <label className="mt-3 block text-sm">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Categories (comma or newline separated)</span>
-            <textarea value={kit.categories.join(", ")} onChange={(e) => setKit({ categories: parseListInput(e.target.value) })} rows={2} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
-          </label>
-          <label className="mt-3 block text-sm">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Services (comma or newline separated)</span>
-            <textarea value={kit.services.join(", ")} onChange={(e) => setKit({ services: parseListInput(e.target.value) })} rows={2} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
-          </label>
+          <div className="mt-3 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Categories — pick or add your own</span>
+            <TagField
+              value={kit.categories}
+              onChange={(next) => setKit({ categories: next })}
+              suggestions={NICHE_SUGGESTIONS}
+              placeholder="Add a niche (e.g. Skincare) and press Enter…"
+            />
+          </div>
+          <div className="mt-3 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Services you offer</span>
+            <TagField
+              value={kit.services}
+              onChange={(next) => setKit({ services: next })}
+              placeholder="Add a service (e.g. UGC video) and press Enter…"
+            />
+          </div>
         </article>
 
         <article className="rounded-2xl bg-card p-5 shadow-sm">
@@ -1007,7 +1165,9 @@ Engagement rate:
                 <div className="flex items-center gap-2 text-sm font-medium text-foreground">
                   <FileText className="h-4 w-4 text-primary shrink-0" />
                   <a
-                    href={`${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${rateCardUrl}`}
+                    href={rateCardUrl.startsWith("http")
+                      ? rateCardUrl
+                      : `${process.env.NEXT_PUBLIC_API_URL || "http://localhost:3001"}${rateCardUrl}`}
                     target="_blank"
                     rel="noopener noreferrer"
                     className="hover:underline text-primary flex items-center gap-1"
@@ -1093,24 +1253,51 @@ Engagement rate:
           <h2 className="text-lg font-semibold text-foreground font-serif">Availability</h2>
           <label className="mt-2 block text-sm">
             <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Status</span>
-            <input value={kit.availability} onChange={(e) => setKit({ availability: e.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+            <select
+              value={kit.availability}
+              onChange={(e) => setKit({ availability: e.target.value })}
+              className="mt-1 w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary"
+            >
+              <option value="">Select status…</option>
+              {AVAILABILITY_OPTIONS.map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+              {kit.availability && !AVAILABILITY_OPTIONS.includes(kit.availability) && (
+                <option value={kit.availability}>{kit.availability}</option>
+              )}
+            </select>
           </label>
+          <p className="mt-2 text-xs text-muted-foreground">Saved to your profile — brands and agencies see this when they view you.</p>
         </article>
 
         <article className="rounded-2xl bg-card p-5 shadow-sm">
           <h2 className="text-lg font-semibold text-foreground font-serif">Settings</h2>
+          <p className="mt-0.5 text-xs text-muted-foreground">Saved to your account. Alerts control the notifications you receive; privacy controls whether you appear in Discover.</p>
           {[
             { label: "Message alerts", key: "messageAlerts" as const },
             { label: "Campaign alerts", key: "campaignAlerts" as const },
           ].map(({ label, key }) => (
-            <label key={key} className="mt-2 flex items-center gap-2 text-sm text-foreground">
-              <input type="checkbox" checked={kit.notificationSettings[key]} onChange={(e) => setKit({ notificationSettings: { ...kit.notificationSettings, [key]: e.target.checked } })} />
+            <label key={key} className="mt-3 flex cursor-pointer items-center gap-2.5 text-sm text-foreground">
+              <input
+                type="checkbox"
+                checked={kit.notificationSettings[key]}
+                onChange={(e) => setKit({ notificationSettings: { ...kit.notificationSettings, [key]: e.target.checked } })}
+                className="h-4 w-4 cursor-pointer accent-primary"
+              />
               {label}
             </label>
           ))}
-          <label className="mt-3 block text-sm">
-            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Privacy</span>
-            <input value={kit.privacy} onChange={(e) => setKit({ privacy: e.target.value })} className="mt-1 w-full rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none" />
+          <label className="mt-4 block text-sm">
+            <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">Profile privacy</span>
+            <select
+              value={kit.privacy}
+              onChange={(e) => setKit({ privacy: e.target.value })}
+              className="mt-1 w-full cursor-pointer rounded-xl border border-border bg-background px-3 py-2 text-sm outline-none transition-colors focus:border-primary"
+            >
+              {["Public", "Unlisted", "Private"].map((o) => (
+                <option key={o} value={o}>{o}</option>
+              ))}
+            </select>
           </label>
         </article>
       </div>

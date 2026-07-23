@@ -19,8 +19,26 @@ import { useShortlistStore } from "@/store/useShortlistStore";
  * supplies the sidebar chrome + per-route page-bg tint. Pages opt into the
  * header-extracting layout themselves, later.
  */
+// Each authed section carries its own accent (see the `.tv-accent-*` classes in
+// globals.css). Applied to the content <section> only, so the sidebar keeps the
+// base persimmon identity while the page body reads as a distinct "chapter".
+// Dashboard and any unlisted route fall through to the base persimmon.
+function pageAccent(path: string): string {
+  if (path.startsWith("/dashboard")) return "tv-accent-slate";
+  if (path.startsWith("/discover")) return "tv-accent-ocean";
+  if (path.startsWith("/campaigns")) return "tv-accent-bronze";
+  if (path.startsWith("/smart-plan")) return "tv-accent-burntorange";
+  if (path.startsWith("/messages")) return "tv-accent-teal";
+  if (path.startsWith("/profile")) return "tv-accent-brown";
+  if (path.startsWith("/tracking")) return "tv-accent-forest";
+  if (path.startsWith("/shortlist")) return "tv-accent-pink";
+  return "";
+}
+
 function AppSidebarLayout({ children }: { children: React.ReactNode }) {
   const { collapsed } = useSidebar();
+  const pathname = usePathname() ?? "";
+  const accent = pageAccent(pathname);
 
   return (
     <main className="app-tv flex min-h-svh w-full flex-col bg-background text-foreground transition-colors duration-300">
@@ -37,7 +55,7 @@ function AppSidebarLayout({ children }: { children: React.ReactNode }) {
           <div className="min-h-0 flex-1" aria-hidden />
           <NavFooter />
         </aside>
-        <section className="relative flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-6 pt-4 lg:px-6 lg:pt-5">
+        <section className={cn("relative flex min-h-0 min-w-0 flex-1 flex-col px-4 pb-6 pt-4 lg:px-6 lg:pt-5", accent)}>
           {children}
         </section>
       </div>

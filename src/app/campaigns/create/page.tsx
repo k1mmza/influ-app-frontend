@@ -1,51 +1,16 @@
 /*
  * ─────────────────────────────────────────────────────────────────────────────
- * DESIGN PLAN — Create Campaign Page
+ * Create Campaign — travelogue redesign (Stitch: "Create Campaign | Inflique")
  * ─────────────────────────────────────────────────────────────────────────────
+ * Colours/fonts are inherited from the `.app-tv` scope on the authed <main>:
+ * persimmon primary, porcelain background, Playfair (font-serif) headings, Fira
+ * Sans body (the scope's base font — plain text needs no font class).
  *
- * PALETTE (6 values)
- *   #0F172A  hsl(var(--foreground))         Navy — headings, body text
- *   #2563EB  hsl(var(--primary))            Primary blue — step circles, CTA, rings
- *   #F8FAFC  hsl(var(--background))         Cloud white — page background
- *   #FFFFFF  hsl(var(--card))               Card surface
- *   #E2E8F0  hsl(var(--border))             Borders, dividers, spine connector
- *   #64748B  hsl(var(--muted-foreground))   Muted — labels, help text, placeholders
- *
- * TYPOGRAPHY (4 deliberate roles)
- *   font-serif   (Playfair Display) — page title only; editorial anchor
- *   font-grotesk (Space Grotesk)    — section step labels (UPPERCASE wide-tracking),
- *                                     step numbers, metric suffixes; technical precision
- *   font-sans    (Montserrat)       — field labels, input values, button text; workhorse
- *   font-dm      (DM Sans)          — subtitle, placeholder, helper copy; light & airy
- *
- * LAYOUT — Vertical step spine
- *   Three sections connected by a dashed vertical line.
- *   Numbered circles (01 / 02 / 03) in primary blue mark each chapter.
- *   Section labels live OUTSIDE cards, above them in small-caps grotesk.
- *   Cards are content-only — no duplicate headers.
- *
- * SIGNATURE ELEMENT
- *   The dashed spine connector signals "work in progress" and transforms the
- *   experience from filling a form to building a campaign brief. The numbered
- *   anchors give the page a production-document feel appropriate for marketing
- *   managers working in an influencer platform.
- *
- * ANTI-GENERIC DECISIONS
- *   ✓ Removed border-l-4 colored borders (framework default) → spine circles
- *   ✓ Replaced objective <select> with button-group pill selector (same state)
- *   ✓ Replaced visibility <select> with two-option toggle (same state)
- *   ✓ Metric inputs wrapped with ≥ prefix / % suffix (visual only)
- *   ✓ Section labels moved outside cards — structure separated from content
- *   ✓ 4-font hierarchy used with deliberate role assignments, not default sans
- *
- * CHECKLIST (per design-system/influapp/MASTER.md)
- *   ✓ No emojis as icons — Lucide only
- *   ✓ cursor-pointer on all clickable elements
- *   ✓ Hover + focus transitions 150-200ms
- *   ✓ Focus states visible (ring-2 primary)
- *   ✓ Contrast ≥ 4.5:1 on all text
- *   ✓ No horizontal scroll on mobile (max-w-3xl, responsive grids)
- *   ✓ Content not hidden behind sticky footer (pb-28)
+ * Layout — a numbered "brief" the brand writes in three chapters. Each section
+ * is a persimmon step stamp (01/02/03) beside a hairline rule and a paper card.
+ * Fields are journal underlines that ink to persimmon on focus; objective and
+ * visibility are rounded-full pill toggles. All form state and handlers are
+ * unchanged from the previous version — this is a restyle only.
  * ─────────────────────────────────────────────────────────────────────────────
  */
 
@@ -61,6 +26,7 @@ import {
   Loader2,
   Plus,
   Search,
+  Stamp,
   X,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -82,7 +48,7 @@ import { Label } from "@/components/ui/label";
 
 const objectives = ["Awareness", "Engagement", "Conversion", "UGC / content production"];
 
-const PLATFORM_OPTIONS = ["TikTok", "Instagram", "YouTube"];
+const PLATFORM_OPTIONS = ["TikTok", "Instagram", "YouTube", "Facebook"];
 const CONTENT_TYPE_OPTIONS = ["Video", "Story", "Reel", "Post", "Live", "Short"];
 
 /* ── Helpers ─────────────────────────────────────────────────────────────── */
@@ -129,49 +95,40 @@ function TagInput({
   };
 
   return (
-    <div
-      className={cn(
-        "mt-1 min-h-[44px] rounded-lg border border-border bg-card px-3 py-2",
-        "shadow-sm transition-all duration-150",
-        "focus-within:border-primary focus-within:ring-2 focus-within:ring-primary/15",
-      )}
-    >
-      <div className="flex flex-wrap gap-1.5">
-        {/* Selected pills */}
-        {selected.map((tag) => (
-          <span
-            key={tag}
-            className="inline-flex cursor-default items-center gap-1 rounded-md bg-primary/10 px-2 py-0.5 font-grotesk text-xs font-medium text-primary"
+    <div className="mt-2 flex min-h-[40px] flex-wrap items-center gap-2">
+      {/* Selected — olive "packed" luggage tags */}
+      {selected.map((tag) => (
+        <span
+          key={tag}
+          className="inline-flex cursor-default items-center gap-1.5 rounded-lg border border-secondary/40 bg-secondary/15 px-3 py-1 text-xs font-semibold text-secondary"
+        >
+          {tag}
+          <button
+            type="button"
+            onClick={() => toggle(tag)}
+            className="cursor-pointer text-secondary/60 transition-colors duration-100 hover:text-secondary"
+            aria-label={`Remove ${tag}`}
           >
-            {tag}
-            <button
-              type="button"
-              onClick={() => toggle(tag)}
-              className="cursor-pointer text-primary/60 transition-colors duration-100 hover:text-primary"
-              aria-label={`Remove ${tag}`}
-            >
-              <X className="h-3 w-3" />
-            </button>
-          </span>
+            <X className="h-3 w-3" />
+          </button>
+        </span>
+      ))}
+      {/* Available — hollow tags to add */}
+      {options
+        .filter((opt) => !selected.includes(opt))
+        .map((opt) => (
+          <button
+            key={opt}
+            type="button"
+            onClick={() => toggle(opt)}
+            className={cn(
+              "cursor-pointer rounded-lg border border-border px-3 py-1 text-xs text-muted-foreground",
+              "transition-all duration-150 hover:border-primary/50 hover:bg-primary/5 hover:text-primary",
+            )}
+          >
+            + {opt}
+          </button>
         ))}
-        {/* Available options */}
-        {options
-          .filter((opt) => !selected.includes(opt))
-          .map((opt) => (
-            <button
-              key={opt}
-              type="button"
-              onClick={() => toggle(opt)}
-              className={cn(
-                "cursor-pointer rounded-md border border-border px-2 py-0.5",
-                "font-grotesk text-xs text-muted-foreground",
-                "transition-all duration-150 hover:border-primary/40 hover:bg-primary/5 hover:text-primary",
-              )}
-            >
-              + {opt}
-            </button>
-          ))}
-      </div>
     </div>
   );
 }
@@ -187,20 +144,18 @@ function DateInput({
   onChange: (e: React.ChangeEvent<HTMLInputElement>) => void;
 }) {
   return (
-    <div className="relative mt-1">
+    <div className="mt-2 flex items-center gap-2 border-b border-border py-2.5 transition-colors focus-within:border-primary">
       <input
         id={id}
         type="date"
         value={value}
         onChange={onChange}
         className={cn(
-          "w-full rounded-lg border border-border bg-card px-3 py-2 pr-10",
-          "font-sans text-sm text-foreground shadow-sm",
-          "transition-all duration-150 placeholder:text-muted-foreground",
-          "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15",
+          "w-full border-0 bg-transparent p-0 text-base text-foreground outline-none",
+          "focus:ring-0 [&::-webkit-calendar-picker-indicator]:opacity-0",
         )}
       />
-      <Calendar className="pointer-events-none absolute right-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground/60" />
+      <Calendar className="pointer-events-none h-4 w-4 shrink-0 text-muted-foreground" />
     </div>
   );
 }
@@ -224,11 +179,9 @@ function MetricInput({
   step?: string;
 }) {
   return (
-    <div className="relative mt-1">
+    <div className="mt-2 flex items-center gap-2 border-b border-border py-2 transition-colors focus-within:border-primary">
       {prefix ? (
-        <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 select-none font-grotesk text-xs font-medium text-muted-foreground">
-          {prefix}
-        </span>
+        <span className="select-none text-base text-muted-foreground">{prefix}</span>
       ) : null}
       <input
         id={id}
@@ -239,18 +192,14 @@ function MetricInput({
         onChange={onChange}
         placeholder={placeholder}
         className={cn(
-          "w-full rounded-lg border border-border bg-card py-2 font-sans text-sm text-foreground shadow-sm",
-          "transition-all duration-150 placeholder:text-muted-foreground/60",
-          "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15",
+          "w-full border-0 bg-transparent p-0 text-base text-foreground outline-none",
+          "placeholder:text-muted-foreground/40 focus:ring-0",
           "[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none",
-          prefix ? "pl-7" : "pl-3",
-          suffix ? "pr-8" : "pr-3",
+          suffix ? "text-right" : "",
         )}
       />
       {suffix ? (
-        <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 select-none font-grotesk text-xs font-medium text-muted-foreground">
-          {suffix}
-        </span>
+        <span className="select-none text-base text-muted-foreground">{suffix}</span>
       ) : null}
     </div>
   );
@@ -271,33 +220,38 @@ function StepHeader({
   return (
     <div className={cn("mb-3", !isLast && "")}>
       <div className="flex items-center gap-3">
-        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary font-grotesk text-xs font-bold text-primary-foreground">
+        <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">
           {number}
         </div>
-        <span className="font-grotesk text-[11px] font-bold uppercase tracking-widest text-primary">
+        <span className="text-[11px] font-bold uppercase tracking-widest text-primary">
           {label}
         </span>
         <div className="flex-1 border-t border-dashed border-border" />
       </div>
-      <p className="ml-10 mt-0.5 font-dm text-xs text-muted-foreground">{description}</p>
+      <p className="ml-10 mt-0.5 text-xs text-muted-foreground">{description}</p>
     </div>
   );
 }
 
 /* ── Shared style tokens ─────────────────────────────────────────────────── */
 
-const labelCls = "font-sans text-sm font-medium text-foreground";
+// Journal fields: uppercase Fira label over a hairline underline that inks to
+// persimmon on focus — the travelogue "filled-in itinerary" look. Colors come
+// from the .app-tv scope; we only override the shadcn Input box shape here.
+const labelCls = "block text-[11px] font-semibold uppercase tracking-widest text-muted-foreground";
 
 const inputCls = cn(
-  "mt-1 w-full rounded-lg border border-border bg-card px-3 py-2",
-  "font-sans text-sm text-foreground shadow-sm",
-  "transition-all duration-150 placeholder:text-muted-foreground/60",
-  "focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/15",
+  "mt-2 h-auto w-full rounded-none border-0 border-b border-border bg-transparent px-0 py-2.5 shadow-none",
+  "text-base text-foreground outline-none transition-colors",
+  "placeholder:text-muted-foreground/40",
+  "focus:border-primary focus-visible:ring-0",
 );
 
 const textareaCls = cn(
-  inputCls,
-  "resize-none leading-relaxed",
+  "mt-2 w-full resize-none rounded-lg border border-border bg-muted/30 p-4",
+  "text-sm leading-relaxed text-foreground shadow-inner outline-none transition-colors",
+  "placeholder:text-muted-foreground/50",
+  "focus:border-primary focus:ring-1 focus:ring-primary/15",
 );
 
 /* ── Page component ──────────────────────────────────────────────────────── */
@@ -501,54 +455,50 @@ export default function CreateCampaignPage() {
       <div className="mb-10">
         <Link
           href="/campaigns"
-          className="inline-flex cursor-pointer items-center gap-1.5 font-dm text-sm text-muted-foreground transition-colors duration-150 hover:text-foreground"
+          className="inline-flex cursor-pointer items-center gap-1.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground transition-colors duration-150 hover:text-primary"
         >
           <ArrowLeft className="h-3.5 w-3.5" />
           Back to campaigns
         </Link>
 
-        <h1 className="mt-4 font-serif text-3xl font-bold tracking-tight text-foreground">
+        <h1 className="mt-4 font-serif text-4xl font-bold tracking-tight text-foreground sm:text-5xl">
           Create Campaign
         </h1>
-        <p className="mt-1.5 font-dm text-sm text-muted-foreground">
-          Set the details, timeline, and creator fit for your campaign.
+        <p className="mt-2 max-w-2xl font-serif text-lg italic text-muted-foreground">
+          Set the details, timeline, and creator fit for your curated journey.
         </p>
       </div>
 
       <form onSubmit={(event) => handleSubmit(event, false)}>
 
-        {/* ── STEP SPINE: wrapper gives context to the dashed connector ──── */}
-        <div className="space-y-0">
+        {/* ── STEP SPINE: numbered "stamps" mark each chapter of the brief ── */}
+        <div className="space-y-12">
 
           {/* ────────────────────────────────────────────────────────────────
               SECTION 01 — Campaign Details
           ──────────────────────────────────────────────────────────────── */}
-          <div className="flex items-start gap-5">
-
-            {/* Spine column */}
-            <div className="flex flex-shrink-0 flex-col items-center self-stretch" style={{ width: 28 }}>
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary font-grotesk text-xs font-bold text-primary-foreground shadow-sm">
-                01
-              </div>
-              {/* Dashed connector to next section */}
-              <div className="mt-2 flex-1 border-l-2 border-dashed border-border" />
+          <section className="relative pl-14">
+            {/* Step "stamp" */}
+            <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-sm font-bold text-primary-foreground shadow-sm">
+              01
             </div>
+            {/* Section label */}
+            <div className="mb-5 flex items-center gap-4">
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-primary">
+                Campaign Details
+              </h2>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <p className="mb-5 text-sm italic text-muted-foreground">
+              Name your campaign and define its core objective, budget, and messaging.
+            </p>
 
-            {/* Content column */}
-            <div className="flex-1 pb-10">
-              {/* Section label */}
-              <div className="mb-4 flex items-center gap-3">
-                <span className="font-grotesk text-[11px] font-bold uppercase tracking-widest text-primary">
-                  Campaign Details
+              <Card className="relative overflow-hidden border border-border shadow-sm">
+                {/* Decorative dashed "postage token" stamp */}
+                <span className="pointer-events-none absolute right-4 top-4 flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-border/60 text-border">
+                  <Stamp className="h-5 w-5 opacity-40" />
                 </span>
-                <div className="flex-1 border-t border-dashed border-border" />
-              </div>
-              <p className="mb-4 font-dm text-xs text-muted-foreground">
-                Name your campaign and define its core objective, budget, and messaging.
-              </p>
-
-              <Card className="border border-border shadow-sm">
-                <CardContent className="space-y-5 p-6">
+                <CardContent className="space-y-8 p-6 sm:p-8">
 
                   {/* Name */}
                   <div>
@@ -558,7 +508,7 @@ export default function CreateCampaignPage() {
                       value={name}
                       onChange={(e) => setName(e.target.value)}
                       required
-                      className={inputCls}
+                      className={cn(inputCls, "text-lg italic placeholder:not-italic")}
                       placeholder="e.g. Spring collection launch"
                     />
                   </div>
@@ -573,18 +523,14 @@ export default function CreateCampaignPage() {
                           type="button"
                           onClick={() => setObjective(obj)}
                           className={cn(
-                            "cursor-pointer rounded-lg border px-3 py-1.5 font-sans text-sm font-medium",
+                            "inline-flex cursor-pointer items-center gap-1.5 rounded-full border px-5 py-2 text-[11px] font-semibold uppercase tracking-widest",
                             "transition-all duration-150",
                             objective === obj
                               ? "border-primary bg-primary text-primary-foreground shadow-sm"
-                              : "border-border bg-card text-muted-foreground hover:border-primary/50 hover:text-primary",
+                              : "border-border text-muted-foreground hover:bg-muted hover:text-primary",
                           )}
                         >
-                          {objective === obj ? (
-                            <span className="mr-1.5 inline-flex items-center">
-                              <Check className="inline h-3 w-3" />
-                            </span>
-                          ) : null}
+                          {objective === obj ? <Check className="h-3.5 w-3.5" /> : null}
                           {obj}
                         </button>
                       ))}
@@ -620,15 +566,15 @@ export default function CreateCampaignPage() {
                     <div>
                       <Label htmlFor="brandQuery" className={labelCls}>Client brand</Label>
                       {brandsLoading ? (
-                        <p className="mt-1 flex items-center gap-2 font-sans text-sm text-muted-foreground">
+                        <p className="mt-1 flex items-center gap-2 text-sm text-muted-foreground">
                           <Loader2 className="h-4 w-4 animate-spin" /> Loading client brands…
                         </p>
                       ) : brandsError ? (
-                        <p className="mt-1 font-sans text-sm text-destructive">{brandsError}</p>
+                        <p className="mt-1 text-sm text-destructive">{brandsError}</p>
                       ) : selectedBrand ? (
                         // Selected state — chip with a "Change" affordance.
                         <div className="mt-1 flex items-center justify-between gap-3 rounded-lg border border-border bg-card px-3 py-2 shadow-sm">
-                          <span className="flex items-center gap-2 font-sans text-sm text-foreground">
+                          <span className="flex items-center gap-2 text-sm text-foreground">
                             {selectedBrand.brandName}
                             {selectedBrand.origin === "AGENCY_MANAGED" ? (
                               <span className="rounded-full bg-muted px-2 py-0.5 text-xs text-muted-foreground">
@@ -639,7 +585,7 @@ export default function CreateCampaignPage() {
                           <button
                             type="button"
                             onClick={clearBrand}
-                            className="cursor-pointer font-sans text-xs font-medium text-primary hover:underline"
+                            className="cursor-pointer text-xs font-medium text-primary hover:underline"
                           >
                             Change
                           </button>
@@ -681,7 +627,7 @@ export default function CreateCampaignPage() {
                                     key={brand.id}
                                     type="button"
                                     onClick={() => selectBrand(brand)}
-                                    className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-left font-sans text-sm text-foreground transition-colors duration-150 hover:bg-muted"
+                                    className="flex w-full cursor-pointer items-center justify-between gap-2 rounded-md px-3 py-2 text-left text-sm text-foreground transition-colors duration-150 hover:bg-muted"
                                   >
                                     <span>{brand.brandName}</span>
                                     {brand.origin === "AGENCY_MANAGED" ? (
@@ -692,7 +638,7 @@ export default function CreateCampaignPage() {
                                   </button>
                                 ))}
                                 {filteredBrands.length === 0 ? (
-                                  <p className="px-3 py-2 font-sans text-sm text-muted-foreground">
+                                  <p className="px-3 py-2 text-sm text-muted-foreground">
                                     {brandQuery.trim() ? "No matching brands." : "No brands yet."}
                                   </p>
                                 ) : null}
@@ -700,7 +646,7 @@ export default function CreateCampaignPage() {
                                   <button
                                     type="button"
                                     onClick={openCreateBrand}
-                                    className="flex w-full cursor-pointer items-center gap-2 rounded-md border-t border-border px-3 py-2 text-left font-sans text-sm font-medium text-primary transition-colors duration-150 hover:bg-muted"
+                                    className="flex w-full cursor-pointer items-center gap-2 rounded-md border-t border-border px-3 py-2 text-left text-sm font-medium text-primary transition-colors duration-150 hover:bg-muted"
                                   >
                                     <Plus className="h-4 w-4" /> Create &ldquo;{brandQuery.trim()}&rdquo;
                                   </button>
@@ -715,7 +661,7 @@ export default function CreateCampaignPage() {
                       {creatingBrand ? (
                         <div className="mt-3 space-y-3 rounded-lg border border-border bg-muted/40 p-3">
                           <div className="flex items-center justify-between">
-                            <span className="font-sans text-sm font-medium text-foreground">New brand</span>
+                            <span className="text-sm font-medium text-foreground">New brand</span>
                             <button
                               type="button"
                               onClick={() => setCreatingBrand(false)}
@@ -757,7 +703,7 @@ export default function CreateCampaignPage() {
                             />
                           </div>
                           {brandCreateError ? (
-                            <p className="font-sans text-sm text-destructive">{brandCreateError}</p>
+                            <p className="text-sm text-destructive">{brandCreateError}</p>
                           ) : null}
                           <Button
                             type="button"
@@ -779,16 +725,16 @@ export default function CreateCampaignPage() {
                   {/* Visibility — toggle (state unchanged) */}
                   <div>
                     <Label className={labelCls}>Visibility</Label>
-                    <div className="mt-2 inline-flex rounded-lg border border-border bg-muted p-1 ml-2">
+                    <div className="mt-2 inline-flex rounded-full border border-border bg-muted p-1">
                       {(["PUBLIC", "PRIVATE"] as CampaignVisibility[]).map((v) => (
                         <button
                           key={v}
                           type="button"
                           onClick={() => setVisibility(v)}
                           className={cn(
-                            "cursor-pointer rounded-md px-4 py-1.5 font-sans text-sm font-medium transition-all duration-150",
+                            "cursor-pointer rounded-full px-5 py-2 text-[11px] font-semibold uppercase tracking-widest transition-all duration-150",
                             visibility === v
-                              ? "bg-card text-foreground shadow-sm"
+                              ? "bg-card text-primary shadow-sm"
                               : "text-muted-foreground hover:text-foreground",
                           )}
                         >
@@ -836,37 +782,27 @@ export default function CreateCampaignPage() {
 
                 </CardContent>
               </Card>
-            </div>
-          </div>
+          </section>
 
           {/* ────────────────────────────────────────────────────────────────
               SECTION 02 — Timeline
           ──────────────────────────────────────────────────────────────── */}
-          <div className="flex items-start gap-5">
-
-            {/* Spine column */}
-            <div className="flex flex-shrink-0 flex-col items-center self-stretch" style={{ width: 28 }}>
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary font-grotesk text-xs font-bold text-primary-foreground shadow-sm">
-                02
-              </div>
-              {/* Dashed connector to next section */}
-              <div className="mt-2 flex-1 border-l-2 border-dashed border-border" />
+          <section className="relative pl-14">
+            <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-sm font-bold text-primary-foreground shadow-sm">
+              02
             </div>
-
-            {/* Content column */}
-            <div className="flex-1 pb-10">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="font-grotesk text-[11px] font-bold uppercase tracking-widest text-primary">
-                  Timeline
-                </span>
-                <div className="flex-1 border-t border-dashed border-border" />
-              </div>
-              <p className="mb-4 font-dm text-xs text-muted-foreground">
-                Set key milestone dates for applications, submissions, review, and payment.
-              </p>
+            <div className="mb-5 flex items-center gap-4">
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-primary">
+                Timeline
+              </h2>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <p className="mb-5 text-sm italic text-muted-foreground">
+              Set key milestone dates for applications, submissions, review, and payment.
+            </p>
 
               <Card className="border border-border shadow-sm">
-                <CardContent className="p-6">
+                <CardContent className="p-6 sm:p-8">
                   <div className="grid gap-5 sm:grid-cols-2">
                     <div>
                       <Label htmlFor="applyDeadline" className={labelCls}>Apply deadline</Label>
@@ -903,39 +839,31 @@ export default function CreateCampaignPage() {
                   </div>
                 </CardContent>
               </Card>
-            </div>
-          </div>
+          </section>
 
           {/* ────────────────────────────────────────────────────────────────
               SECTION 03 — Creator Requirements
           ──────────────────────────────────────────────────────────────── */}
-          <div className="flex items-start gap-5">
-
-            {/* Spine column — last step: no connector below */}
-            <div className="flex flex-shrink-0 flex-col items-center pt-0" style={{ width: 28 }}>
-              <div className="flex h-7 w-7 flex-shrink-0 items-center justify-center rounded-full bg-primary font-grotesk text-xs font-bold text-primary-foreground shadow-sm">
-                03
-              </div>
+          <section className="relative pl-14">
+            <div className="absolute left-0 top-0 flex h-10 w-10 items-center justify-center rounded-full bg-primary font-serif text-sm font-bold text-primary-foreground shadow-sm">
+              03
             </div>
-
-            {/* Content column */}
-            <div className="flex-1">
-              <div className="mb-4 flex items-center gap-3">
-                <span className="font-grotesk text-[11px] font-bold uppercase tracking-widest text-primary">
-                  Creator Requirements
-                </span>
-                <div className="flex-1 border-t border-dashed border-border" />
-              </div>
-              <p className="mb-4 font-dm text-xs text-muted-foreground">
-                Define the minimum reach, platform presence, and content type for eligible creators.
-              </p>
+            <div className="mb-5 flex items-center gap-4">
+              <h2 className="text-[11px] font-semibold uppercase tracking-widest text-primary">
+                Creator Requirements
+              </h2>
+              <div className="h-px flex-1 bg-border" />
+            </div>
+            <p className="mb-5 text-sm italic text-muted-foreground">
+              Define the minimum reach, platform presence, and content type for eligible creators.
+            </p>
 
               <Card className="border border-border shadow-sm">
-                <CardContent className="space-y-5 p-6">
+                <CardContent className="space-y-8 p-6 sm:p-8">
 
                   {/* Reach metrics */}
                   <div>
-                    <p className="mb-2 font-grotesk text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Reach minimums
                     </p>
                     <div className="grid gap-4 sm:grid-cols-3">
@@ -975,7 +903,7 @@ export default function CreateCampaignPage() {
 
                   {/* Platforms + Content type — tag inputs */}
                   <div>
-                    <p className="mb-2 font-grotesk text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Platforms &amp; content
                     </p>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -1000,7 +928,7 @@ export default function CreateCampaignPage() {
 
                   {/* Locations + Categories — free text */}
                   <div>
-                    <p className="mb-2 font-grotesk text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                    <p className="mb-2 text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
                       Audience targeting
                     </p>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -1029,20 +957,19 @@ export default function CreateCampaignPage() {
 
                 </CardContent>
               </Card>
-            </div>
-          </div>
+          </section>
 
         </div>{/* end step spine */}
 
         {/* ── Error banner ─────────────────────────────────────────────────── */}
         {error ? (
-          <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 font-dm text-sm text-destructive">
+          <div className="mt-6 rounded-lg border border-destructive/30 bg-destructive/5 px-4 py-3 text-sm text-destructive">
             {error}
           </div>
         ) : null}
 
-        {/* ── Inline action buttons — end of form ───────────────────────── */}
-        <div className="ml-[calc(28px+20px)] mt-8 flex flex-wrap items-center gap-3 border-t border-border pt-6">
+        {/* ── Action buttons — centered "stamp & send" row ──────────────── */}
+        <div className="mt-12 flex flex-wrap items-center justify-center gap-6 border-t border-border/60 pt-10 pb-24">
 
           {/* Primary: Publish */}
           <Button
@@ -1052,8 +979,8 @@ export default function CreateCampaignPage() {
               handleSubmit(event as unknown as FormEvent<HTMLFormElement>, true)
             }
             className={cn(
-              "cursor-pointer rounded-lg bg-primary px-6 font-sans font-semibold text-primary-foreground",
-              "shadow-sm transition-all duration-150 hover:bg-primary/90",
+              "h-auto cursor-pointer rounded-full bg-primary px-10 py-3.5 text-[11px] font-semibold uppercase tracking-widest text-primary-foreground",
+              "shadow-sm transition-all duration-150 hover:bg-primary/90 hover:shadow-xl active:scale-95",
               "focus-visible:ring-2 focus-visible:ring-primary/40 disabled:cursor-not-allowed disabled:opacity-50",
             )}
           >
@@ -1069,8 +996,8 @@ export default function CreateCampaignPage() {
             disabled={submitting != null}
             variant="outline"
             className={cn(
-              "cursor-pointer rounded-lg border-primary/40 px-6 font-sans font-medium text-primary",
-              "transition-all duration-150 hover:bg-primary/5 hover:border-primary",
+              "h-auto cursor-pointer rounded-full border-border px-9 py-3.5 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground",
+              "transition-all duration-150 hover:border-primary hover:bg-transparent hover:text-primary active:scale-95",
               "focus-visible:ring-2 focus-visible:ring-primary/20 disabled:cursor-not-allowed disabled:opacity-50",
             )}
           >
@@ -1085,7 +1012,7 @@ export default function CreateCampaignPage() {
             type="button"
             variant="ghost"
             asChild
-            className="cursor-pointer rounded-lg px-4 font-sans text-muted-foreground transition-all duration-150 hover:text-foreground"
+            className="h-auto cursor-pointer px-2 text-[11px] font-semibold uppercase tracking-widest text-muted-foreground underline decoration-border underline-offset-8 transition-all duration-150 hover:bg-transparent hover:text-destructive"
           >
             <Link href="/campaigns">Cancel</Link>
           </Button>

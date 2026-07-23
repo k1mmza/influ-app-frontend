@@ -150,21 +150,21 @@ function InfluencerInvitations() {
   const hasInvitations = invitations.length > 0;
 
   return (
-    <Card className="border-none shadow-sm">
-      <CardHeader>
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Inbox className="h-4 w-4" /> Campaign Invitations
-          {hasInvitations && (
-            <Badge className="bg-primary text-primary-foreground">{invitations.length}</Badge>
-          )}
-        </CardTitle>
-        <CardDescription>
-          {hasInvitations
-            ? "Brands have invited you to these campaigns."
-            : "Brands that invite you to campaigns will appear here."}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-3">
+    <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+      <div className="flex items-center gap-2">
+        <h4 className="flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
+          <Inbox className="h-5 w-5 text-primary" /> Campaign Invitations
+        </h4>
+        {hasInvitations && (
+          <Badge className="bg-primary text-primary-foreground">{invitations.length}</Badge>
+        )}
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        {hasInvitations
+          ? "Brands have invited you to these campaigns."
+          : "Brands that invite you to campaigns will appear here."}
+      </p>
+      <div className="mt-4 space-y-3">
         {error && <p className="text-sm font-medium text-destructive">{error}</p>}
         {loading ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
@@ -216,8 +216,8 @@ function InfluencerInvitations() {
             </div>
           </div>
         ))}
-      </CardContent>
-    </Card>
+      </div>
+    </div>
   );
 }
 
@@ -266,7 +266,7 @@ function InfluencerDashboard({ data }: { data: any }) {
             </Link>
             <Link
               href="/messages"
-              className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-primary-foreground shadow-lg shadow-black/20 transition hover:opacity-90"
+              className="inline-flex items-center gap-2 rounded-full bg-white px-5 py-2.5 text-xs font-semibold uppercase tracking-widest text-[#334155] shadow-lg shadow-black/20 transition hover:bg-white/90"
             >
               <MessageSquare className="h-4 w-4" /> Messages
             </Link>
@@ -338,13 +338,11 @@ function InfluencerDashboard({ data }: { data: any }) {
 
       {/* Recent Activity — reads data.recentActivity (Notification rows written by
           notify() on draft review, invitation, and application-accept). */}
-      <Card className="border-none shadow-sm">
-        <CardHeader>
-          <CardTitle className="text-lg flex items-center gap-2">
-            <Bell className="h-5 w-5 text-primary" /> Recent Activity
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
+      <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+        <h4 className="flex items-center gap-2 font-serif text-lg font-semibold text-foreground">
+          <Bell className="h-5 w-5 text-primary" /> Recent Activity
+        </h4>
+        <div className="mt-4 space-y-4">
           {recentActivity.length === 0 && (
             <p className="text-sm text-muted-foreground">No recent activity yet.</p>
           )}
@@ -357,8 +355,8 @@ function InfluencerDashboard({ data }: { data: any }) {
               </div>
             </div>
           ))}
-        </CardContent>
-      </Card>
+        </div>
+      </div>
     </div>
   );
 }

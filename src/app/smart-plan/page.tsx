@@ -714,7 +714,7 @@ export default function SmartPlanPage() {
   return (
     <section className="mx-auto max-w-5xl space-y-6 p-4 lg:p-6">
       {/* Header */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#c2410c] to-[#7c2d12] p-8 text-white shadow-lg">
+      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-primary to-secondary p-8 text-white shadow-lg">
         <div className="absolute right-6 top-1/2 -translate-y-1/2 opacity-10">
           <Brain className="h-40 w-40" />
         </div>

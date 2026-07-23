@@ -661,6 +661,7 @@ export interface CampaignResponse extends CampaignInput {
   budgetSpent?: number;
   createdAt?: string;
   updatedAt?: string;
+  briefImageUrls?: string[];
   clientBrand?: {
     id: string;
     brandName: string;
@@ -803,6 +804,21 @@ export async function apiUploadCampaignBriefImage(
     body: form,
   });
   if (!res.ok) throw new Error(await readApiError(res, "Failed to upload brief image"));
+  return res.json();
+}
+
+/** Remove one image (by url) from a campaign's brief/product gallery. */
+export async function apiDeleteCampaignBriefImage(
+  token: string,
+  id: string,
+  url: string,
+): Promise<CampaignResponse> {
+  const res = await authFetch(`${API_URL}/campaigns/${id}/brief-image`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ url }),
+  });
+  if (!res.ok) throw new Error(await readApiError(res, "Failed to delete brief image"));
   return res.json();
 }
 
@@ -1043,6 +1059,7 @@ export interface PublicCampaign {
   brandLogoUrl: string | null;
   coverImageUrl: string | null;
   briefImageUrl: string | null;
+  briefImageUrls?: string[];
   objective: string | null;
   keyMessage: string | null;
   doAndDont: string | null;

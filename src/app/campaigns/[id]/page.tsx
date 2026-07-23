@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { Calendar, Check, Download, DollarSign, Edit, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
+import { Calendar, Check, Download, DollarSign, Edit, FileText, ImageIcon, LayoutGrid, Link2, Loader2, MessageSquare, Rows3, Send, Share2, Trash2, UserPlus, X } from "lucide-react";
 import {
   apiApplyToCampaign,
   apiDeleteCampaign,
@@ -15,6 +15,7 @@ import {
   apiUpdateCampaign,
   apiUploadCampaignCover,
   apiUploadCampaignBriefImage,
+  apiDeleteCampaignBriefImage,
   apiUpdateCampaignApplicationStatus,
   apiFetchInfluencer,
   apiGetCampaignShortlist,
@@ -229,7 +230,9 @@ export default function CampaignDetailPage() {
   const [uploadingCover, setUploadingCover] = useState(false);
   const coverInputRef = useRef<HTMLInputElement>(null);
   const [uploadingBriefImage, setUploadingBriefImage] = useState(false);
+  const [deletingImageUrl, setDeletingImageUrl] = useState<string | null>(null);
   const briefImageInputRef = useRef<HTMLInputElement>(null);
+  const MAX_BRIEF_IMAGES = 6;
   const collaborations = useCampaignCollaborationStore((s) => s.collaborations);
   const recordCampaignFinished = useCampaignCollaborationStore((s) => s.recordCampaignFinished);
 
@@ -245,6 +248,13 @@ export default function CampaignDetailPage() {
   const [shareInfluencersOpen, setShareInfluencersOpen] = useState(false);
 
   const canManageCampaign = role === "brand" || role === "agency";
+  // Brief/product image gallery — falls back to the single briefImageUrl for
+  // campaigns loaded before the gallery migration backfilled briefImageUrls.
+  const briefImages = campaign?.briefImageUrls?.length
+    ? campaign.briefImageUrls
+    : campaign?.briefImageUrl
+      ? [campaign.briefImageUrl]
+      : [];
   const [shareOpen, setShareOpen] = useState(false);
 
   // Commercial-term lock: once ≥1 application is ACCEPTED (from either an
@@ -593,12 +603,28 @@ export default function CampaignDetailPage() {
     try {
       const updated = await apiUploadCampaignBriefImage(token, campaign.id, file);
       setCampaign(updated);
-      setMessage("Product image updated.");
+      setMessage("Product image added.");
     } catch (err) {
       setError(err instanceof Error ? err.message : "Failed to upload product image");
     } finally {
       setUploadingBriefImage(false);
       if (briefImageInputRef.current) briefImageInputRef.current.value = "";
+    }
+  };
+
+  const handleBriefImageDelete = async (url: string) => {
+    if (!token || !campaign) return;
+    setDeletingImageUrl(url);
+    setError(null);
+    setMessage("");
+    try {
+      const updated = await apiDeleteCampaignBriefImage(token, campaign.id, url);
+      setCampaign(updated);
+      setMessage("Product image removed.");
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to remove product image");
+    } finally {
+      setDeletingImageUrl(null);
     }
   };
 
@@ -690,11 +716,12 @@ export default function CampaignDetailPage() {
 
   return (
     <section className="space-y-6">
-      <Card className="border-none shadow-sm">
-        <CardContent className="p-6">
-          {/* Cover banner — shown in view mode when set; uploader in edit mode. */}
-          {(campaign.coverImageUrl || (isEditing && canManageCampaign)) && (
-            <div className="relative mb-5 h-40 w-full overflow-hidden rounded-2xl bg-muted sm:h-56">
+      {isEditing && editFormData ? (
+        /* ── Edit mode — clean form card ──────────────────────────────── */
+        <Card className="border border-border shadow-sm">
+          <CardContent className="space-y-5 p-6">
+            {/* Cover uploader */}
+            <div className="relative h-40 w-full overflow-hidden rounded-xl bg-muted sm:h-56">
               {campaign.coverImageUrl ? (
                 <img
                   src={campaign.coverImageUrl ?? ""}
@@ -707,7 +734,7 @@ export default function CampaignDetailPage() {
                   <span className="text-sm font-medium">No cover image yet</span>
                 </div>
               )}
-              {isEditing && canManageCampaign && (
+              {canManageCampaign && (
                 <>
                   <input
                     ref={coverInputRef}
@@ -722,7 +749,7 @@ export default function CampaignDetailPage() {
                     variant="secondary"
                     disabled={uploadingCover}
                     onClick={() => coverInputRef.current?.click()}
-                    className="absolute bottom-3 right-3 rounded-xl font-bold shadow-md"
+                    className="absolute bottom-3 right-3 rounded-full font-semibold shadow-md"
                   >
                     {uploadingCover ? (
                       <Loader2 className="mr-1.5 h-4 w-4 animate-spin" />
@@ -734,191 +761,213 @@ export default function CampaignDetailPage() {
                 </>
               )}
             </div>
-          )}
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            {isEditing && editFormData ? (
-              <div className="flex-1 min-w-0 space-y-3">
-                <div>
-                  <Label htmlFor="editName">Name</Label>
-                  <Input
-                    id="editName"
-                    value={editFormData.name || ""}
-                    onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
-                    placeholder="Campaign name"
-                    className="mt-1 w-full rounded-xl"
-                  />
-                </div>
-                <div>
-                  <Label htmlFor="editObjective">Objective</Label>
-                  <select
-                    id="editObjective"
-                    value={editFormData.objective || objectives[0]}
-                    onChange={(e) => setEditFormData({ ...editFormData, objective: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                  >
-                    {objectives.map((item) => (
-                      <option key={item} value={item}>
-                        {item}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+
+            <div>
+              <Label htmlFor="editName">Name</Label>
+              <Input
+                id="editName"
+                value={editFormData.name || ""}
+                onChange={(e) => setEditFormData({ ...editFormData, name: e.target.value })}
+                placeholder="Campaign name"
+                className="mt-1 w-full rounded-xl"
+              />
+            </div>
+            <div>
+              <Label htmlFor="editObjective">Objective</Label>
+              <select
+                id="editObjective"
+                value={editFormData.objective || objectives[0]}
+                onChange={(e) => setEditFormData({ ...editFormData, objective: e.target.value })}
+                className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
+              >
+                {objectives.map((item) => (
+                  <option key={item} value={item}>
+                    {item}
+                  </option>
+                ))}
+              </select>
+            </div>
+            <div className="grid gap-4 sm:grid-cols-3">
+              <div>
+                <Label htmlFor="editBudget">Budget</Label>
+                <Input
+                  id="editBudget"
+                  type="number"
+                  min={0}
+                  value={editFormData.budget || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
+                  className="mt-1 rounded-xl"
+                  placeholder="Budget in THB"
+                  {...lockedInputProps}
+                />
+                {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
               </div>
+              <div>
+                <Label htmlFor="editVisibility">Visibility</Label>
+                <select
+                  id="editVisibility"
+                  value={editFormData.visibility || "PUBLIC"}
+                  onChange={(e) => setEditFormData({ ...editFormData, visibility: e.target.value })}
+                  className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
+                >
+                  <option value="PUBLIC">Public marketplace</option>
+                  <option value="PRIVATE">Private invite only</option>
+                </select>
+              </div>
+              <div>
+                <Label htmlFor="editPaymentType">Payment type</Label>
+                <Input
+                  id="editPaymentType"
+                  value={editFormData.paymentType || ""}
+                  onChange={(e) => setEditFormData({ ...editFormData, paymentType: e.target.value })}
+                  className="mt-1 rounded-xl"
+                  placeholder="Per post, package, affiliate"
+                  {...lockedInputProps}
+                />
+                {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
+              </div>
+            </div>
+
+            {message ? <p className="text-sm font-medium text-emerald-700">{message}</p> : null}
+            {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+
+            <div className="flex flex-wrap gap-2 pt-1">
+              <Button onClick={saveChanges} disabled={busyAction != null} className="rounded-full">
+                {busyAction === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                Save Changes
+              </Button>
+              <Button onClick={cancelEdit} variant="outline" disabled={busyAction != null} className="rounded-full">
+                Cancel
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      ) : (
+        /* ── View mode — full-bleed travelogue hero (Stitch) ──────────── */
+        <div className="space-y-6">
+          <div className="group relative h-[280px] w-full overflow-hidden rounded-xl border border-border shadow-sm sm:h-[320px]">
+            {campaign.coverImageUrl ? (
+              <img
+                src={campaign.coverImageUrl}
+                alt={`${campaign.name} cover`}
+                className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+              />
             ) : (
-              <div className="min-w-0">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.16em] text-muted-foreground">
+              <div className="h-full w-full bg-gradient-to-br from-primary via-primary/85 to-secondary" />
+            )}
+            <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/25 to-transparent" />
+            <div className="absolute inset-x-6 bottom-6 flex flex-wrap items-end justify-between gap-4 sm:inset-x-8 sm:bottom-8">
+              <div className="min-w-0 text-white">
+                <span className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/80">
                   {campaign.clientBrand?.brandName ?? "Campaign"}
-                </p>
-                <h1 className="mt-1 font-serif text-3xl font-bold text-foreground">{campaign.name}</h1>
+                </span>
+                <h1 className="mt-2 font-serif text-3xl font-bold sm:text-4xl">{campaign.name}</h1>
                 {campaign.objective ? (
-                  <p className="mt-1.5 max-w-xl font-serif text-lg italic text-muted-foreground">{campaign.objective}</p>
+                  <p className="mt-1 max-w-xl font-serif text-lg italic text-white/90">{campaign.objective}</p>
                 ) : null}
               </div>
-            )}
+              <div className="flex flex-shrink-0 flex-wrap items-center gap-2">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-2 rounded-full px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur-sm",
+                    campaign.status === "ACTIVE" ? "bg-primary/90" : "bg-black/60",
+                  )}
+                >
+                  {campaign.status === "ACTIVE" ? <span className="h-2 w-2 animate-pulse rounded-full bg-white" /> : null}
+                  {campaign.status}
+                </span>
+                {campaign.visibility ? (
+                  <span className="inline-flex items-center rounded-full bg-black/60 px-4 py-1.5 text-[10px] font-semibold uppercase tracking-widest text-white backdrop-blur-sm">
+                    {campaign.visibility}
+                  </span>
+                ) : null}
+              </div>
+            </div>
+          </div>
+
+          {/* Controls row — stat trio + rounded-full actions */}
+          <div className="flex flex-wrap items-center justify-between gap-6 border-b border-border pb-6">
+            <div className="flex flex-wrap gap-x-10 gap-y-4">
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Brand</p>
+                <p className="mt-1 font-serif text-sm text-foreground">{campaign.clientBrand?.brandName ?? "Brand"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Payment</p>
+                <p className="mt-1 font-serif text-sm text-foreground">{campaign.paymentType ?? "TBD"}</p>
+              </div>
+              <div>
+                <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">Applications</p>
+                <p className="mt-1 font-serif text-sm text-foreground">{applications.length || campaign.applications?.length || 0}</p>
+              </div>
+            </div>
+
             <div className="flex flex-wrap gap-2">
-              <Badge className={cn("border-none uppercase", statusClass(campaign.status))}>{campaign.status}</Badge>
-              {campaign.visibility ? (
-                <Badge variant="secondary" className="uppercase">
-                  {campaign.visibility}
-                </Badge>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="mt-5 grid gap-3 text-sm text-muted-foreground sm:grid-cols-2 lg:grid-cols-3">
-            <div>
-              <p className="font-semibold text-foreground">Brand</p>
-              <p className="mt-1">{campaign.clientBrand?.brandName ?? "Brand"}</p>
-            </div>
-            {isEditing && editFormData ? (
-              <>
-                <div>
-                  <Label htmlFor="editBudget">Budget</Label>
-                  <Input
-                    id="editBudget"
-                    type="number"
-                    min={0}
-                    value={editFormData.budget || ""}
-                    onChange={(e) => setEditFormData({ ...editFormData, budget: e.target.value })}
-                    className="mt-1 rounded-xl"
-                    placeholder="Budget in THB"
-                    {...lockedInputProps}
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="editVisibility">Visibility</Label>
-                  <select
-                    id="editVisibility"
-                    value={editFormData.visibility || "PUBLIC"}
-                    onChange={(e) => setEditFormData({ ...editFormData, visibility: e.target.value })}
-                    className="mt-1 w-full rounded-xl border border-input bg-background px-3 py-2 text-sm shadow-sm"
-                  >
-                    <option value="PUBLIC">Public marketplace</option>
-                    <option value="PRIVATE">Private invite only</option>
-                  </select>
-                </div>
-                <div>
-                  <Label htmlFor="editPaymentType">Payment type</Label>
-                  <Input
-                    id="editPaymentType"
-                    value={editFormData.paymentType || ""}
-                    onChange={(e) => setEditFormData({ ...editFormData, paymentType: e.target.value })}
-                    className="mt-1 rounded-xl"
-                    placeholder="Per post, package, affiliate"
-                    {...lockedInputProps}
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Locked — campaign has accepted creators</p> : null}
-                </div>
-              </>
-            ) : (
-              <div><p className="font-semibold text-foreground">Payment</p><p className="mt-1">{campaign.paymentType ?? "TBD"}</p></div>
-            )}
-            <div>
-              <p className="font-semibold text-foreground">Applications</p>
-              <p className="mt-1">{applications.length || campaign.applications?.length || 0}</p>
-            </div>
-          </div>
-
-          {message ? <p className="mt-4 text-sm font-medium text-emerald-700">{message}</p> : null}
-          {error ? <p className="mt-4 text-sm font-medium text-destructive">{error}</p> : null}
-
-          <div className="mt-5 flex flex-wrap gap-2">
-            {isEditing ? (
-              <>
-                <Button onClick={saveChanges} disabled={busyAction != null} className="rounded-xl">
-                  {busyAction === "save" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                  Save Changes
-                </Button>
-                <Button onClick={cancelEdit} variant="outline" disabled={busyAction != null} className="rounded-xl">
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                {canManageCampaign && campaign.status === "DRAFT" ? (
-                  <>
-                    <Button onClick={startEdit} variant="outline" className="rounded-xl">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button onClick={() => updateCampaignStatus("ACTIVE")} disabled={busyAction != null} className="rounded-xl">
-                      {busyAction === "ACTIVE" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                      Publish
-                    </Button>
-                    <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
-                      {busyAction === "delete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
-                      Delete
-                    </Button>
-                  </>
-                ) : null}
-                {canManageCampaign && campaign.status === "ACTIVE" ? (
-                  <>
-                    <Button onClick={startEdit} variant="outline" className="rounded-xl">
-                      <Edit className="mr-2 h-4 w-4" />
-                      Edit
-                    </Button>
-                    <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-xl">
-                      {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
-                      Mark complete
-                    </Button>
-                    <Button onClick={() => updateCampaignStatus("CANCELLED")} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
-                      {busyAction === "CANCELLED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
-                      Cancel campaign
-                    </Button>
-                  </>
-                ) : null}
-                {canManageCampaign && campaign.status === "CANCELLED" ? (
-                  <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-xl border-destructive text-destructive hover:bg-destructive/10">
+              {canManageCampaign && campaign.status === "DRAFT" ? (
+                <>
+                  <Button onClick={startEdit} variant="outline" className="rounded-full">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
+                  </Button>
+                  <Button onClick={() => updateCampaignStatus("ACTIVE")} disabled={busyAction != null} className="rounded-full">
+                    {busyAction === "ACTIVE" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                    Publish
+                  </Button>
+                  <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-full border-destructive text-destructive hover:bg-destructive/10">
                     {busyAction === "delete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
                     Delete
                   </Button>
-                ) : null}
-                {!canManageCampaign && role === "influencer" ? (
-                  <Button onClick={applyToCampaign} disabled={busyAction != null} className="rounded-xl">
-                    {busyAction === "apply" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
-                    Apply now
+                </>
+              ) : null}
+              {canManageCampaign && campaign.status === "ACTIVE" ? (
+                <>
+                  <Button onClick={startEdit} variant="outline" className="rounded-full">
+                    <Edit className="mr-2 h-4 w-4" />
+                    Edit
                   </Button>
-                ) : null}
-                <Button variant="outline" asChild className="rounded-xl">
-                  <Link href="/campaigns">Back to campaigns</Link>
+                  <Button onClick={() => updateCampaignStatus("COMPLETED")} disabled={busyAction != null} className="rounded-full">
+                    {busyAction === "COMPLETED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Check className="mr-2 h-4 w-4" />}
+                    Mark complete
+                  </Button>
+                  <Button onClick={() => updateCampaignStatus("CANCELLED")} disabled={busyAction != null} variant="outline" className="rounded-full border-destructive text-destructive hover:bg-destructive/10">
+                    {busyAction === "CANCELLED" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <X className="mr-2 h-4 w-4" />}
+                    Cancel campaign
+                  </Button>
+                </>
+              ) : null}
+              {canManageCampaign && campaign.status === "CANCELLED" ? (
+                <Button onClick={handleDeleteCampaign} disabled={busyAction != null} variant="outline" className="rounded-full border-destructive text-destructive hover:bg-destructive/10">
+                  {busyAction === "delete" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Trash2 className="mr-2 h-4 w-4" />}
+                  Delete
                 </Button>
-              </>
-            )}
+              ) : null}
+              {!canManageCampaign && role === "influencer" ? (
+                <Button onClick={applyToCampaign} disabled={busyAction != null} className="rounded-full">
+                  {busyAction === "apply" ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Send className="mr-2 h-4 w-4" />}
+                  Apply now
+                </Button>
+              ) : null}
+              <Button variant="outline" asChild className="rounded-full">
+                <Link href="/campaigns">Back to campaigns</Link>
+              </Button>
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          {message ? <p className="text-sm font-medium text-emerald-700">{message}</p> : null}
+          {error ? <p className="text-sm font-medium text-destructive">{error}</p> : null}
+        </div>
+      )}
 
       {/* Two-column body: main content (left) + investment right rail (Stitch) */}
-      <div className="grid items-start gap-6 lg:grid-cols-[1fr_320px]">
+      <div className="grid items-start gap-6 lg:grid-cols-[1fr_400px]">
         <div className="min-w-0 space-y-6">
 
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Brief &amp; Creative Direction</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4 text-sm text-muted-foreground">
+      <Card className="relative overflow-hidden border border-border shadow-sm">
+        <FileText className="pointer-events-none absolute right-6 top-6 h-16 w-16 text-primary opacity-10" />
+        <CardHeader>
+          <CardTitle className="inline-block border-b border-primary/20 pb-2 font-serif text-xl">Brief &amp; Creative Direction</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-8 text-sm text-muted-foreground">
             {isEditing && editFormData ? (
               <>
                 <div>
@@ -957,99 +1006,28 @@ export default function CampaignDetailPage() {
             ) : (
               <>
                 <div>
-                  <p className="font-semibold text-foreground">Key message</p>
-                  <p className="mt-1 whitespace-pre-wrap">{campaign.keyMessage || "No key message yet."}</p>
+                  <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Key message</p>
+                  <p className="mt-2 whitespace-pre-wrap border-l-2 border-primary/20 pl-4 italic leading-relaxed">{campaign.keyMessage || "No key message yet."}</p>
                 </div>
-                <div>
-                  <p className="font-semibold text-foreground">Deliverables</p>
-                  <p className="mt-1 whitespace-pre-wrap">{campaign.deliverables || "No deliverables yet."}</p>
-                </div>
-                <div>
-                  <p className="font-semibold text-foreground">Do and don't</p>
-                  <p className="mt-1 whitespace-pre-wrap">{campaign.doAndDont || "No guidance yet."}</p>
+                <div className="grid gap-8 sm:grid-cols-2">
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Deliverables</p>
+                    <p className="mt-2 whitespace-pre-wrap leading-relaxed">{campaign.deliverables || "No deliverables yet."}</p>
+                  </div>
+                  <div>
+                    <p className="text-[11px] font-semibold uppercase tracking-widest text-primary">Do and don't</p>
+                    <p className="mt-2 whitespace-pre-wrap leading-relaxed">{campaign.doAndDont || "No guidance yet."}</p>
+                  </div>
                 </div>
               </>
             )}
           </CardContent>
         </Card>
-
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-4 w-4" />
-              Timeline
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="grid gap-4 text-sm text-muted-foreground sm:grid-cols-2">
-            {isEditing && editFormData ? (
-              <>
-                <div>
-                  <Label htmlFor="editApplyDeadline">Apply deadline</Label>
-                  <Input
-                    id="editApplyDeadline"
-                    type="date"
-                    value={editFormData.applyDeadline || ""}
-                    min={termsLocked ? campaign.applyDeadline?.substring(0, 10) : undefined}
-                    onChange={(e) => setEditFormData({ ...editFormData, applyDeadline: e.target.value })}
-                    className="mt-1 rounded-xl"
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="editSubmissionDate">Submission date</Label>
-                  <Input
-                    id="editSubmissionDate"
-                    type="date"
-                    value={editFormData.submissionDate || ""}
-                    min={termsLocked ? campaign.submissionDate?.substring(0, 10) : undefined}
-                    onChange={(e) => setEditFormData({ ...editFormData, submissionDate: e.target.value })}
-                    className="mt-1 rounded-xl"
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="editReviewDate">Review date</Label>
-                  <Input
-                    id="editReviewDate"
-                    type="date"
-                    value={editFormData.reviewDate || ""}
-                    min={termsLocked ? campaign.reviewDate?.substring(0, 10) : undefined}
-                    onChange={(e) => setEditFormData({ ...editFormData, reviewDate: e.target.value })}
-                    className="mt-1 rounded-xl"
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
-                </div>
-                <div>
-                  <Label htmlFor="editPaymentDate">Payment date</Label>
-                  <Input
-                    id="editPaymentDate"
-                    type="date"
-                    value={editFormData.paymentDate || ""}
-                    min={termsLocked ? campaign.paymentDate?.substring(0, 10) : undefined}
-                    onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
-                    className="mt-1 rounded-xl"
-                  />
-                  {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
-                </div>
-              </>
-            ) : (
-              <>
-                <div><p className="font-semibold text-foreground">Apply deadline</p><p className="mt-1">{formatDate(campaign.applyDeadline)}</p></div>
-                <div><p className="font-semibold text-foreground">Submission date</p><p className="mt-1">{formatDate(campaign.submissionDate)}</p></div>
-                <div><p className="font-semibold text-foreground">Review date</p><p className="mt-1">{formatDate(campaign.reviewDate)}</p></div>
-                <div><p className="font-semibold text-foreground">Payment date</p><p className="mt-1">{formatDate(campaign.paymentDate)}</p></div>
-              </>
-            )}
-          </CardContent>
-        </Card>
-      </div>
 
       {(isEditing || campaign.requirements?.length) ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Creator requirements</CardTitle>
-          </CardHeader>
-          <CardContent className="text-sm text-muted-foreground">
+        <section>
+          <h4 className="mb-4 font-serif text-xl font-semibold text-foreground">Creator requirements</h4>
+          <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-sm">
             {isEditing && editFormData ? (
               <>
               {termsLocked ? (
@@ -1144,35 +1122,52 @@ export default function CampaignDetailPage() {
               </div>
               </>
             ) : (
-              <div className="grid gap-4 md:grid-cols-2">
-                {(campaign.requirements ?? []).map((requirement, index) => (
-                  <div key={requirement.id ?? index} className="rounded-xl border border-border p-4 space-y-1">
-                    <p><span className="font-semibold text-foreground">Min followers:</span> {requirement.minFollowers?.toLocaleString() ?? "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Min engagement:</span> {requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Min avg views:</span> {requirement.minAvgViews?.toLocaleString() ?? "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Platforms:</span> {Array.isArray(requirement.platforms) ? requirement.platforms.join(", ") : "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Locations:</span> {Array.isArray(requirement.locations) ? requirement.locations.join(", ") : "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Categories:</span> {Array.isArray(requirement.categories) ? requirement.categories.join(", ") : "Any"}</p>
-                    <p><span className="font-semibold text-foreground">Content type:</span> {requirement.contentType || "Any"}</p>
-                  </div>
-                ))}
+              <div className="space-y-8">
+                {(campaign.requirements ?? []).map((requirement, index) => {
+                  const cats = Array.isArray(requirement.categories) ? requirement.categories : [];
+                  const tiles = [
+                    { label: "Min followers", value: requirement.minFollowers?.toLocaleString() ?? "Any" },
+                    { label: "Engagement", value: requirement.minEngagementRate != null ? `${requirement.minEngagementRate}%` : "Any" },
+                    { label: "Avg views", value: requirement.minAvgViews?.toLocaleString() ?? "Any" },
+                    { label: "Location", value: Array.isArray(requirement.locations) && requirement.locations.length ? requirement.locations.join(", ") : "Any" },
+                    { label: "Platforms", value: Array.isArray(requirement.platforms) && requirement.platforms.length ? requirement.platforms.join(", ") : "Any" },
+                    { label: "Content type", value: requirement.contentType || "Any" },
+                  ];
+                  return (
+                    <div key={requirement.id ?? index} className="space-y-4">
+                      {cats.length ? (
+                        <div className="flex flex-wrap gap-2">
+                          {cats.map((c) => (
+                            <span key={c} className="rounded-md bg-secondary/15 px-3 py-1 text-[10px] font-semibold uppercase tracking-wider text-secondary">{c}</span>
+                          ))}
+                        </div>
+                      ) : null}
+                      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                        {tiles.map((tile) => (
+                          <div key={tile.label} className="rounded-lg border-b-2 border-primary/10 bg-muted p-4">
+                            <p className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{tile.label}</p>
+                            <p className="mt-1 font-serif text-lg text-foreground">{tile.value}</p>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  );
+                })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-lg">Confirmed influencers</CardTitle>
-              <Badge variant="outline" className="rounded-full">
-                {confirmed.length} confirmed
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-serif text-xl font-semibold text-foreground">Confirmed influencers</h4>
+            <Badge variant="outline" className="rounded-full">
+              {confirmed.length} confirmed
+            </Badge>
+          </div>
+          <div>
             {confirmed.length === 0 ? (
               <p className="text-sm text-muted-foreground">No confirmed influencers yet.</p>
             ) : (
@@ -1188,46 +1183,44 @@ export default function CampaignDetailPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-lg">Applications</CardTitle>
-              {inboundApplications.length > 0 ? (
-                <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
-                  {([
-                    ["text", "Text", Rows3],
-                    ["card", "Profile card", LayoutGrid],
-                  ] as const).map(([mode, label, Icon]) => (
-                    <button
-                      key={mode}
-                      type="button"
-                      onClick={() => setApplicationsView(mode)}
-                      aria-pressed={applicationsView === mode}
-                      className={cn(
-                        "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium transition",
-                        applicationsView === mode
-                          ? "bg-card text-foreground shadow-sm"
-                          : "text-muted-foreground hover:text-foreground",
-                      )}
-                    >
-                      <Icon className="h-3.5 w-3.5" />
-                      {label}
-                    </button>
-                  ))}
-                </div>
-              ) : null}
-            </div>
-          </CardHeader>
-          <CardContent>
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-serif text-xl font-semibold text-foreground">Applications</h4>
+            {inboundApplications.length > 0 ? (
+              <div className="inline-flex items-center rounded-lg border border-border bg-muted/40 p-0.5">
+                {([
+                  ["text", "Text", Rows3],
+                  ["card", "Profile card", LayoutGrid],
+                ] as const).map(([mode, label, Icon]) => (
+                  <button
+                    key={mode}
+                    type="button"
+                    onClick={() => setApplicationsView(mode)}
+                    aria-pressed={applicationsView === mode}
+                    className={cn(
+                      "inline-flex cursor-pointer items-center gap-1.5 rounded-md px-2.5 py-1 text-sm font-medium transition",
+                      applicationsView === mode
+                        ? "bg-card text-foreground shadow-sm"
+                        : "text-muted-foreground hover:text-foreground",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {label}
+                  </button>
+                ))}
+              </div>
+            ) : null}
+          </div>
+          <div>
             {inboundApplications.length === 0 ? (
               <p className="text-sm text-muted-foreground">No applications yet.</p>
             ) : applicationsView === "text" ? (
-              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border">
+              <div className="divide-y divide-border overflow-hidden rounded-xl border border-border bg-card shadow-sm">
                 {inboundApplications.map((application) => {
                   const accounts = application.influencer?.platformAccounts ?? [];
                   return (
@@ -1261,22 +1254,20 @@ export default function CampaignDetailPage() {
                 ))}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <CardTitle className="text-lg">Invited influencers</CardTitle>
-              <Button size="sm" onClick={openInvitePicker} className="rounded-xl">
-                <UserPlus className="mr-2 h-3.5 w-3.5" />
-                Invite from shortlist
-              </Button>
-            </div>
-          </CardHeader>
-          <CardContent>
+        <section>
+          <div className="mb-4 flex flex-wrap items-center justify-between gap-2">
+            <h4 className="font-serif text-xl font-semibold text-foreground">Invited influencers</h4>
+            <Button size="sm" onClick={openInvitePicker} className="rounded-xl">
+              <UserPlus className="mr-2 h-3.5 w-3.5" />
+              Invite from shortlist
+            </Button>
+          </div>
+          <div>
             {invitations.length === 0 ? (
               <p className="text-sm text-muted-foreground">
                 No invitations yet. Invite creators from your shortlist or from Discover.
@@ -1298,7 +1289,7 @@ export default function CampaignDetailPage() {
                       {rows.map((invitation) => {
                         const accounts = invitation.influencer?.platformAccounts ?? [];
                         return (
-                          <div key={invitation.id} className="rounded-xl border border-border p-4">
+                          <div key={invitation.id} className="rounded-xl border border-border bg-card p-4 shadow-sm">
                             <div className="flex flex-wrap items-start justify-between gap-3">
                               <div>
                                 <p className="font-semibold text-foreground">{getInfluencerName(invitation)}</p>
@@ -1333,27 +1324,25 @@ export default function CampaignDetailPage() {
                 })}
               </div>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <div className="flex flex-wrap items-center justify-between gap-2">
-              <div>
-                <CardTitle className="text-lg">Campaign shortlist</CardTitle>
-                <p className="mt-1 text-sm text-muted-foreground">
-                  A client-facing list of recommended creators with notes and proposed
-                  pricing — separate from formal invitations above.
-                </p>
-              </div>
-              <Badge variant="outline" className="rounded-full">
-                {campaignShortlist.length} on list
-              </Badge>
+        <section>
+          <div className="mb-4 flex flex-wrap items-start justify-between gap-2">
+            <div>
+              <h4 className="font-serif text-xl font-semibold text-foreground">Campaign shortlist</h4>
+              <p className="mt-1 text-sm text-muted-foreground">
+                A client-facing list of recommended creators with notes and proposed
+                pricing — separate from formal invitations above.
+              </p>
             </div>
-          </CardHeader>
-          <CardContent className="space-y-4">
+            <Badge variant="outline" className="rounded-full">
+              {campaignShortlist.length} on list
+            </Badge>
+          </div>
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
             <div className="flex flex-wrap gap-2">
               <Button size="sm" onClick={openInvitePicker} className="rounded-xl">
                 <UserPlus className="mr-2 h-3.5 w-3.5" />
@@ -1398,8 +1387,8 @@ export default function CampaignDetailPage() {
                 then share the public link with your client.
               </p>
             )}
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {isCampaignFinished ? (
@@ -1412,11 +1401,9 @@ export default function CampaignDetailPage() {
       ) : null}
 
       {canManageCampaign ? (
-        <Card className="border-none shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Share campaign</CardTitle>
-          </CardHeader>
-          <CardContent>
+        <section>
+          <h4 className="mb-4 font-serif text-xl font-semibold text-foreground">Share campaign</h4>
+          <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
             <p className="mb-3 text-sm text-muted-foreground">
               Generate a public, account-less link to a presentation-safe view of
               this campaign. Budget, payment, and applicant data are never shown.
@@ -1425,8 +1412,8 @@ export default function CampaignDetailPage() {
               <Share2 className="mr-2 h-4 w-4" />
               Share campaign
             </Button>
-          </CardContent>
-        </Card>
+          </div>
+        </section>
       ) : null}
 
       {shareOpen && token ? (
@@ -1566,27 +1553,131 @@ export default function CampaignDetailPage() {
             </CardContent>
           </Card>
 
-          {/* Latest Assets (Stitch) — the campaign product image */}
-          {(campaign.briefImageUrl || (isEditing && canManageCampaign)) ? (
+          {/* Timeline (Stitch) — moved into the right rail */}
+          <section>
+            <h4 className="mb-4 flex items-center gap-2 font-serif text-xl font-semibold text-foreground">
+              <Calendar className="h-5 w-5 text-primary" />
+              Timeline
+            </h4>
+            <div className="rounded-2xl border border-border bg-card p-6 text-sm text-muted-foreground shadow-sm">
+              {isEditing && editFormData ? (
+                <div className="space-y-4">
+                  <div>
+                    <Label htmlFor="editApplyDeadline">Apply deadline</Label>
+                    <Input
+                      id="editApplyDeadline"
+                      type="date"
+                      value={editFormData.applyDeadline || ""}
+                      min={termsLocked ? campaign.applyDeadline?.substring(0, 10) : undefined}
+                      onChange={(e) => setEditFormData({ ...editFormData, applyDeadline: e.target.value })}
+                      className="mt-1 rounded-xl"
+                    />
+                    {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
+                  </div>
+                  <div>
+                    <Label htmlFor="editSubmissionDate">Submission date</Label>
+                    <Input
+                      id="editSubmissionDate"
+                      type="date"
+                      value={editFormData.submissionDate || ""}
+                      min={termsLocked ? campaign.submissionDate?.substring(0, 10) : undefined}
+                      onChange={(e) => setEditFormData({ ...editFormData, submissionDate: e.target.value })}
+                      className="mt-1 rounded-xl"
+                    />
+                    {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
+                  </div>
+                  <div>
+                    <Label htmlFor="editReviewDate">Review date</Label>
+                    <Input
+                      id="editReviewDate"
+                      type="date"
+                      value={editFormData.reviewDate || ""}
+                      min={termsLocked ? campaign.reviewDate?.substring(0, 10) : undefined}
+                      onChange={(e) => setEditFormData({ ...editFormData, reviewDate: e.target.value })}
+                      className="mt-1 rounded-xl"
+                    />
+                    {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
+                  </div>
+                  <div>
+                    <Label htmlFor="editPaymentDate">Payment date</Label>
+                    <Input
+                      id="editPaymentDate"
+                      type="date"
+                      value={editFormData.paymentDate || ""}
+                      min={termsLocked ? campaign.paymentDate?.substring(0, 10) : undefined}
+                      onChange={(e) => setEditFormData({ ...editFormData, paymentDate: e.target.value })}
+                      className="mt-1 rounded-xl"
+                    />
+                    {termsLocked ? <p className="mt-1 text-sm text-muted-foreground">Can be extended, not shortened</p> : null}
+                  </div>
+                </div>
+              ) : (
+                <div className="space-y-0.5">
+                  {[
+                    { label: "Apply deadline", value: formatDate(campaign.applyDeadline) },
+                    { label: "Submission date", value: formatDate(campaign.submissionDate) },
+                    { label: "Review date", value: formatDate(campaign.reviewDate) },
+                    { label: "Payment date", value: formatDate(campaign.paymentDate) },
+                  ].map((row) => (
+                    <div key={row.label} className="flex items-center justify-between border-b border-border/60 py-3 last:border-0">
+                      <span className="text-[10px] font-semibold uppercase tracking-widest text-muted-foreground">{row.label}</span>
+                      <span className="font-serif text-sm text-foreground">{row.value}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </section>
+
+          {/* Product images (Stitch "Latest Assets") — brief image gallery */}
+          {(briefImages.length > 0 || (isEditing && canManageCampaign)) ? (
             <Card className="border-none shadow-sm">
               <CardContent className="p-5">
-                <div className="mb-3 flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
-                  <ImageIcon className="h-4 w-4" /> Latest Assets
+                <div className="mb-3 flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-muted-foreground">
+                    <ImageIcon className="h-4 w-4" /> Product Images
+                  </div>
+                  <span className="text-[11px] font-semibold text-muted-foreground/70">
+                    {briefImages.length}/{MAX_BRIEF_IMAGES}
+                  </span>
                 </div>
-                <div className="relative w-full overflow-hidden rounded-xl border border-border bg-muted">
-                  {campaign.briefImageUrl ? (
-                    <img
-                      src={campaign.briefImageUrl ?? ""}
-                      alt={`${campaign.name} product`}
-                      className="max-h-56 w-full object-cover"
-                    />
-                  ) : (
-                    <div className="flex h-32 w-full flex-col items-center justify-center gap-2 text-muted-foreground">
-                      <ImageIcon className="h-7 w-7" />
-                      <span className="text-xs font-medium">No product image yet</span>
-                    </div>
-                  )}
-                </div>
+                {briefImages.length > 0 ? (
+                  <div className="grid grid-cols-2 gap-2">
+                    {briefImages.map((url, index) => (
+                      <div
+                        key={url}
+                        className="group relative aspect-square overflow-hidden rounded-xl border border-border bg-muted"
+                      >
+                        {/* eslint-disable-next-line @next/next/no-img-element */}
+                        <img
+                          src={url}
+                          alt={`${campaign.name} product ${index + 1}`}
+                          className="h-full w-full object-cover"
+                        />
+                        {isEditing && canManageCampaign ? (
+                          <button
+                            type="button"
+                            onClick={() => handleBriefImageDelete(url)}
+                            disabled={deletingImageUrl === url}
+                            aria-label="Remove image"
+                            className="absolute right-1.5 top-1.5 flex h-7 w-7 cursor-pointer items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition group-hover:opacity-100 hover:bg-black/80 disabled:cursor-not-allowed"
+                          >
+                            {deletingImageUrl === url ? (
+                              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                            ) : (
+                              <X className="h-3.5 w-3.5" />
+                            )}
+                          </button>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="flex h-32 w-full flex-col items-center justify-center gap-2 rounded-xl border border-border bg-muted text-muted-foreground">
+                    <ImageIcon className="h-7 w-7" />
+                    <span className="text-xs font-medium">No product images yet</span>
+                  </div>
+                )}
                 {isEditing && canManageCampaign && (
                   <>
                     <input
@@ -1600,7 +1691,7 @@ export default function CampaignDetailPage() {
                       type="button"
                       size="sm"
                       variant="secondary"
-                      disabled={uploadingBriefImage}
+                      disabled={uploadingBriefImage || briefImages.length >= MAX_BRIEF_IMAGES}
                       onClick={() => briefImageInputRef.current?.click()}
                       className="mt-3 w-full rounded-xl font-bold"
                     >
@@ -1609,7 +1700,11 @@ export default function CampaignDetailPage() {
                       ) : (
                         <ImageIcon className="mr-1.5 h-4 w-4" />
                       )}
-                      {campaign.briefImageUrl ? "Change product image" : "Upload product image"}
+                      {briefImages.length >= MAX_BRIEF_IMAGES
+                        ? "Maximum reached"
+                        : briefImages.length > 0
+                          ? "Add product image"
+                          : "Upload product image"}
                     </Button>
                   </>
                 )}
