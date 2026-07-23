@@ -16,7 +16,7 @@ set -euo pipefail
 VPS=root@80.241.213.128
 REMOTE_DIR=/opt/influ-app-frontend
 REPO=https://github.com/k1mmza/influ-app-frontend.git
-API_URL=https://influ-app-backend.onrender.com
+API_URL=https://api.inflique.com
 HOST_PORT=3200
 
 echo "==> Pulling latest main on the VPS"
