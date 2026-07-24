@@ -26,6 +26,18 @@ export function registerTokenRefresher(fn: TokenRefresher | null) {
   tokenRefresher = fn;
 }
 
+// When a Bearer request 401s AND the silent refresh can't recover it, the active
+// session is dead (refresh token expired/revoked). The store registers a handler
+// here so authFetch can sign the account out once, centrally — otherwise every
+// background authed call on the page surfaces a raw "Unauthorized" to the console.
+type SessionExpiredHandler = () => void;
+let sessionExpiredHandler: SessionExpiredHandler | null = null;
+
+/** Called once by the user store to clean up a session the refresh couldn't save. */
+export function registerSessionExpiredHandler(fn: SessionExpiredHandler | null) {
+  sessionExpiredHandler = fn;
+}
+
 // All api functions build headers as plain object literals, so we only need to
 // read/rewrite that shape (not Headers instances or [key,value][] tuples).
 function bearerOf(init?: RequestInit): string | null {
@@ -43,7 +55,13 @@ async function authFetch(input: RequestInfo | URL, init?: RequestInit): Promise<
   if (!expired) return res; // no Bearer token → not an auth failure we can fix
 
   const fresh = await tokenRefresher(expired);
-  if (!fresh || fresh === expired) return res; // refresh failed → surface the 401
+  if (!fresh || fresh === expired) {
+    // Refresh failed → the session is unrecoverable. Sign out centrally so guards
+    // redirect to /login, rather than leaving callers to log raw 401s. The store
+    // handler is idempotent, so concurrent failures collapsing here is harmless.
+    sessionExpiredHandler?.();
+    return res; // still surface the 401 for the immediate caller
+  }
 
   // Retry exactly once with the rotated access token (uses raw fetch, so a
   // second 401 is returned as-is rather than looping).

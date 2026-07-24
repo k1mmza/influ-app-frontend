@@ -41,7 +41,7 @@ function AppSidebarLayout({ children }: { children: React.ReactNode }) {
   const accent = pageAccent(pathname);
 
   return (
-    <main className="app-tv flex min-h-svh w-full flex-col bg-background text-foreground transition-colors duration-300">
+    <main className="app-tv tv-scope flex min-h-svh w-full flex-col bg-background text-foreground transition-colors duration-300">
       <div className="flex min-h-0 w-full flex-1 flex-col lg:min-h-svh lg:flex-row">
         <aside
           className={cn(

@@ -473,17 +473,121 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="space-y-6">
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-          {[0, 1, 2, 3, 4, 5].map((i) => (
-            <Card key={i} className="border-none shadow-sm">
-              <CardContent className="p-6 space-y-2">
-                <Skeleton className="h-4 w-1/2" />
-                <Skeleton className="h-7 w-2/3" />
-              </CardContent>
-            </Card>
+      <div className="space-y-8">
+        {/* Header band */}
+        <Skeleton className="h-[168px] w-full rounded-2xl" />
+
+        {/* KPI grid */}
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
+          {[0, 1, 2, 3].map((i) => (
+            <div key={i} className="rounded-xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex items-center justify-between">
+                <Skeleton className="h-3 w-24" />
+                <Skeleton className="h-4 w-4 rounded" />
+              </div>
+              <Skeleton className="mt-3 h-9 w-2/3" />
+              <Skeleton className="mt-3 h-3 w-1/2" />
+            </div>
           ))}
         </div>
+
+        {/* Bento: active campaigns (left) + attention rail (right) */}
+        <div className="grid grid-cols-12 gap-6">
+          <section className="col-span-12 lg:col-span-8">
+            <div className="mb-6 flex items-baseline justify-between">
+              <Skeleton className="h-6 w-40" />
+              <Skeleton className="h-3 w-16" />
+            </div>
+            <div className="grid gap-6 sm:grid-cols-2">
+              {[0, 1].map((i) => (
+                <div key={i} className="flex flex-col overflow-hidden rounded-xl border border-border bg-card shadow-sm">
+                  <Skeleton className="h-28 w-full rounded-none" />
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="flex justify-between">
+                      {[0, 1, 2].map((j) => (
+                        <div key={j} className="flex flex-col items-center gap-1.5 px-2">
+                          <Skeleton className="h-2.5 w-14" />
+                          <Skeleton className="h-5 w-8" />
+                        </div>
+                      ))}
+                    </div>
+                    <Skeleton className="mt-4 h-1.5 w-full rounded-full" />
+                    <Skeleton className="mt-5 h-4 w-2/3" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </section>
+
+          {/* Needs your attention rail */}
+          <section className="col-span-12 lg:col-span-4">
+            <div className="h-full rounded-2xl border border-border bg-muted/40 p-6 shadow-sm">
+              <Skeleton className="mb-6 h-6 w-48" />
+              <div className="space-y-3">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="flex items-center gap-3 rounded-xl border border-border bg-card px-4 py-3">
+                    <Skeleton className="h-9 w-9 shrink-0 rounded-xl" />
+                    <div className="min-w-0 flex-1 space-y-1.5">
+                      <Skeleton className="h-3.5 w-2/3" />
+                      <Skeleton className="h-3 w-1/2" />
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Performance + Budget row */}
+        <div className="grid gap-8 lg:grid-cols-2">
+          <section>
+            <Skeleton className="mb-6 h-6 w-52" />
+            <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="grid grid-cols-3 gap-6">
+                {[0, 1, 2].map((i) => (
+                  <div key={i} className="space-y-2">
+                    <Skeleton className="h-3 w-16" />
+                    <Skeleton className="h-7 w-20" />
+                  </div>
+                ))}
+              </div>
+            </div>
+          </section>
+          <section>
+            <Skeleton className="mb-6 h-6 w-48" />
+            <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-32" />
+                <Skeleton className="h-4 w-20" />
+              </div>
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-28" />
+                <Skeleton className="h-4 w-16" />
+              </div>
+              <Skeleton className="h-1.5 w-full rounded-full" />
+              <div className="flex justify-between">
+                <Skeleton className="h-4 w-16" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            </div>
+          </section>
+        </div>
+
+        {/* Recent activity */}
+        <section>
+          <Skeleton className="mb-6 h-6 w-40" />
+          <div className="space-y-4 rounded-2xl border border-border bg-card p-6 shadow-sm">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="flex items-start gap-3">
+                <Skeleton className="mt-1.5 h-1.5 w-1.5 shrink-0 rounded-full" />
+                <div className="min-w-0 flex-1 space-y-1.5">
+                  <Skeleton className="h-4 w-1/2" />
+                  <Skeleton className="h-3 w-1/3" />
+                </div>
+              </div>
+            ))}
+          </div>
+        </section>
       </div>
     );
   }

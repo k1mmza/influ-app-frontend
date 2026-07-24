@@ -679,25 +679,70 @@ export default function CampaignDetailPage() {
   if (loading) {
     return (
       <section className="space-y-6">
-        <Card className="border-none shadow-sm">
-          <CardContent className="p-6 space-y-5">
-            <Skeleton className="h-40 w-full rounded-2xl sm:h-56" />
-            <div className="space-y-2">
-              <Skeleton className="h-8 w-1/2" />
-              <Skeleton className="h-4 w-1/3" />
+        {/* Hero */}
+        <Skeleton className="h-[280px] w-full rounded-xl sm:h-[320px]" />
+
+        {/* Controls row — stat trio + actions */}
+        <div className="flex flex-wrap items-center justify-between gap-6 border-b border-border pb-6">
+          <div className="flex flex-wrap gap-x-10 gap-y-4">
+            {[0, 1, 2].map((i) => (
+              <div key={i} className="space-y-2">
+                <Skeleton className="h-3 w-16" />
+                <Skeleton className="h-4 w-24" />
+              </div>
+            ))}
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Skeleton className="h-10 w-28 rounded-full" />
+            <Skeleton className="h-10 w-28 rounded-full" />
+          </div>
+        </div>
+
+        {/* Two-column body: main content + right rail */}
+        <div className="grid items-start gap-6 lg:grid-cols-[1fr_400px]">
+          <div className="min-w-0 space-y-6">
+            <Card className="border border-border shadow-sm">
+              <CardContent className="space-y-6 p-6">
+                <Skeleton className="h-6 w-56" />
+                <div className="space-y-2">
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-full" />
+                  <Skeleton className="h-4 w-2/3" />
+                </div>
+                <div className="grid gap-8 sm:grid-cols-2">
+                  {[0, 1].map((i) => (
+                    <div key={i} className="space-y-2">
+                      <Skeleton className="h-3 w-24" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="space-y-4">
+              <Skeleton className="h-6 w-48" />
+              <div className="rounded-2xl border border-border bg-card p-6 shadow-sm">
+                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                  {[0, 1, 2, 3, 4, 5].map((i) => (
+                    <Skeleton key={i} className="h-20 w-full rounded-lg" />
+                  ))}
+                </div>
+              </div>
             </div>
-            <div className="flex gap-2">
-              <Skeleton className="h-9 w-24 rounded-xl" />
-              <Skeleton className="h-9 w-24 rounded-xl" />
-              <Skeleton className="h-9 w-24 rounded-xl" />
-            </div>
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-full" />
-              <Skeleton className="h-4 w-2/3" />
-            </div>
-          </CardContent>
-        </Card>
+          </div>
+
+          {/* Right rail */}
+          <Card className="border border-border shadow-sm">
+            <CardContent className="space-y-4 p-6">
+              <Skeleton className="h-6 w-32" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+              <Skeleton className="h-10 w-full rounded-xl" />
+            </CardContent>
+          </Card>
+        </div>
       </section>
     );
   }

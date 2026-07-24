@@ -767,13 +767,25 @@ export default function SmartPlanPage() {
             <div className="grid gap-4 sm:grid-cols-2">
               {[0, 1].map((i) => (
                 <Card key={i} className="border-none shadow-sm">
-                  <CardContent className="p-6 space-y-3">
-                    <Skeleton className="h-4 w-2/3" />
-                    <Skeleton className="h-3 w-1/3" />
-                    <div className="grid grid-cols-2 gap-3 pt-2">
-                      <Skeleton className="h-6" />
-                      <Skeleton className="h-6" />
+                  <CardContent className="p-6">
+                    <div className="mb-4 flex items-start justify-between">
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-4 w-40" />
+                        <Skeleton className="h-3 w-24" />
+                      </div>
+                      <Skeleton className="h-6 w-16 rounded-full" />
                     </div>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-2.5 w-14" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                      <div className="space-y-1.5">
+                        <Skeleton className="h-2.5 w-14" />
+                        <Skeleton className="h-4 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="mt-4 h-8 w-full rounded-xl" />
                   </CardContent>
                 </Card>
               ))}

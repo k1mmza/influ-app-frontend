@@ -265,22 +265,41 @@ function BrandCampaignCard({ raw, role }: { raw: any; role: string | null }) {
 
 function CampaignCardsSkeleton() {
   return (
-    <div className="space-y-6">
-      <Card className="border-none shadow-sm">
-        <CardContent className="p-8 space-y-3">
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-4 w-2/3" />
-        </CardContent>
-      </Card>
-      <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+    <div className="space-y-10">
+      {/* Editorial hero */}
+      <Skeleton className="h-[220px] w-full rounded-xl" />
+
+      {/* Filters row */}
+      <div className="flex items-center justify-between border-b border-border pb-4">
+        <div className="flex items-center gap-6 sm:gap-8">
+          {[0, 1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-3 w-20" />
+          ))}
+        </div>
+        <Skeleton className="h-3 w-16" />
+      </div>
+
+      {/* Campaign card grid */}
+      <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-3">
         {[0, 1, 2, 3, 4, 5].map((i) => (
-          <Card key={i} className="border-none shadow-sm">
-            <CardContent className="p-6 space-y-3">
-              <Skeleton className="h-5 w-2/3" />
-              <Skeleton className="h-4 w-1/2" />
-              <Skeleton className="h-4 w-1/3" />
-            </CardContent>
-          </Card>
+          <div
+            key={i}
+            className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm"
+          >
+            <Skeleton className="h-48 w-full rounded-none" />
+            <div className="flex flex-grow flex-col gap-4 p-6">
+              <div className="space-y-2">
+                <Skeleton className="h-7 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              <div className="space-y-2.5 border-t border-border/60 pt-4">
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-2/3" />
+                <Skeleton className="h-4 w-1/2" />
+              </div>
+              <Skeleton className="mt-auto h-3 w-1/3" />
+            </div>
+          </div>
         ))}
       </div>
     </div>
@@ -879,10 +898,31 @@ function AdminCampaignsView() {
 
   if (loading && !result) {
     return (
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
-        {[0, 1, 2, 3, 4, 5].map((i) => (
-          <Skeleton key={i} className="h-64 w-full rounded-2xl" />
-        ))}
+      <div className="space-y-6">
+        <div className="space-y-2">
+          <Skeleton className="h-7 w-48" />
+          <Skeleton className="h-4 w-72" />
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+          {[0, 1, 2, 3, 4, 5].map((i) => (
+            <div key={i} className="space-y-1">
+              <Skeleton className="h-3 w-24" />
+              <div className="flex h-full flex-col overflow-hidden rounded-lg border border-border bg-card shadow-sm">
+                <Skeleton className="h-48 w-full rounded-none" />
+                <div className="flex flex-col gap-4 p-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-7 w-2/3" />
+                    <Skeleton className="h-4 w-1/2" />
+                  </div>
+                  <div className="space-y-2.5 border-t border-border/60 pt-4">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                </div>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
     );
   }

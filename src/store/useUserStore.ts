@@ -10,6 +10,7 @@ import {
   apiRefresh,
   apiLogout,
   registerTokenRefresher,
+  registerSessionExpiredHandler,
 } from "@/lib/api";
 import { useMediaKitStore } from "@/store/useMediaKitStore";
 
@@ -316,3 +317,12 @@ function addAccount(
 registerTokenRefresher((expiredAccessToken) =>
   useUserStore.getState().refreshAccountToken(expiredAccessToken),
 );
+
+// When a refresh can't save the session, drop the active account so guards send
+// the user to /login. Idempotent: if the account is already gone (a concurrent
+// 401 got here first), logout() is a no-op.
+registerSessionExpiredHandler(() => {
+  if (useUserStore.getState().activeAccountId) {
+    useUserStore.getState().logout();
+  }
+});

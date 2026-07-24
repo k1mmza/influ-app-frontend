@@ -140,7 +140,12 @@ function DiscoverPageContent() {
     }
     apiGetCampaigns(token)
       .then(setCampaigns)
-      .catch((err) => console.error("Failed to fetch campaigns:", err));
+      .catch((err) => {
+        // An expired session is handled centrally (authFetch → sign out → /login);
+        // don't surface it as a console error for this non-critical picker fetch.
+        if (err instanceof Error && err.message === "Unauthorized") return;
+        console.error("Failed to fetch campaigns:", err);
+      });
   }, [role, token]);
 
   const handleConfirmInvite = async () => {
@@ -1240,12 +1245,18 @@ function DiscoverPageContent() {
             )}
           </div>
           {loading ? (
-            <div className={cn("grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3", publicSkin ? "gap-6 lg:gap-8" : "gap-4 xl:grid-cols-4")}>
+            <div className={cn("grid grid-cols-1 sm:grid-cols-2", publicSkin ? "gap-tv-gutter lg:grid-cols-4" : "gap-4 lg:grid-cols-3 xl:grid-cols-4")}>
               {[0, 1, 2, 3, 4, 5, 6, 7].map((i) => (
-                <div key={i} className="space-y-2">
-                  <Skeleton className="h-40 w-full rounded-2xl" />
-                  <Skeleton className="h-4 w-2/3" />
-                  <Skeleton className="h-3 w-1/2" />
+                <div key={i} className="flex flex-col overflow-hidden rounded-tv-lg border border-tv-outline-variant bg-tv-surface-container-lowest">
+                  <Skeleton className="aspect-[6/5] w-full rounded-none" />
+                  <div className="space-y-2 p-4">
+                    <Skeleton className="h-4 w-2/3" />
+                    <Skeleton className="h-3 w-1/2" />
+                    <div className="flex gap-2 pt-1">
+                      <Skeleton className="h-3 w-12" />
+                      <Skeleton className="h-3 w-12" />
+                    </div>
+                  </div>
                 </div>
               ))}
             </div>

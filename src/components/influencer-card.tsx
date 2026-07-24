@@ -17,7 +17,6 @@ import {
 import { Heart, PlusCircle } from "lucide-react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 
 const PLATFORM_ORDER = ["youtube", "tiktok", "instagram"];
@@ -146,17 +145,20 @@ export function InfluencerCard({ influencer, isActive = false, onSelect, onAddTo
           </button>
         ) : null}
 
-        {/* score (top-right) */}
-        <Badge
+        {/* score (top-right) — opaque fill so it stays legible over any avatar,
+            including solid-black images. The tv-* tokens resolve in both the
+            public (.tv-scope marketing layout) and authed (.app-tv .tv-scope
+            shell) contexts — see app-shell + globals.css. */}
+        <span
           className={cn(
-            "absolute right-2 top-2 backdrop-blur-sm",
+            "absolute right-2 top-2 inline-flex items-center border px-2.5 py-0.5 text-xs font-semibold shadow-sm",
             tv
-              ? "rounded-tv-lg border border-tv-outline-variant bg-tv-surface/90 font-tv-body text-tv-label-caps uppercase text-tv-primary hover:bg-tv-surface"
-              : "border-none bg-card/90 text-primary font-bold hover:bg-card",
+              ? "rounded-tv-lg border-tv-outline-variant bg-tv-surface font-tv-body text-tv-label-caps uppercase text-tv-primary"
+              : "rounded-md border-transparent bg-card font-bold text-primary",
           )}
         >
           Score {influencer.performanceScore}
-        </Badge>
+        </span>
 
         {/* overlaid identity (bottom) */}
         <div className="absolute inset-x-0 bottom-0 p-3">
